@@ -2,17 +2,17 @@ using System.Collections.Generic;
 
 namespace DemoApplication
 {
-    internal class Polygon
+    public class Model
     {
-        public List<Mathematics.Vector3D> vertices;
+        public List<Mathematics.Vector3> vertices;
         public List<int[]> verticeGroups;
 
-        public List<Mathematics.Vector3D> modifiedVertices;
+        public List<Mathematics.Vector3> modifiedVertices;
 
-        public List<Mathematics.Vector3D> normals;
+        public List<Mathematics.Vector3> normals;
         public List<int[]> normalGroups;
 
-        public List<Mathematics.Vector3D> modifiedNormals;
+        public List<Mathematics.Vector3> modifiedNormals;
 
         public void Reset()
         {

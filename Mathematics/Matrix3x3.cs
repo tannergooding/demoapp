@@ -15,13 +15,13 @@ namespace Mathematics
         /// <summary>
         ///     <para>Represents a <see cref="Matrix3x3"/> whose main-diagonal components are set to one and whose remaining components are all set to zero.</para>
         /// </summary>
-        public static readonly Matrix3x3 Identity = new Matrix3x3(Vector3D.UnitX, Vector3D.UnitY, Vector3D.UnitZ);
+        public static readonly Matrix3x3 Identity = new Matrix3x3(Vector3.UnitX, Vector3.UnitY, Vector3.UnitZ);
         #endregion
 
         #region Fields
-        private Vector3D _x;
-        private Vector3D _y;
-        private Vector3D _z;
+        private Vector3 _x;
+        private Vector3 _y;
+        private Vector3 _z;
         #endregion
 
         #region Constructors
@@ -31,11 +31,112 @@ namespace Mathematics
         /// <param name="x">The initial value for the x-component of the matrix.</param>
         /// <param name="y">The initial value for the y-component of the matrix.</param>
         /// <param name="z">The initial value for the z-component of the matrix.</param>
-        public Matrix3x3(Vector3D x, Vector3D y, Vector3D z)
+        public Matrix3x3(Vector3 x, Vector3 y, Vector3 z)
         {
             _x = x;
             _y = y;
             _z = z;
+        }
+        #endregion
+
+        #region Properties
+        /// <summary>
+        ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
+        /// </summary>
+        /// <param name="index">The index of the component to get or set.</param>
+        public unsafe Vector3 this[int index]
+        {
+            get
+            {
+                if ((index < 0) || (index > 2))
+                {
+                    throw new IndexOutOfRangeException();
+                }
+                Contract.EndContractBlock();
+
+                fixed (Matrix3x3* pVector = &this)
+                {
+                    return ((Vector3*)pVector)[index];
+                }
+            }
+
+            set
+            {
+                if ((index < 0) || (index > 2))
+                {
+                    throw new IndexOutOfRangeException();
+                }
+                Contract.EndContractBlock();
+
+                fixed (Matrix3x3* pVector = &this)
+                {
+                    ((Vector3*)pVector)[index] = value;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets the determinant of the current instance.</para>
+        /// </summary>
+        public float Determinant
+        {
+            get
+            {
+                return (X.X * Y.Y * Z.Z) +
+                       (X.Y * Y.Z * Z.X) +
+                       (X.Z * Y.X * Z.Y) -
+                       (X.Z * Y.Y * Z.X) -
+                       (X.Y * Y.X * Z.Z) -
+                       (X.X * Y.Z * Z.Y);
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the x-component for the current instance.</para>
+        /// </summary>
+        public Vector3 X
+        {
+            get
+            {
+                return _x;
+            }
+
+            set
+            {
+                _x = value;
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the y-component for the current instance.</para>
+        /// </summary>
+        public Vector3 Y
+        {
+            get
+            {
+                return _y;
+            }
+
+            set
+            {
+                _y = value;
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the z-component for the current instance.</para>
+        /// </summary>
+        public Vector3 Z
+        {
+            get
+            {
+                return _z;
+            }
+
+            set
+            {
+                _z = value;
+            }
         }
         #endregion
 
@@ -151,15 +252,15 @@ namespace Mathematics
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Matrix3x3 operator *(Matrix3x3 left, Matrix3x3 right)
         {
-            var x = new Vector3D((left.X.X * right.X.X) + (left.X.Y * right.Y.X) + (left.X.Z * right.Z.X),
+            var x = new Vector3((left.X.X * right.X.X) + (left.X.Y * right.Y.X) + (left.X.Z * right.Z.X),
                                       (left.X.X * right.X.Y) + (left.X.Y * right.Y.Y) + (left.X.Z * right.Z.Y),
                                       (left.X.X * right.X.Z) + (left.X.Y * right.Y.Z) + (left.X.Z * right.Z.Z));
 
-            var y = new Vector3D((left.Y.X * right.X.X) + (left.Y.Y * right.Y.X) + (left.Y.Z * right.Z.X),
+            var y = new Vector3((left.Y.X * right.X.X) + (left.Y.Y * right.Y.X) + (left.Y.Z * right.Z.X),
                                       (left.Y.X * right.X.Y) + (left.Y.Y * right.Y.Y) + (left.Y.Z * right.Z.Y),
                                       (left.Y.X * right.X.Z) + (left.Y.Y * right.Y.Z) + (left.Y.Z * right.Z.Z));
 
-            var z = new Vector3D((left.Z.X * right.X.X) + (left.Z.Y * right.Y.X) + (left.Z.Z * right.Z.X),
+            var z = new Vector3((left.Z.X * right.X.X) + (left.Z.Y * right.Y.X) + (left.Z.Z * right.Z.X),
                                       (left.Z.X * right.X.Y) + (left.Z.Y * right.Y.Y) + (left.Z.Z * right.Z.Y),
                                       (left.Z.X * right.X.Z) + (left.Z.Y * right.Y.Z) + (left.Z.Z * right.Z.Z));
 
@@ -302,15 +403,35 @@ namespace Mathematics
         /// <returns>The transpose of <paramref name="right"/>.</returns>
         public static Matrix3x3 Transpose(Matrix3x3 right)
         {
-            var x = new Vector3D(right._x.X, right._y.X, right._z.X);
-            var y = new Vector3D(right._x.Y, right._y.Y, right._z.Y);
-            var z = new Vector3D(right._x.Z, right._y.Z, right._z.Z);
+            var x = new Vector3(right._x.X, right._y.X, right._z.X);
+            var y = new Vector3(right._x.Y, right._y.Y, right._z.Y);
+            var z = new Vector3(right._x.Z, right._y.Z, right._z.Z);
 
             return new Matrix3x3(x, y, z);
         }
         #endregion
 
         #region Methods
+        public static Matrix3x3 CreateFrom(Quaternion rotation)
+        {
+            var xx = rotation.X * rotation.X;
+            var yy = rotation.Y * rotation.Y;
+            var zz = rotation.Z * rotation.Z;
+
+            var xy = rotation.X * rotation.Y;
+            var wz = rotation.Z * rotation.W;
+            var xz = rotation.Z * rotation.X;
+            var wy = rotation.Y * rotation.W;
+            var yz = rotation.Y * rotation.Z;
+            var wx = rotation.X * rotation.W;
+
+            return new Matrix3x3(
+                new Vector3((1.0f - 2.0f * (yy + zz)), (2.0f * (xy + wz)), (2.0f * (xz - wy))),
+                new Vector3((2.0f * (xy - wz)), (1.0f - 2.0f * (zz + xx)), (2.0f * (yz + wx))),
+                new Vector3((2.0f * (xz + wy)), (2.0f * (yz - wx)), (1.0f - 2.0f * (yy + xx)))
+            );
+        }
+
         /// <summary>
         ///     <para>Compares a <see cref="object"/> to the current instance to determine sort order.</para>
         /// </summary>
@@ -407,107 +528,6 @@ namespace Mathematics
         public override string ToString()
         {
             return string.Format(CultureInfo.CurrentCulture.NumberFormat, "[{0} {1} {2}]", _x, _y, _z);
-        }
-        #endregion
-
-        #region Properties
-        /// <summary>
-        ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
-        /// </summary>
-        /// <param name="index">The index of the component to get or set.</param>
-        public unsafe Vector3D this[int index]
-        {
-            get
-            {
-                if ((index < 0) || (index > 2))
-                {
-                    throw new IndexOutOfRangeException();
-                }
-                Contract.EndContractBlock();
-
-                fixed (Matrix3x3* pVector = &this)
-                {
-                    return ((Vector3D*)pVector)[index];
-                }
-            }
-
-            set
-            {
-                if ((index < 0) || (index > 2))
-                {
-                    throw new IndexOutOfRangeException();
-                }
-                Contract.EndContractBlock();
-
-                fixed (Matrix3x3* pVector = &this)
-                {
-                    ((Vector3D*)pVector)[index] = value;
-                }
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets or sets the value of the x-component for the current instance.</para>
-        /// </summary>
-        public Vector3D X
-        {
-            get
-            {
-                return _x;
-            }
-
-            set
-            {
-                _x = value;
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets or sets the value of the y-component for the current instance.</para>
-        /// </summary>
-        public Vector3D Y
-        {
-            get
-            {
-                return _y;
-            }
-
-            set
-            {
-                _y = value;
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets or sets the value of the z-component for the current instance.</para>
-        /// </summary>
-        public Vector3D Z
-        {
-            get
-            {
-                return _z;
-            }
-
-            set
-            {
-                _z = value;
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets the determinant of the current instance.</para>
-        /// </summary>
-        public float Determinant
-        {
-            get
-            {
-                return (X.X * Y.Y * Z.Z) +
-                       (X.Y * Y.Z * Z.X) +
-                       (X.Z * Y.X * Z.Y) -
-                       (X.Z * Y.Y * Z.X) -
-                       (X.Y * Y.X * Z.Z) -
-                       (X.X * Y.Z * Z.Y);
-            }
         }
         #endregion
     }

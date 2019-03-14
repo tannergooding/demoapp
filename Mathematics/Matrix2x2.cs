@@ -15,12 +15,93 @@ namespace Mathematics
         /// <summary>
         ///     <para>Represents a <see cref="Matrix2x2"/> whose main-diagonal components are set to one and whose remaining components are all set to zero.</para>
         /// </summary>
-        public static readonly Matrix2x2 Identity = new Matrix2x2(Vector2D.UnitX, Vector2D.UnitY);
+        public static readonly Matrix2x2 Identity = new Matrix2x2(Vector2.UnitX, Vector2.UnitY);
         #endregion
 
         #region Fields
-        private Vector2D _x;
-        private Vector2D _y;
+        private Vector2 _x;
+        private Vector2 _y;
+        #endregion
+
+        #region Properties
+        /// <summary>
+        ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
+        /// </summary>
+        /// <param name="index">The index of the component to get or set.</param>
+        public unsafe Vector2 this[int index]
+        {
+            get
+            {
+                if ((index < 0) || (index > 1))
+                {
+                    throw new IndexOutOfRangeException();
+                }
+                Contract.EndContractBlock();
+
+                fixed (Matrix2x2* pVector = &this)
+                {
+                    return ((Vector2*)pVector)[index];
+                }
+            }
+
+            set
+            {
+                if ((index < 0) || (index > 1))
+                {
+                    throw new IndexOutOfRangeException();
+                }
+                Contract.EndContractBlock();
+
+                fixed (Matrix2x2* pVector = &this)
+                {
+                    ((Vector2*)pVector)[index] = value;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets the determinant of the current instance.</para>
+        /// </summary>
+        public float Determinant
+        {
+            get
+            {
+                return (X.X * Y.Y) -
+                       (X.Y * Y.X);
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the x-component for the current instance.</para>
+        /// </summary>
+        public Vector2 X
+        {
+            get
+            {
+                return _x;
+            }
+
+            set
+            {
+                _x = value;
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the y-component for the current instance.</para>
+        /// </summary>
+        public Vector2 Y
+        {
+            get
+            {
+                return _y;
+            }
+
+            set
+            {
+                _y = value;
+            }
+        }
         #endregion
 
         #region Constructors
@@ -29,7 +110,7 @@ namespace Mathematics
         /// </summary>
         /// <param name="x">The initial value for the x-component of the matrix.</param>
         /// <param name="y">The initial value for the y-component of the matrix.</param>
-        public Matrix2x2(Vector2D x, Vector2D y)
+        public Matrix2x2(Vector2 x, Vector2 y)
         {
             _x = x;
             _y = y;
@@ -146,10 +227,10 @@ namespace Mathematics
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Matrix2x2 operator *(Matrix2x2 left, Matrix2x2 right)
         {
-            var x = new Vector2D((left.X.X * right.X.X) + (left.X.Y * right.Y.X),
+            var x = new Vector2((left.X.X * right.X.X) + (left.X.Y * right.Y.X),
                                       (left.X.X * right.X.Y) + (left.X.Y * right.Y.Y));
 
-            var y = new Vector2D((left.Y.X * right.X.X) + (left.Y.Y * right.Y.X),
+            var y = new Vector2((left.Y.X * right.X.X) + (left.Y.Y * right.Y.X),
                                       (left.Y.X * right.X.Y) + (left.Y.Y * right.Y.Y));
 
             return new Matrix2x2(x, y);
@@ -290,8 +371,8 @@ namespace Mathematics
         /// <returns>The transpose of <paramref name="right"/>.</returns>
         public static Matrix2x2 Transpose(Matrix2x2 right)
         {
-            var x = new Vector2D(right._x.X, right._y.X);
-            var y = new Vector2D(right._x.Y, right._y.Y);
+            var x = new Vector2(right._x.X, right._y.X);
+            var y = new Vector2(right._x.Y, right._y.Y);
 
             return new Matrix2x2(x, y);
         }
@@ -394,87 +475,6 @@ namespace Mathematics
         public override string ToString()
         {
             return string.Format(CultureInfo.CurrentCulture.NumberFormat, "[{0} {1}]", _x, _y);
-        }
-        #endregion
-
-        #region Properties
-        /// <summary>
-        ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
-        /// </summary>
-        /// <param name="index">The index of the component to get or set.</param>
-        public unsafe Vector2D this[int index]
-        {
-            get
-            {
-                if ((index < 0) || (index > 1))
-                {
-                    throw new IndexOutOfRangeException();
-                }
-                Contract.EndContractBlock();
-
-                fixed (Matrix2x2* pVector = &this)
-                {
-                    return ((Vector2D*)pVector)[index];
-                }
-            }
-
-            set
-            {
-                if ((index < 0) || (index > 1))
-                {
-                    throw new IndexOutOfRangeException();
-                }
-                Contract.EndContractBlock();
-
-                fixed (Matrix2x2* pVector = &this)
-                {
-                    ((Vector2D*)pVector)[index] = value;
-                }
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets or sets the value of the x-component for the current instance.</para>
-        /// </summary>
-        public Vector2D X
-        {
-            get
-            {
-                return _x;
-            }
-
-            set
-            {
-                _x = value;
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets or sets the value of the y-component for the current instance.</para>
-        /// </summary>
-        public Vector2D Y
-        {
-            get
-            {
-                return _y;
-            }
-
-            set
-            {
-                _y = value;
-            }
-        }
-
-        /// <summary>
-        ///     <para>Gets the determinant of the current instance.</para>
-        /// </summary>
-        public float Determinant
-        {
-            get
-            {
-                return (X.X * Y.Y) -
-                       (X.Y * Y.X);
-            }
         }
         #endregion
     }
