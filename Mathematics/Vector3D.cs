@@ -39,9 +39,9 @@ namespace Mathematics
         #endregion
 
         #region Fields
-            private float _x;
-            private float _y;
-            private float _z;
+        private float _x;
+        private float _y;
+        private float _z;
         #endregion
 
         #region Constructors
@@ -52,11 +52,11 @@ namespace Mathematics
         /// <param name="y">The initial value for the y-component of the vector.</param>
         /// <param name="z">The initial value for the z-component of the vector.</param>
         public Vector3D(float x, float y, float z)
-            {
-                _x = x;
-                _y = y;
-                _z = z;
-            }
+        {
+            _x = x;
+            _y = y;
+            _z = z;
+        }
         #endregion
 
         #region Operators
@@ -67,11 +67,11 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> and <paramref name="right"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(Vector3D left, Vector3D right)
-            {
-                return (left._x == right._x) &&
-                       (left._y == right._y) &&
-                       (left._z == right._z);
-            }
+        {
+            return (left._x == right._x) &&
+                   (left._y == right._y) &&
+                   (left._z == right._z);
+        }
 
 
         /// <summary>
@@ -81,9 +81,9 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> and <paramref name="right"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(Vector3D left, Vector3D right)
-            {
-                return !(left == right);
-            }
+        {
+            return !(left == right);
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Vector3D"/> instances to determine sort order.</para>
@@ -92,9 +92,9 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is less than <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator <(Vector3D left, Vector3D right)
-            {
-                return left.LengthSquared < right.LengthSquared;
-            }
+        {
+            return left.LengthSquared < right.LengthSquared;
+        }
 
 
         /// <summary>
@@ -104,9 +104,9 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is less than or equal to <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator <=(Vector3D left, Vector3D right)
-            {
-                return left.LengthSquared <= right.LengthSquared;
-            }
+        {
+            return left.LengthSquared <= right.LengthSquared;
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Vector3D"/> instances to determine sort order.</para>
@@ -115,9 +115,9 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is greater than <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator >(Vector3D left, Vector3D right)
-            {
-                return left.LengthSquared > right.LengthSquared;
-            }
+        {
+            return left.LengthSquared > right.LengthSquared;
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Vector3D"/> instances to determine sort order.</para>
@@ -126,9 +126,9 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is greater than or equal to <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator >=(Vector3D left, Vector3D right)
-            {
-                return left.LengthSquared >= right.LengthSquared;
-            }
+        {
+            return left.LengthSquared >= right.LengthSquared;
+        }
 
         /// <summary>
         ///     <para>Negates a <see cref="Vector3D"/> instance to determine its additive inverse.</para>
@@ -136,9 +136,9 @@ namespace Mathematics
         /// <param name="right">The vector to negate.</param>
         /// <returns>The additive inverse of <paramref name="right"/>.</returns>
         public static Vector3D operator -(Vector3D right)
-            {
-                return right * (-1.0f);
-            }
+        {
+            return right * (-1.0f);
+        }
 
         /// <summary>
         ///     <para>Adds two <see cref="Vector3D"/> instances to determine their sum.</para>
@@ -147,11 +147,11 @@ namespace Mathematics
         /// <param name="right">The vector to add to <paramref name="left"/>.</param>
         /// <returns>The sum of <paramref name="right"/> added to <paramref name="left"/>.</returns>
         public static Vector3D operator +(Vector3D left, Vector3D right)
-            {
-                return new Vector3D(left._x + right._x,
-                                    left._y + right._y,
-                                    left._z + right._z);
-            }
+        {
+            return new Vector3D(left._x + right._x,
+                                left._y + right._y,
+                                left._z + right._z);
+        }
 
         /// <summary>
         ///     <para>Subtracts two <see cref="Vector3D"/> instances to determine their difference.</para>
@@ -160,9 +160,9 @@ namespace Mathematics
         /// <param name="right">The vector to subtract from <paramref name="left"/>.</param>
         /// <returns>The difference of <paramref name="right"/> subtracted from <paramref name="right"/>.</returns>
         public static Vector3D operator -(Vector3D left, Vector3D right)
-            {
-                return left + (-right);
-            }
+        {
+            return left + (-right);
+        }
 
         /// <summary>
         ///     <para>Multiples a <see cref="Vector3D"/> and <see cref="Matrix3x3"/> instance to determine their product.</para>
@@ -171,11 +171,11 @@ namespace Mathematics
         /// <param name="right">The matrix to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Vector3D operator *(Vector3D left, Matrix3x3 right)
-            {
-                return new Vector3D((left.X * right.X.X) + (left.Y * right.Y.X) + (left.Z * right.Z.X),
-                                    (left.X * right.X.Y) + (left.Y * right.Y.Y) + (left.Z * right.Z.Y),
-                                    (left.X * right.X.Z) + (left.Y * right.Y.Z) + (left.Z * right.Z.Z));
-            }
+        {
+            return new Vector3D((left.X * right.X.X) + (left.Y * right.Y.X) + (left.Z * right.Z.X),
+                                (left.X * right.X.Y) + (left.Y * right.Y.Y) + (left.Z * right.Z.Y),
+                                (left.X * right.X.Z) + (left.Y * right.Y.Z) + (left.Z * right.Z.Z));
+        }
 
 
         /// <summary>
@@ -185,11 +185,11 @@ namespace Mathematics
         /// <param name="right">The scalar to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Vector3D operator *(Vector3D left, float right)
-            {
-                return new Vector3D(left._x * right,
-                                    left._y * right,
-                                    left._z * right);
-            }
+        {
+            return new Vector3D(left._x * right,
+                                left._y * right,
+                                left._z * right);
+        }
 
         /// <summary>
         ///     <para>Divides a <see cref="Vector3D"/> and <see cref="float"/> instance to determine their quotient.</para>
@@ -198,9 +198,9 @@ namespace Mathematics
         /// <param name="right">The scalar to divide <paramref name="left"/> by.</param>
         /// <returns>The quotient of <paramref name="left"/> divided by <paramref name="right"/>.</returns>
         public static Vector3D operator /(Vector3D left, float right)
-            {
-                return left * (1.0f / right);
-            }
+        {
+            return left * (1.0f / right);
+        }
         #endregion
 
         #region Friendly Operators
@@ -211,9 +211,9 @@ namespace Mathematics
         /// <param name="right">The vector to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> and <paramref name="right"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool Equals(Vector3D left, Vector3D right)
-            {
-                return left == right;
-            }
+        {
+            return left == right;
+        }
 
         /// <summary>
         ///     <para>Compares two <see cref="Vector3D"/> instances to determine sort order.</para>
@@ -238,9 +238,9 @@ namespace Mathematics
         ///     </list>
         /// </returns>
         public static int Compare(Vector3D left, Vector3D right)
-            {
-                return (int)(left.LengthSquared - right.LengthSquared);
-            }
+        {
+            return (int)(left.LengthSquared - right.LengthSquared);
+        }
 
         /// <summary>
         ///     <para>Negates a <see cref="Vector3D"/> instance to determine its additive inverse.</para>
@@ -248,9 +248,9 @@ namespace Mathematics
         /// <param name="right">The vector to negate.</param>
         /// <returns>The additive inverse of <paramref name="right"/>.</returns>
         public static Vector3D Negate(Vector3D right)
-            {
-                return -right;
-            }
+        {
+            return -right;
+        }
 
         /// <summary>
         ///     <para>Adds two <see cref="Vector3D"/> instances to determine their sum.</para>
@@ -259,9 +259,9 @@ namespace Mathematics
         /// <param name="right">The vector to add to <paramref name="left"/>.</param>
         /// <returns>The sum of <paramref name="right"/> added to <paramref name="left"/>.</returns>
         public static Vector3D Add(Vector3D left, Vector3D right)
-            {
-                return left + right;
-            }
+        {
+            return left + right;
+        }
 
         /// <summary>
         ///     <para>Subtracts two <see cref="Vector3D"/> instances to determine their difference.</para>
@@ -270,9 +270,9 @@ namespace Mathematics
         /// <param name="right">The vector to subtract from <paramref name="left"/>.</param>
         /// <returns>The difference of <paramref name="right"/> subtracted from <paramref name="right"/>.</returns>
         public static Vector3D Subtract(Vector3D left, Vector3D right)
-            {
-                return left - right;
-            }
+        {
+            return left - right;
+        }
 
         /// <summary>
         ///     <para>Multiples a <see cref="Vector3D"/> and <see cref="Matrix3x3"/> instance to determine their product.</para>
@@ -281,9 +281,9 @@ namespace Mathematics
         /// <param name="right">The matrix to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Vector3D Multiply(Vector3D left, Matrix3x3 right)
-            {
-                return left * right;
-            }
+        {
+            return left * right;
+        }
 
         /// <summary>
         ///     <para>Multiples a <see cref="Vector3D"/> and <see cref="float"/> instance to determine their product.</para>
@@ -292,9 +292,9 @@ namespace Mathematics
         /// <param name="right">The scalar to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Vector3D Multiply(Vector3D left, float right)
-            {
-                return left * right;
-            }
+        {
+            return left * right;
+        }
 
         /// <summary>
         ///     <para>Divides a <see cref="Vector3D"/> and <see cref="float"/> instance to determine their quotient.</para>
@@ -303,9 +303,9 @@ namespace Mathematics
         /// <param name="right">The scalar to divide <paramref name="left"/> by.</param>
         /// <returns>The quotient of <paramref name="left"/> divided by <paramref name="right"/>.</returns>
         public static Vector3D Divide(Vector3D left, float right)
-            {
-                return left / right;
-            }
+        {
+            return left / right;
+        }
 
         /// <summary>
         ///     <para>Multiples two <see cref="Vector3D"/> instances to determine their scalar-product.</para>
@@ -314,11 +314,11 @@ namespace Mathematics
         /// <param name="right">The vector to multiply <paramref name="left"/> by.</param>
         /// <returns>The scalar-product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static float DotProduct(Vector3D left, Vector3D right)
-            {
-                return (left._x * right._x) +
-                       (left._y * right._y) +
-                       (left._z * right._z);
-            }
+        {
+            return (left._x * right._x) +
+                   (left._y * right._y) +
+                   (left._z * right._z);
+        }
 
         /// <summary>
         ///     <para>Multiples two <see cref="Vector3D"/> instances to determine their vector-product.</para>
@@ -327,11 +327,11 @@ namespace Mathematics
         /// <param name="right">The vector to multiply <paramref name="left"/> by.</param>
         /// <returns>The vector-product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Vector3D CrossProduct(Vector3D left, Vector3D right)
-            {
-                return new Vector3D((left._y * right._z) - (left._z * right._y),
-                                    (left._z * right._x) - (left._x * right._z),
-                                    (left._x * right._y) - (left._y * right._x));
-            }
+        {
+            return new Vector3D((left._y * right._z) - (left._z * right._y),
+                                (left._z * right._x) - (left._x * right._z),
+                                (left._x * right._y) - (left._y * right._x));
+        }
         #endregion
 
         #region Methods
@@ -358,15 +358,15 @@ namespace Mathematics
         /// </returns>
         /// <exception cref="ArgumentException"><paramref name="obj"/> is not an instance of <see cref="Vector3D"/>.</exception>
         public int CompareTo(object obj)
+        {
+            if ((obj is Vector3D) == false)
             {
-                if ((obj is Vector3D) == false)
-                {
-                    throw new ArgumentException("obj is not an instance of Mathematics.Vector3D", "obj");
-                }
-                Contract.EndContractBlock();
-
-                return CompareTo((Vector3D)obj);
+                throw new ArgumentException("obj is not an instance of Mathematics.Vector3D", "obj");
             }
+            Contract.EndContractBlock();
+
+            return CompareTo((Vector3D)obj);
+        }
 
         /// <summary>
         ///     <para>Compares a <see cref="Vector3D"/> to the current instance to determine sort order.</para>
@@ -390,9 +390,9 @@ namespace Mathematics
         ///     </list>
         /// </returns>
         public int CompareTo(Vector3D other)
-            {
-                return Compare(this, other);
-            }
+        {
+            return Compare(this, other);
+        }
 
         /// <summary>
         ///     <para>Compares a <see cref="object"/> to the current instance to determine equality.</para>
@@ -400,10 +400,10 @@ namespace Mathematics
         /// <param name="obj">The object to compare to the current instance.</param>
         /// <returns><c>true</c> if <paramref name="obj"/> is a <see cref="Vector3D"/> and is equal to the current instance; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
-            {
-                return (obj is Vector3D) &&
-                       Equals((Vector3D)obj);
-            }
+        {
+            return (obj is Vector3D) &&
+                   Equals((Vector3D)obj);
+        }
 
         /// <summary>
         ///     <para>Compares a <see cref="Vector3D"/> to the current instance to determine equality.</para>
@@ -411,134 +411,134 @@ namespace Mathematics
         /// <param name="other">The vector to compare to the current instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to the current instance; otherwise, <c>false</c>.</returns>
         public bool Equals(Vector3D other)
-            {
-                return Equals(this, other);
-            }
-        
-            /// <summary>
-            ///     <para>Generates a hash code for the value of the current instance.</para>
-            /// </summary>
-            /// <returns>A hash code for the value of the current instance.</returns>
-            public override int GetHashCode()
-            {
-                return LengthSquared.GetHashCode();
-            }
+        {
+            return Equals(this, other);
+        }
+
+        /// <summary>
+        ///     <para>Generates a hash code for the value of the current instance.</para>
+        /// </summary>
+        /// <returns>A hash code for the value of the current instance.</returns>
+        public override int GetHashCode()
+        {
+            return LengthSquared.GetHashCode();
+        }
 
         /// <summary>
         ///     <para>Converts the current instance into a string that represents its value.</para>
         /// </summary>
         /// <returns>A <see cref="string"/> that represents the value of the current instance.</returns>
         public override string ToString()
-            {
-                return string.Format(CultureInfo.CurrentCulture.NumberFormat, "[{0} {1} {2}]", _x, _y, _z);
-            }
+        {
+            return string.Format(CultureInfo.CurrentCulture.NumberFormat, "[{0} {1} {2}]", _x, _y, _z);
+        }
         #endregion
 
         #region Properties
-            /// <summary>
-            ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
-            /// </summary>
-            /// <param name="index">The index of the component to get or set.</param>
-            public unsafe float this[int index]
+        /// <summary>
+        ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
+        /// </summary>
+        /// <param name="index">The index of the component to get or set.</param>
+        public unsafe float this[int index]
+        {
+            get
             {
-                get
+                if ((index < 0) || (index > 2))
                 {
-                    if ((index < 0) || (index > 2))
-                    {
-                        throw new IndexOutOfRangeException();
-                    }
-                    Contract.EndContractBlock();
-
-                    fixed (Vector3D* pVector = &this)
-                    {
-                        return ((float*)pVector)[index];
-                    }
+                    throw new IndexOutOfRangeException();
                 }
+                Contract.EndContractBlock();
 
-                set
+                fixed (Vector3D* pVector = &this)
                 {
-                    if ((index < 0) || (index > 2))
-                    {
-                        throw new IndexOutOfRangeException();
-                    }
-                    Contract.EndContractBlock();
-
-                    fixed (Vector3D* pVector = &this)
-                    {
-                        ((float*)pVector)[index] = value;
-                    }
+                    return ((float*)pVector)[index];
                 }
             }
 
-            /// <summary>
-            ///     <para>Gets or sets the value of the x-component for the current instance.</para>
-            /// </summary>
-            public float X
+            set
             {
-                get
+                if ((index < 0) || (index > 2))
                 {
-                    return _x;
+                    throw new IndexOutOfRangeException();
                 }
-            
-                set
+                Contract.EndContractBlock();
+
+                fixed (Vector3D* pVector = &this)
                 {
-                    _x = value;
+                    ((float*)pVector)[index] = value;
                 }
             }
+        }
 
-            /// <summary>
-            ///     <para>Gets or sets the value of the y-component for the current instance.</para>
-            /// </summary>
-            public float Y
+        /// <summary>
+        ///     <para>Gets or sets the value of the x-component for the current instance.</para>
+        /// </summary>
+        public float X
+        {
+            get
             {
-                get
-                {
-                    return _y;
-                }
-
-                set
-                {
-                    _y = value;
-                }
+                return _x;
             }
 
-            /// <summary>
-            ///     <para>Gets or sets the value of the z-component for the current instance.</para>
-            /// </summary>
-            public float Z
+            set
             {
-                get
-                {
-                    return _z;
-                }
+                _x = value;
+            }
+        }
 
-                set
-                {
-                    _z = value;
-                }
+        /// <summary>
+        ///     <para>Gets or sets the value of the y-component for the current instance.</para>
+        /// </summary>
+        public float Y
+        {
+            get
+            {
+                return _y;
             }
 
-            /// <summary>
-            ///     <para>Gets the length for the values of the current instance.</para>
-            /// </summary>
-            public float Length
+            set
             {
-                get
-                {
-                    return (float)Math.Sqrt(LengthSquared);
-                }
+                _y = value;
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the z-component for the current instance.</para>
+        /// </summary>
+        public float Z
+        {
+            get
+            {
+                return _z;
             }
 
-            /// <summary>
-            ///     <para>Gets the length-squared for the values of the current instance.</para>
-            /// </summary>
-            public float LengthSquared
+            set
             {
-                get
-                {
-                    return DotProduct(this, this);
-                }
+                _z = value;
             }
+        }
+
+        /// <summary>
+        ///     <para>Gets the length for the values of the current instance.</para>
+        /// </summary>
+        public float Length
+        {
+            get
+            {
+                return (float)Math.Sqrt(LengthSquared);
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets the length-squared for the values of the current instance.</para>
+        /// </summary>
+        public float LengthSquared
+        {
+            get
+            {
+                return DotProduct(this, this);
+            }
+        }
         #endregion
     }
 }

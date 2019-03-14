@@ -12,115 +12,114 @@ namespace DemoApplication
     public partial class MainWindow : Window
     {
         #region Fields
-            private readonly DispatcherTimer _timer = null;
-            private readonly WriteableBitmap[] _buffers = new WriteableBitmap[2];
+        private readonly DispatcherTimer _timer = null;
+        private readonly WriteableBitmap[] _buffers = new WriteableBitmap[2];
 
-            private int _displayBuffer = 0;
-            private int _renderBuffer = 0;
+        private int _displayBuffer = 0;
+        private int _renderBuffer = 0;
 
-            private int _pixelWidth = 0;
-            private int _pixelHeight = 0;
-            private int _pixelCount = 0;
+        private int _pixelWidth = 0;
+        private int _pixelHeight = 0;
+        private int _pixelCount = 0;
 
-            private Vector3D _rotationSpeed = Vector3D.Zero;
-            private Vector3D _rotation = Vector3D.Zero;
-            private Vector3D _translation = Vector3D.Zero;
-            private Vector3D _scale = Vector3D.Unit;
+        private Vector3D _rotationSpeed = Vector3D.Zero;
+        private Vector3D _rotation = Vector3D.Zero;
+        private Vector3D _translation = Vector3D.Zero;
+        private Vector3D _scale = Vector3D.Unit;
 
-            private Int32Rect _bufferRegion = new Int32Rect();
-            private Vector4D _clearColor = new Vector4D(0.392156899f, 0.584313750f, 0.929411829f, 1.0f);
+        private Int32Rect _bufferRegion = new Int32Rect();
+        private Vector4D _clearColor = new Vector4D(0.392156899f, 0.584313750f, 0.929411829f, 1.0f);
 
-            private bool _isTriangles = false;
-            private bool _isRotating = true;
-            private bool _isCulling = true;
+        private bool _isTriangles = false;
+        private bool _isRotating = true;
+        private bool _isCulling = true;
         #endregion
 
         #region Models
-            private readonly List<Polygon> _primitives = new List<Polygon>();
-            private Polygon _activePrimitive = null;
+        private readonly List<Polygon> _primitives = new List<Polygon>();
+        private Polygon _activePrimitive = null;
         #endregion
 
         #region Constructors
-            public MainWindow()
-            {
-                InitializeComponent();
+        public MainWindow()
+        {
+            InitializeComponent();
 
-                Startup();                
-                _timer = new DispatcherTimer(TimeSpan.FromSeconds(1.0 / 60.0), DispatcherPriority.ApplicationIdle, Timer_Tick, Application.Current.Dispatcher);
+            Startup();
+            _timer = new DispatcherTimer(TimeSpan.FromSeconds(1.0 / 60.0), DispatcherPriority.ApplicationIdle, Timer_Tick, Application.Current.Dispatcher);
+        }
+
+        private void Startup()
+        {
+            _pixelWidth = (int)_displaySurface.Width;
+            _pixelHeight = (int)_displaySurface.Height;
+            _pixelCount = _pixelWidth * _pixelHeight;
+
+            for (var i = 0; i < _buffers.Length; i++)
+            {
+                _buffers[i] = new WriteableBitmap(_pixelWidth, _pixelHeight, 96.0, 96.0, PixelFormats.Rgba128Float, null);
             }
 
-            private void Startup()
-            {
-                _pixelWidth = (int)_displaySurface.Width;
-                _pixelHeight = (int)_displaySurface.Height;
-                _pixelCount = _pixelWidth * _pixelHeight;
+            _bufferRegion = new Int32Rect(0, 0, _pixelWidth, _pixelHeight);
+            _buffers[_renderBuffer].Lock();
 
-                for (var i = 0; i < _buffers.Length; i++)
+            CreatePrimitives();
+            _primitiveListBox.SelectedIndex = 0;
+
+            Reset();
+        }
+
+        private void Reset()
+        {
+            _rotationXSlider.Value = 0.0;
+            _rotationYSlider.Value = 0.0;
+            _rotationZSlider.Value = 0.0;
+
+            _zoomSlider.Value = 100.0;
+
+            _renderTriangleCheckBox.IsChecked = false;
+            _rotateModelCheckBox.IsChecked = true;
+            _cullFacesCheckBox.IsChecked = true;
+
+            _rotation = new Vector3D(0.0f, 0.0f, 0.0f);
+            _translation = new Vector3D(_pixelWidth / 2.0f, _pixelHeight / 2.0f, 0.0f);
+            _scale = new Vector3D(100.0f, 100.0f, 1.0f);
+        }
+
+        private void CreatePrimitives()
+        {
+            CreateCube();
+            CreateSphere();
+            CreateTorus();
+        }
+
+        private void CreateCube()
+        {
+            var primitive = new Polygon() {
+                vertices = new List<Vector3D>()
                 {
-                    _buffers[i] = new WriteableBitmap(_pixelWidth, _pixelHeight, 96.0, 96.0, PixelFormats.Rgba128Float, null);
-                }
-
-                _bufferRegion = new Int32Rect(0, 0, _pixelWidth, _pixelHeight);
-                _buffers[_renderBuffer].Lock();
-
-                CreatePrimitives();
-                _primitiveListBox.SelectedIndex = 0;
-
-                Reset();
-            }
-
-            private void Reset()
-            {
-                _rotationXSlider.Value = 0.0;
-                _rotationYSlider.Value = 0.0;
-                _rotationZSlider.Value = 0.0;
-
-                _zoomSlider.Value = 100.0;
-
-                _renderTriangleCheckBox.IsChecked = false;
-                _rotateModelCheckBox.IsChecked = true;
-                _cullFacesCheckBox.IsChecked = true;
-                
-                _rotation = new Vector3D(0.0f, 0.0f, 0.0f);
-                _translation = new Vector3D(_pixelWidth / 2.0f, _pixelHeight / 2.0f, 0.0f);
-                _scale = new Vector3D(100.0f, 100.0f, 1.0f);
-            }
-
-            private void CreatePrimitives()
-            {
-                CreateCube();
-                CreateSphere();
-                CreateTorus();
-            }
-
-            private void CreateCube()
-            {
-                var primitive = new Polygon()
-                {
-                    vertices = new List<Vector3D>()
-                    {
-                        new Vector3D(-1.000000f, -1.000000f, -1.000000f), 
-                        new Vector3D(-1.000000f,  1.000000f, -1.000000f), 
-                        new Vector3D( 1.000000f,  1.000000f, -1.000000f), 
-                        new Vector3D( 1.000000f, -1.000000f, -1.000000f), 
-                        new Vector3D(-1.000000f, -1.000000f,  1.000000f), 
-                        new Vector3D(-1.000000f,  1.000000f,  1.000000f), 
-                        new Vector3D( 1.000000f,  1.000000f,  1.000000f), 
+                        new Vector3D(-1.000000f, -1.000000f, -1.000000f),
+                        new Vector3D(-1.000000f,  1.000000f, -1.000000f),
+                        new Vector3D( 1.000000f,  1.000000f, -1.000000f),
+                        new Vector3D( 1.000000f, -1.000000f, -1.000000f),
+                        new Vector3D(-1.000000f, -1.000000f,  1.000000f),
+                        new Vector3D(-1.000000f,  1.000000f,  1.000000f),
+                        new Vector3D( 1.000000f,  1.000000f,  1.000000f),
                         new Vector3D( 1.000000f, -1.000000f,  1.000000f)
                     },
-                    verticeGroups = new List<int[]>()
-                    {
-                        new int[4] {0, 1, 5, 4}, 
-                        new int[4] {1, 2, 6, 5}, 
-                        new int[4] {2, 3, 7, 6}, 
-                        new int[4] {3, 0, 4, 7}, 
-                        new int[4] {3, 2, 1, 0}, 
+                verticeGroups = new List<int[]>()
+                {
+                        new int[4] {0, 1, 5, 4},
+                        new int[4] {1, 2, 6, 5},
+                        new int[4] {2, 3, 7, 6},
+                        new int[4] {3, 0, 4, 7},
+                        new int[4] {3, 2, 1, 0},
                         new int[4] {4, 5, 6, 7}
                     },
-                    modifiedVertices = new List<Vector3D>(),
+                modifiedVertices = new List<Vector3D>(),
 
-                    normals = new List<Vector3D>()
-                    {
+                normals = new List<Vector3D>()
+                {
                         new Vector3D(-1.000000f,  0.000000f,  0.000000f),
                         new Vector3D( 0.000000f,  1.000000f, -0.000000f),
                         new Vector3D( 1.000000f,  0.000000f, -0.000000f),
@@ -128,32 +127,31 @@ namespace DemoApplication
                         new Vector3D(-0.000000f,  0.000000f, -1.000000f),
                         new Vector3D(-0.000000f,  0.000000f,  1.000000f)
                     },
-                    normalGroups = new List<int[]>()
-                    {
-                        new int[4] {0, 0, 0, 0}, 
-                        new int[4] {1, 1, 1, 1}, 
-                        new int[4] {2, 2, 2, 2}, 
-                        new int[4] {3, 3, 3, 3}, 
-                        new int[4] {4, 4, 4, 4}, 
+                normalGroups = new List<int[]>()
+                {
+                        new int[4] {0, 0, 0, 0},
+                        new int[4] {1, 1, 1, 1},
+                        new int[4] {2, 2, 2, 2},
+                        new int[4] {3, 3, 3, 3},
+                        new int[4] {4, 4, 4, 4},
                         new int[4] {5, 5, 5, 5}
                     },
-                    modifiedNormals = new List<Vector3D>()
-                };
-                _primitives.Add(primitive);
+                modifiedNormals = new List<Vector3D>()
+            };
+            _primitives.Add(primitive);
 
-                var item = new ListBoxItem();
-                {
-                    item.Content = "Cube";
-                }
-                _primitiveListBox.Items.Add(item);
-            }
-
-            private void CreateSphere()
+            var item = new ListBoxItem();
             {
-                var primitive = new Polygon()
+                item.Content = "Cube";
+            }
+            _primitiveListBox.Items.Add(item);
+        }
+
+        private void CreateSphere()
+        {
+            var primitive = new Polygon() {
+                vertices = new List<Vector3D>()
                 {
-                    vertices = new List<Vector3D>()
-                    {
                         new Vector3D(-0.195090f,  0.000000f,  0.980785f),
                         new Vector3D(-0.382683f,  0.000000f,  0.923880f),
                         new Vector3D(-0.555570f,  0.000000f,  0.831470f),
@@ -637,525 +635,525 @@ namespace DemoApplication
                         new Vector3D(-0.375330f, -0.074658f, -0.923880f),
                         new Vector3D(-0.191341f, -0.038060f, -0.980785f)
                     },
-                    verticeGroups = new List<int[]>()
-                    {
-                        new int[4] {27, 26, 11, 12}, 
-                        new int[4] {22, 21, 6, 7}, 
-                        new int[4] {17, 16, 1, 2}, 
-                        new int[4] {28, 27, 12, 13}, 
-                        new int[4] {23, 22, 7, 8}, 
-                        new int[4] {18, 17, 2, 3}, 
-                        new int[4] {29, 28, 13, 14}, 
-                        new int[4] {24, 23, 8, 9}, 
-                        new int[4] {19, 18, 3, 4}, 
-                        new int[4] {25, 24, 9, 10}, 
-                        new int[4] {20, 19, 4, 5}, 
-                        new int[4] {26, 25, 10, 11}, 
-                        new int[4] {21, 20, 5, 6}, 
-                        new int[4] {16, 15, 0, 1}, 
-                        new int[4] {42, 41, 26, 27}, 
-                        new int[4] {37, 36, 21, 22}, 
-                        new int[4] {32, 31, 16, 17}, 
-                        new int[4] {43, 42, 27, 28}, 
-                        new int[4] {38, 37, 22, 23}, 
-                        new int[4] {33, 32, 17, 18}, 
-                        new int[4] {44, 43, 28, 29}, 
-                        new int[4] {39, 38, 23, 24}, 
-                        new int[4] {34, 33, 18, 19}, 
-                        new int[4] {40, 39, 24, 25}, 
-                        new int[4] {35, 34, 19, 20}, 
-                        new int[4] {41, 40, 25, 26}, 
-                        new int[4] {36, 35, 20, 21}, 
-                        new int[4] {31, 30, 15, 16}, 
-                        new int[4] {56, 55, 40, 41}, 
-                        new int[4] {51, 50, 35, 36}, 
-                        new int[4] {46, 45, 30, 31}, 
-                        new int[4] {57, 56, 41, 42}, 
-                        new int[4] {52, 51, 36, 37}, 
-                        new int[4] {47, 46, 31, 32}, 
-                        new int[4] {58, 57, 42, 43}, 
-                        new int[4] {53, 52, 37, 38}, 
-                        new int[4] {48, 47, 32, 33}, 
-                        new int[4] {59, 58, 43, 44}, 
-                        new int[4] {54, 53, 38, 39}, 
-                        new int[4] {49, 48, 33, 34}, 
-                        new int[4] {55, 54, 39, 40}, 
-                        new int[4] {50, 49, 34, 35}, 
-                        new int[4] {64, 63, 48, 49}, 
-                        new int[4] {70, 69, 54, 55}, 
-                        new int[4] {65, 64, 49, 50}, 
-                        new int[4] {71, 70, 55, 56}, 
-                        new int[4] {66, 65, 50, 51}, 
-                        new int[4] {61, 60, 45, 46}, 
-                        new int[4] {72, 71, 56, 57}, 
-                        new int[4] {67, 66, 51, 52}, 
-                        new int[4] {62, 61, 46, 47}, 
-                        new int[4] {73, 72, 57, 58}, 
-                        new int[4] {68, 67, 52, 53}, 
-                        new int[4] {63, 62, 47, 48}, 
-                        new int[4] {74, 73, 58, 59}, 
-                        new int[4] {69, 68, 53, 54}, 
-                        new int[4] {83, 82, 67, 68}, 
-                        new int[4] {78, 77, 62, 63}, 
-                        new int[4] {89, 88, 73, 74}, 
-                        new int[4] {84, 83, 68, 69}, 
-                        new int[4] {79, 78, 63, 64}, 
-                        new int[4] {85, 84, 69, 70}, 
-                        new int[4] {80, 79, 64, 65}, 
-                        new int[4] {86, 85, 70, 71}, 
-                        new int[4] {81, 80, 65, 66}, 
-                        new int[4] {76, 75, 60, 61}, 
-                        new int[4] {87, 86, 71, 72}, 
-                        new int[4] {82, 81, 66, 67}, 
-                        new int[4] {77, 76, 61, 62}, 
-                        new int[4] {88, 87, 72, 73}, 
-                        new int[4] {102, 101, 86, 87}, 
-                        new int[4] {97, 96, 81, 82}, 
-                        new int[4] {92, 91, 76, 77}, 
-                        new int[4] {103, 102, 87, 88}, 
-                        new int[4] {98, 97, 82, 83}, 
-                        new int[4] {93, 92, 77, 78}, 
-                        new int[4] {104, 103, 88, 89}, 
-                        new int[4] {99, 98, 83, 84}, 
-                        new int[4] {94, 93, 78, 79}, 
-                        new int[4] {100, 99, 84, 85}, 
-                        new int[4] {95, 94, 79, 80}, 
-                        new int[4] {101, 100, 85, 86}, 
-                        new int[4] {96, 95, 80, 81}, 
-                        new int[4] {91, 90, 75, 76}, 
-                        new int[4] {116, 115, 100, 101}, 
-                        new int[4] {111, 110, 95, 96}, 
-                        new int[4] {106, 105, 90, 91}, 
-                        new int[4] {117, 116, 101, 102}, 
-                        new int[4] {112, 111, 96, 97}, 
-                        new int[4] {107, 106, 91, 92}, 
-                        new int[4] {118, 117, 102, 103}, 
-                        new int[4] {113, 112, 97, 98}, 
-                        new int[4] {108, 107, 92, 93}, 
-                        new int[4] {119, 118, 103, 104}, 
-                        new int[4] {114, 113, 98, 99}, 
-                        new int[4] {109, 108, 93, 94}, 
-                        new int[4] {115, 114, 99, 100}, 
-                        new int[4] {110, 109, 94, 95}, 
-                        new int[4] {130, 129, 114, 115}, 
-                        new int[4] {125, 124, 109, 110}, 
-                        new int[4] {131, 130, 115, 116}, 
-                        new int[4] {126, 125, 110, 111}, 
-                        new int[4] {121, 120, 105, 106}, 
-                        new int[4] {132, 131, 116, 117}, 
-                        new int[4] {127, 126, 111, 112}, 
-                        new int[4] {122, 121, 106, 107}, 
-                        new int[4] {133, 132, 117, 118}, 
-                        new int[4] {128, 127, 112, 113}, 
-                        new int[4] {123, 122, 107, 108}, 
-                        new int[4] {134, 133, 118, 119}, 
-                        new int[4] {129, 128, 113, 114}, 
-                        new int[4] {124, 123, 108, 109}, 
-                        new int[4] {138, 137, 122, 123}, 
-                        new int[4] {149, 148, 133, 134}, 
-                        new int[4] {144, 143, 128, 129}, 
-                        new int[4] {139, 138, 123, 124}, 
-                        new int[4] {145, 144, 129, 130}, 
-                        new int[4] {140, 139, 124, 125}, 
-                        new int[4] {146, 145, 130, 131}, 
-                        new int[4] {141, 140, 125, 126}, 
-                        new int[4] {136, 135, 120, 121}, 
-                        new int[4] {147, 146, 131, 132}, 
-                        new int[4] {142, 141, 126, 127}, 
-                        new int[4] {137, 136, 121, 122}, 
-                        new int[4] {148, 147, 132, 133}, 
-                        new int[4] {143, 142, 127, 128}, 
-                        new int[4] {157, 156, 141, 142}, 
-                        new int[4] {152, 151, 136, 137}, 
-                        new int[4] {163, 162, 147, 148}, 
-                        new int[4] {158, 157, 142, 143}, 
-                        new int[4] {153, 152, 137, 138}, 
-                        new int[4] {164, 163, 148, 149}, 
-                        new int[4] {159, 158, 143, 144}, 
-                        new int[4] {154, 153, 138, 139}, 
-                        new int[4] {160, 159, 144, 145}, 
-                        new int[4] {155, 154, 139, 140}, 
-                        new int[4] {161, 160, 145, 146}, 
-                        new int[4] {156, 155, 140, 141}, 
-                        new int[4] {151, 150, 135, 136}, 
-                        new int[4] {162, 161, 146, 147}, 
-                        new int[4] {176, 175, 160, 161}, 
-                        new int[4] {171, 170, 155, 156}, 
-                        new int[4] {166, 165, 150, 151}, 
-                        new int[4] {177, 176, 161, 162}, 
-                        new int[4] {172, 171, 156, 157}, 
-                        new int[4] {167, 166, 151, 152}, 
-                        new int[4] {178, 177, 162, 163}, 
-                        new int[4] {173, 172, 157, 158}, 
-                        new int[4] {168, 167, 152, 153}, 
-                        new int[4] {179, 178, 163, 164}, 
-                        new int[4] {174, 173, 158, 159}, 
-                        new int[4] {169, 168, 153, 154}, 
-                        new int[4] {175, 174, 159, 160}, 
-                        new int[4] {170, 169, 154, 155}, 
-                        new int[4] {190, 189, 174, 175}, 
-                        new int[4] {185, 184, 169, 170}, 
-                        new int[4] {191, 190, 175, 176}, 
-                        new int[4] {186, 185, 170, 171}, 
-                        new int[4] {181, 180, 165, 166}, 
-                        new int[4] {192, 191, 176, 177}, 
-                        new int[4] {187, 186, 171, 172}, 
-                        new int[4] {182, 181, 166, 167}, 
-                        new int[4] {193, 192, 177, 178}, 
-                        new int[4] {188, 187, 172, 173}, 
-                        new int[4] {183, 182, 167, 168}, 
-                        new int[4] {194, 193, 178, 179}, 
-                        new int[4] {189, 188, 173, 174}, 
-                        new int[4] {184, 183, 168, 169}, 
-                        new int[4] {198, 197, 182, 183}, 
-                        new int[4] {209, 208, 193, 194}, 
-                        new int[4] {204, 203, 188, 189}, 
-                        new int[4] {199, 198, 183, 184}, 
-                        new int[4] {205, 204, 189, 190}, 
-                        new int[4] {200, 199, 184, 185}, 
-                        new int[4] {206, 205, 190, 191}, 
-                        new int[4] {201, 200, 185, 186}, 
-                        new int[4] {196, 195, 180, 181}, 
-                        new int[4] {207, 206, 191, 192}, 
-                        new int[4] {202, 201, 186, 187}, 
-                        new int[4] {197, 196, 181, 182}, 
-                        new int[4] {208, 207, 192, 193}, 
-                        new int[4] {203, 202, 187, 188}, 
-                        new int[4] {217, 216, 201, 202}, 
-                        new int[4] {212, 211, 196, 197}, 
-                        new int[4] {223, 222, 207, 208}, 
-                        new int[4] {218, 217, 202, 203}, 
-                        new int[4] {213, 212, 197, 198}, 
-                        new int[4] {224, 223, 208, 209}, 
-                        new int[4] {219, 218, 203, 204}, 
-                        new int[4] {214, 213, 198, 199}, 
-                        new int[4] {220, 219, 204, 205}, 
-                        new int[4] {215, 214, 199, 200}, 
-                        new int[4] {221, 220, 205, 206}, 
-                        new int[4] {216, 215, 200, 201}, 
-                        new int[4] {211, 210, 195, 196}, 
-                        new int[4] {222, 221, 206, 207}, 
-                        new int[4] {236, 235, 220, 221}, 
-                        new int[4] {231, 230, 215, 216}, 
-                        new int[4] {226, 225, 210, 211}, 
-                        new int[4] {237, 236, 221, 222}, 
-                        new int[4] {232, 231, 216, 217}, 
-                        new int[4] {227, 226, 211, 212}, 
-                        new int[4] {238, 237, 222, 223}, 
-                        new int[4] {233, 232, 217, 218}, 
-                        new int[4] {228, 227, 212, 213}, 
-                        new int[4] {239, 238, 223, 224}, 
-                        new int[4] {234, 233, 218, 219}, 
-                        new int[4] {229, 228, 213, 214}, 
-                        new int[4] {235, 234, 219, 220}, 
-                        new int[4] {230, 229, 214, 215}, 
-                        new int[4] {250, 249, 234, 235}, 
-                        new int[4] {245, 244, 229, 230}, 
-                        new int[4] {251, 250, 235, 236}, 
-                        new int[4] {246, 245, 230, 231}, 
-                        new int[4] {241, 240, 225, 226}, 
-                        new int[4] {252, 251, 236, 237}, 
-                        new int[4] {247, 246, 231, 232}, 
-                        new int[4] {242, 241, 226, 227}, 
-                        new int[4] {253, 252, 237, 238}, 
-                        new int[4] {248, 247, 232, 233}, 
-                        new int[4] {243, 242, 227, 228}, 
-                        new int[4] {254, 253, 238, 239}, 
-                        new int[4] {249, 248, 233, 234}, 
-                        new int[4] {244, 243, 228, 229}, 
-                        new int[4] {269, 268, 253, 254}, 
-                        new int[4] {264, 263, 248, 249}, 
-                        new int[4] {259, 258, 243, 244}, 
-                        new int[4] {265, 264, 249, 250}, 
-                        new int[4] {260, 259, 244, 245}, 
-                        new int[4] {266, 265, 250, 251}, 
-                        new int[4] {261, 260, 245, 246}, 
-                        new int[4] {256, 255, 240, 241}, 
-                        new int[4] {267, 266, 251, 252}, 
-                        new int[4] {262, 261, 246, 247}, 
-                        new int[4] {257, 256, 241, 242}, 
-                        new int[4] {268, 267, 252, 253}, 
-                        new int[4] {263, 262, 247, 248}, 
-                        new int[4] {258, 257, 242, 243}, 
-                        new int[4] {272, 271, 256, 257}, 
-                        new int[4] {283, 282, 267, 268}, 
-                        new int[4] {278, 277, 262, 263}, 
-                        new int[4] {273, 272, 257, 258}, 
-                        new int[4] {284, 283, 268, 269}, 
-                        new int[4] {279, 278, 263, 264}, 
-                        new int[4] {274, 273, 258, 259}, 
-                        new int[4] {280, 279, 264, 265}, 
-                        new int[4] {275, 274, 259, 260}, 
-                        new int[4] {281, 280, 265, 266}, 
-                        new int[4] {276, 275, 260, 261}, 
-                        new int[4] {271, 270, 255, 256}, 
-                        new int[4] {282, 281, 266, 267}, 
-                        new int[4] {277, 276, 261, 262}, 
-                        new int[4] {291, 290, 275, 276}, 
-                        new int[4] {286, 285, 270, 271}, 
-                        new int[4] {297, 296, 281, 282}, 
-                        new int[4] {292, 291, 276, 277}, 
-                        new int[4] {287, 286, 271, 272}, 
-                        new int[4] {298, 297, 282, 283}, 
-                        new int[4] {293, 292, 277, 278}, 
-                        new int[4] {288, 287, 272, 273}, 
-                        new int[4] {299, 298, 283, 284}, 
-                        new int[4] {294, 293, 278, 279}, 
-                        new int[4] {289, 288, 273, 274}, 
-                        new int[4] {295, 294, 279, 280}, 
-                        new int[4] {290, 289, 274, 275}, 
-                        new int[4] {296, 295, 280, 281}, 
-                        new int[4] {310, 309, 294, 295}, 
-                        new int[4] {305, 304, 289, 290}, 
-                        new int[4] {311, 310, 295, 296}, 
-                        new int[4] {306, 305, 290, 291}, 
-                        new int[4] {301, 300, 285, 286}, 
-                        new int[4] {312, 311, 296, 297}, 
-                        new int[4] {307, 306, 291, 292}, 
-                        new int[4] {302, 301, 286, 287}, 
-                        new int[4] {313, 312, 297, 298}, 
-                        new int[4] {308, 307, 292, 293}, 
-                        new int[4] {303, 302, 287, 288}, 
-                        new int[4] {314, 313, 298, 299}, 
-                        new int[4] {309, 308, 293, 294}, 
-                        new int[4] {304, 303, 288, 289}, 
-                        new int[4] {329, 328, 313, 314}, 
-                        new int[4] {324, 323, 308, 309}, 
-                        new int[4] {319, 318, 303, 304}, 
-                        new int[4] {325, 324, 309, 310}, 
-                        new int[4] {320, 319, 304, 305}, 
-                        new int[4] {326, 325, 310, 311}, 
-                        new int[4] {321, 320, 305, 306}, 
-                        new int[4] {316, 315, 300, 301}, 
-                        new int[4] {327, 326, 311, 312}, 
-                        new int[4] {322, 321, 306, 307}, 
-                        new int[4] {317, 316, 301, 302}, 
-                        new int[4] {328, 327, 312, 313}, 
-                        new int[4] {323, 322, 307, 308}, 
-                        new int[4] {318, 317, 302, 303}, 
-                        new int[4] {333, 332, 316, 317}, 
-                        new int[4] {344, 343, 327, 328}, 
-                        new int[4] {339, 338, 322, 323}, 
-                        new int[4] {334, 333, 317, 318}, 
-                        new int[4] {345, 344, 328, 329}, 
-                        new int[4] {340, 339, 323, 324}, 
-                        new int[4] {335, 334, 318, 319}, 
-                        new int[4] {341, 340, 324, 325}, 
-                        new int[4] {336, 335, 319, 320}, 
-                        new int[4] {342, 341, 325, 326}, 
-                        new int[4] {337, 336, 320, 321}, 
-                        new int[4] {332, 331, 315, 316}, 
-                        new int[4] {343, 342, 326, 327}, 
-                        new int[4] {338, 337, 321, 322}, 
-                        new int[4] {352, 351, 336, 337}, 
-                        new int[4] {347, 346, 331, 332}, 
-                        new int[4] {358, 357, 342, 343}, 
-                        new int[4] {353, 352, 337, 338}, 
-                        new int[4] {348, 347, 332, 333}, 
-                        new int[4] {359, 358, 343, 344}, 
-                        new int[4] {354, 353, 338, 339}, 
-                        new int[4] {349, 348, 333, 334}, 
-                        new int[4] {360, 359, 344, 345}, 
-                        new int[4] {355, 354, 339, 340}, 
-                        new int[4] {350, 349, 334, 335}, 
-                        new int[4] {356, 355, 340, 341}, 
-                        new int[4] {351, 350, 335, 336}, 
-                        new int[4] {357, 356, 341, 342}, 
-                        new int[4] {371, 370, 355, 356}, 
-                        new int[4] {366, 365, 350, 351}, 
-                        new int[4] {372, 371, 356, 357}, 
-                        new int[4] {367, 366, 351, 352}, 
-                        new int[4] {362, 361, 346, 347}, 
-                        new int[4] {373, 372, 357, 358}, 
-                        new int[4] {368, 367, 352, 353}, 
-                        new int[4] {363, 362, 347, 348}, 
-                        new int[4] {374, 373, 358, 359}, 
-                        new int[4] {369, 368, 353, 354}, 
-                        new int[4] {364, 363, 348, 349}, 
-                        new int[4] {375, 374, 359, 360}, 
-                        new int[4] {370, 369, 354, 355}, 
-                        new int[4] {365, 364, 349, 350}, 
-                        new int[4] {390, 389, 374, 375}, 
-                        new int[4] {385, 384, 369, 370}, 
-                        new int[4] {380, 379, 364, 365}, 
-                        new int[4] {386, 385, 370, 371}, 
-                        new int[4] {381, 380, 365, 366}, 
-                        new int[4] {387, 386, 371, 372}, 
-                        new int[4] {382, 381, 366, 367}, 
-                        new int[4] {377, 376, 361, 362}, 
-                        new int[4] {388, 387, 372, 373}, 
-                        new int[4] {383, 382, 367, 368}, 
-                        new int[4] {378, 377, 362, 363}, 
-                        new int[4] {389, 388, 373, 374}, 
-                        new int[4] {384, 383, 368, 369}, 
-                        new int[4] {379, 378, 363, 364}, 
-                        new int[4] {404, 403, 388, 389}, 
-                        new int[4] {399, 398, 383, 384}, 
-                        new int[4] {394, 393, 378, 379}, 
-                        new int[4] {405, 404, 389, 390}, 
-                        new int[4] {400, 399, 384, 385}, 
-                        new int[4] {395, 394, 379, 380}, 
-                        new int[4] {401, 400, 385, 386}, 
-                        new int[4] {396, 395, 380, 381}, 
-                        new int[4] {402, 401, 386, 387}, 
-                        new int[4] {397, 396, 381, 382}, 
-                        new int[4] {392, 391, 376, 377}, 
-                        new int[4] {403, 402, 387, 388}, 
-                        new int[4] {398, 397, 382, 383}, 
-                        new int[4] {393, 392, 377, 378}, 
-                        new int[4] {407, 406, 391, 392}, 
-                        new int[4] {418, 417, 402, 403}, 
-                        new int[4] {413, 412, 397, 398}, 
-                        new int[4] {408, 407, 392, 393}, 
-                        new int[4] {419, 418, 403, 404}, 
-                        new int[4] {414, 413, 398, 399}, 
-                        new int[4] {409, 408, 393, 394}, 
-                        new int[4] {420, 419, 404, 405}, 
-                        new int[4] {415, 414, 399, 400}, 
-                        new int[4] {410, 409, 394, 395}, 
-                        new int[4] {416, 415, 400, 401}, 
-                        new int[4] {411, 410, 395, 396}, 
-                        new int[4] {417, 416, 401, 402}, 
-                        new int[4] {412, 411, 396, 397}, 
-                        new int[4] {426, 425, 410, 411}, 
-                        new int[4] {432, 431, 416, 417}, 
-                        new int[4] {427, 426, 411, 412}, 
-                        new int[4] {422, 421, 406, 407}, 
-                        new int[4] {433, 432, 417, 418}, 
-                        new int[4] {428, 427, 412, 413}, 
-                        new int[4] {423, 422, 407, 408}, 
-                        new int[4] {434, 433, 418, 419}, 
-                        new int[4] {429, 428, 413, 414}, 
-                        new int[4] {424, 423, 408, 409}, 
-                        new int[4] {435, 434, 419, 420}, 
-                        new int[4] {430, 429, 414, 415}, 
-                        new int[4] {425, 424, 409, 410}, 
-                        new int[4] {431, 430, 415, 416}, 
-                        new int[4] {445, 444, 429, 430}, 
-                        new int[4] {440, 439, 424, 425}, 
-                        new int[4] {446, 445, 430, 431}, 
-                        new int[4] {441, 440, 425, 426}, 
-                        new int[4] {447, 446, 431, 432}, 
-                        new int[4] {442, 441, 426, 427}, 
-                        new int[4] {437, 436, 421, 422}, 
-                        new int[4] {448, 447, 432, 433}, 
-                        new int[4] {443, 442, 427, 428}, 
-                        new int[4] {438, 437, 422, 423}, 
-                        new int[4] {449, 448, 433, 434}, 
-                        new int[4] {444, 443, 428, 429}, 
-                        new int[4] {439, 438, 423, 424}, 
-                        new int[4] {450, 449, 434, 435}, 
-                        new int[4] {465, 464, 448, 449}, 
-                        new int[4] {460, 459, 443, 444}, 
-                        new int[4] {455, 454, 438, 439}, 
-                        new int[4] {466, 465, 449, 450}, 
-                        new int[4] {461, 460, 444, 445}, 
-                        new int[4] {456, 455, 439, 440}, 
-                        new int[4] {462, 461, 445, 446}, 
-                        new int[4] {457, 456, 440, 441}, 
-                        new int[4] {463, 462, 446, 447}, 
-                        new int[4] {458, 457, 441, 442}, 
-                        new int[4] {453, 452, 436, 437}, 
-                        new int[4] {464, 463, 447, 448}, 
-                        new int[4] {459, 458, 442, 443}, 
-                        new int[4] {454, 453, 437, 438}, 
-                        new int[4] {468, 467, 452, 453}, 
-                        new int[4] {479, 478, 463, 464}, 
-                        new int[4] {474, 473, 458, 459}, 
-                        new int[4] {469, 468, 453, 454}, 
-                        new int[4] {480, 479, 464, 465}, 
-                        new int[4] {475, 474, 459, 460}, 
-                        new int[4] {470, 469, 454, 455}, 
-                        new int[4] {481, 480, 465, 466}, 
-                        new int[4] {476, 475, 460, 461}, 
-                        new int[4] {471, 470, 455, 456}, 
-                        new int[4] {477, 476, 461, 462}, 
-                        new int[4] {472, 471, 456, 457}, 
-                        new int[4] {478, 477, 462, 463}, 
-                        new int[4] {473, 472, 457, 458}, 
-                        new int[3] {29, 14, 330}, 
-                        new int[3] {15, 451, 0}, 
-                        new int[3] {44, 29, 330}, 
-                        new int[3] {30, 451, 15}, 
-                        new int[3] {45, 451, 30}, 
-                        new int[3] {59, 44, 330}, 
-                        new int[3] {74, 59, 330}, 
-                        new int[3] {60, 451, 45}, 
-                        new int[3] {89, 74, 330}, 
-                        new int[3] {75, 451, 60}, 
-                        new int[3] {104, 89, 330}, 
-                        new int[3] {90, 451, 75}, 
-                        new int[3] {119, 104, 330}, 
-                        new int[3] {105, 451, 90}, 
-                        new int[3] {134, 119, 330}, 
-                        new int[3] {120, 451, 105}, 
-                        new int[3] {149, 134, 330}, 
-                        new int[3] {135, 451, 120}, 
-                        new int[3] {164, 149, 330}, 
-                        new int[3] {150, 451, 135}, 
-                        new int[3] {179, 164, 330}, 
-                        new int[3] {165, 451, 150}, 
-                        new int[3] {194, 179, 330}, 
-                        new int[3] {180, 451, 165}, 
-                        new int[3] {209, 194, 330}, 
-                        new int[3] {195, 451, 180}, 
-                        new int[3] {224, 209, 330}, 
-                        new int[3] {210, 451, 195}, 
-                        new int[3] {239, 224, 330}, 
-                        new int[3] {225, 451, 210}, 
-                        new int[3] {254, 239, 330}, 
-                        new int[3] {240, 451, 225}, 
-                        new int[3] {269, 254, 330}, 
-                        new int[3] {255, 451, 240}, 
-                        new int[3] {284, 269, 330}, 
-                        new int[3] {270, 451, 255}, 
-                        new int[3] {299, 284, 330}, 
-                        new int[3] {285, 451, 270}, 
-                        new int[3] {300, 451, 285}, 
-                        new int[3] {314, 299, 330}, 
-                        new int[3] {329, 314, 330}, 
-                        new int[3] {315, 451, 300}, 
-                        new int[3] {345, 329, 330}, 
-                        new int[3] {331, 451, 315}, 
-                        new int[3] {360, 345, 330}, 
-                        new int[3] {346, 451, 331}, 
-                        new int[3] {361, 451, 346}, 
-                        new int[3] {375, 360, 330}, 
-                        new int[3] {390, 375, 330}, 
-                        new int[3] {376, 451, 361}, 
-                        new int[3] {405, 390, 330}, 
-                        new int[3] {391, 451, 376}, 
-                        new int[3] {420, 405, 330}, 
-                        new int[3] {406, 451, 391}, 
-                        new int[3] {421, 451, 406}, 
-                        new int[3] {435, 420, 330}, 
-                        new int[3] {450, 435, 330}, 
-                        new int[3] {436, 451, 421}, 
-                        new int[3] {466, 450, 330}, 
-                        new int[3] {452, 451, 436}, 
-                        new int[3] {481, 466, 330}, 
-                        new int[3] {467, 451, 452}, 
-                        new int[4] {5, 4, 471, 472}, 
-                        new int[3] {0, 451, 467}, 
-                        new int[4] {11, 10, 477, 478}, 
-                        new int[4] {6, 5, 472, 473}, 
-                        new int[4] {1, 0, 467, 468}, 
-                        new int[4] {12, 11, 478, 479}, 
-                        new int[4] {7, 6, 473, 474}, 
-                        new int[4] {2, 1, 468, 469}, 
-                        new int[4] {13, 12, 479, 480}, 
-                        new int[4] {8, 7, 474, 475}, 
-                        new int[4] {3, 2, 469, 470}, 
-                        new int[4] {14, 13, 480, 481}, 
-                        new int[4] {9, 8, 475, 476}, 
-                        new int[4] {4, 3, 470, 471}, 
-                        new int[3] {14, 481, 330}, 
+                verticeGroups = new List<int[]>()
+                {
+                        new int[4] {27, 26, 11, 12},
+                        new int[4] {22, 21, 6, 7},
+                        new int[4] {17, 16, 1, 2},
+                        new int[4] {28, 27, 12, 13},
+                        new int[4] {23, 22, 7, 8},
+                        new int[4] {18, 17, 2, 3},
+                        new int[4] {29, 28, 13, 14},
+                        new int[4] {24, 23, 8, 9},
+                        new int[4] {19, 18, 3, 4},
+                        new int[4] {25, 24, 9, 10},
+                        new int[4] {20, 19, 4, 5},
+                        new int[4] {26, 25, 10, 11},
+                        new int[4] {21, 20, 5, 6},
+                        new int[4] {16, 15, 0, 1},
+                        new int[4] {42, 41, 26, 27},
+                        new int[4] {37, 36, 21, 22},
+                        new int[4] {32, 31, 16, 17},
+                        new int[4] {43, 42, 27, 28},
+                        new int[4] {38, 37, 22, 23},
+                        new int[4] {33, 32, 17, 18},
+                        new int[4] {44, 43, 28, 29},
+                        new int[4] {39, 38, 23, 24},
+                        new int[4] {34, 33, 18, 19},
+                        new int[4] {40, 39, 24, 25},
+                        new int[4] {35, 34, 19, 20},
+                        new int[4] {41, 40, 25, 26},
+                        new int[4] {36, 35, 20, 21},
+                        new int[4] {31, 30, 15, 16},
+                        new int[4] {56, 55, 40, 41},
+                        new int[4] {51, 50, 35, 36},
+                        new int[4] {46, 45, 30, 31},
+                        new int[4] {57, 56, 41, 42},
+                        new int[4] {52, 51, 36, 37},
+                        new int[4] {47, 46, 31, 32},
+                        new int[4] {58, 57, 42, 43},
+                        new int[4] {53, 52, 37, 38},
+                        new int[4] {48, 47, 32, 33},
+                        new int[4] {59, 58, 43, 44},
+                        new int[4] {54, 53, 38, 39},
+                        new int[4] {49, 48, 33, 34},
+                        new int[4] {55, 54, 39, 40},
+                        new int[4] {50, 49, 34, 35},
+                        new int[4] {64, 63, 48, 49},
+                        new int[4] {70, 69, 54, 55},
+                        new int[4] {65, 64, 49, 50},
+                        new int[4] {71, 70, 55, 56},
+                        new int[4] {66, 65, 50, 51},
+                        new int[4] {61, 60, 45, 46},
+                        new int[4] {72, 71, 56, 57},
+                        new int[4] {67, 66, 51, 52},
+                        new int[4] {62, 61, 46, 47},
+                        new int[4] {73, 72, 57, 58},
+                        new int[4] {68, 67, 52, 53},
+                        new int[4] {63, 62, 47, 48},
+                        new int[4] {74, 73, 58, 59},
+                        new int[4] {69, 68, 53, 54},
+                        new int[4] {83, 82, 67, 68},
+                        new int[4] {78, 77, 62, 63},
+                        new int[4] {89, 88, 73, 74},
+                        new int[4] {84, 83, 68, 69},
+                        new int[4] {79, 78, 63, 64},
+                        new int[4] {85, 84, 69, 70},
+                        new int[4] {80, 79, 64, 65},
+                        new int[4] {86, 85, 70, 71},
+                        new int[4] {81, 80, 65, 66},
+                        new int[4] {76, 75, 60, 61},
+                        new int[4] {87, 86, 71, 72},
+                        new int[4] {82, 81, 66, 67},
+                        new int[4] {77, 76, 61, 62},
+                        new int[4] {88, 87, 72, 73},
+                        new int[4] {102, 101, 86, 87},
+                        new int[4] {97, 96, 81, 82},
+                        new int[4] {92, 91, 76, 77},
+                        new int[4] {103, 102, 87, 88},
+                        new int[4] {98, 97, 82, 83},
+                        new int[4] {93, 92, 77, 78},
+                        new int[4] {104, 103, 88, 89},
+                        new int[4] {99, 98, 83, 84},
+                        new int[4] {94, 93, 78, 79},
+                        new int[4] {100, 99, 84, 85},
+                        new int[4] {95, 94, 79, 80},
+                        new int[4] {101, 100, 85, 86},
+                        new int[4] {96, 95, 80, 81},
+                        new int[4] {91, 90, 75, 76},
+                        new int[4] {116, 115, 100, 101},
+                        new int[4] {111, 110, 95, 96},
+                        new int[4] {106, 105, 90, 91},
+                        new int[4] {117, 116, 101, 102},
+                        new int[4] {112, 111, 96, 97},
+                        new int[4] {107, 106, 91, 92},
+                        new int[4] {118, 117, 102, 103},
+                        new int[4] {113, 112, 97, 98},
+                        new int[4] {108, 107, 92, 93},
+                        new int[4] {119, 118, 103, 104},
+                        new int[4] {114, 113, 98, 99},
+                        new int[4] {109, 108, 93, 94},
+                        new int[4] {115, 114, 99, 100},
+                        new int[4] {110, 109, 94, 95},
+                        new int[4] {130, 129, 114, 115},
+                        new int[4] {125, 124, 109, 110},
+                        new int[4] {131, 130, 115, 116},
+                        new int[4] {126, 125, 110, 111},
+                        new int[4] {121, 120, 105, 106},
+                        new int[4] {132, 131, 116, 117},
+                        new int[4] {127, 126, 111, 112},
+                        new int[4] {122, 121, 106, 107},
+                        new int[4] {133, 132, 117, 118},
+                        new int[4] {128, 127, 112, 113},
+                        new int[4] {123, 122, 107, 108},
+                        new int[4] {134, 133, 118, 119},
+                        new int[4] {129, 128, 113, 114},
+                        new int[4] {124, 123, 108, 109},
+                        new int[4] {138, 137, 122, 123},
+                        new int[4] {149, 148, 133, 134},
+                        new int[4] {144, 143, 128, 129},
+                        new int[4] {139, 138, 123, 124},
+                        new int[4] {145, 144, 129, 130},
+                        new int[4] {140, 139, 124, 125},
+                        new int[4] {146, 145, 130, 131},
+                        new int[4] {141, 140, 125, 126},
+                        new int[4] {136, 135, 120, 121},
+                        new int[4] {147, 146, 131, 132},
+                        new int[4] {142, 141, 126, 127},
+                        new int[4] {137, 136, 121, 122},
+                        new int[4] {148, 147, 132, 133},
+                        new int[4] {143, 142, 127, 128},
+                        new int[4] {157, 156, 141, 142},
+                        new int[4] {152, 151, 136, 137},
+                        new int[4] {163, 162, 147, 148},
+                        new int[4] {158, 157, 142, 143},
+                        new int[4] {153, 152, 137, 138},
+                        new int[4] {164, 163, 148, 149},
+                        new int[4] {159, 158, 143, 144},
+                        new int[4] {154, 153, 138, 139},
+                        new int[4] {160, 159, 144, 145},
+                        new int[4] {155, 154, 139, 140},
+                        new int[4] {161, 160, 145, 146},
+                        new int[4] {156, 155, 140, 141},
+                        new int[4] {151, 150, 135, 136},
+                        new int[4] {162, 161, 146, 147},
+                        new int[4] {176, 175, 160, 161},
+                        new int[4] {171, 170, 155, 156},
+                        new int[4] {166, 165, 150, 151},
+                        new int[4] {177, 176, 161, 162},
+                        new int[4] {172, 171, 156, 157},
+                        new int[4] {167, 166, 151, 152},
+                        new int[4] {178, 177, 162, 163},
+                        new int[4] {173, 172, 157, 158},
+                        new int[4] {168, 167, 152, 153},
+                        new int[4] {179, 178, 163, 164},
+                        new int[4] {174, 173, 158, 159},
+                        new int[4] {169, 168, 153, 154},
+                        new int[4] {175, 174, 159, 160},
+                        new int[4] {170, 169, 154, 155},
+                        new int[4] {190, 189, 174, 175},
+                        new int[4] {185, 184, 169, 170},
+                        new int[4] {191, 190, 175, 176},
+                        new int[4] {186, 185, 170, 171},
+                        new int[4] {181, 180, 165, 166},
+                        new int[4] {192, 191, 176, 177},
+                        new int[4] {187, 186, 171, 172},
+                        new int[4] {182, 181, 166, 167},
+                        new int[4] {193, 192, 177, 178},
+                        new int[4] {188, 187, 172, 173},
+                        new int[4] {183, 182, 167, 168},
+                        new int[4] {194, 193, 178, 179},
+                        new int[4] {189, 188, 173, 174},
+                        new int[4] {184, 183, 168, 169},
+                        new int[4] {198, 197, 182, 183},
+                        new int[4] {209, 208, 193, 194},
+                        new int[4] {204, 203, 188, 189},
+                        new int[4] {199, 198, 183, 184},
+                        new int[4] {205, 204, 189, 190},
+                        new int[4] {200, 199, 184, 185},
+                        new int[4] {206, 205, 190, 191},
+                        new int[4] {201, 200, 185, 186},
+                        new int[4] {196, 195, 180, 181},
+                        new int[4] {207, 206, 191, 192},
+                        new int[4] {202, 201, 186, 187},
+                        new int[4] {197, 196, 181, 182},
+                        new int[4] {208, 207, 192, 193},
+                        new int[4] {203, 202, 187, 188},
+                        new int[4] {217, 216, 201, 202},
+                        new int[4] {212, 211, 196, 197},
+                        new int[4] {223, 222, 207, 208},
+                        new int[4] {218, 217, 202, 203},
+                        new int[4] {213, 212, 197, 198},
+                        new int[4] {224, 223, 208, 209},
+                        new int[4] {219, 218, 203, 204},
+                        new int[4] {214, 213, 198, 199},
+                        new int[4] {220, 219, 204, 205},
+                        new int[4] {215, 214, 199, 200},
+                        new int[4] {221, 220, 205, 206},
+                        new int[4] {216, 215, 200, 201},
+                        new int[4] {211, 210, 195, 196},
+                        new int[4] {222, 221, 206, 207},
+                        new int[4] {236, 235, 220, 221},
+                        new int[4] {231, 230, 215, 216},
+                        new int[4] {226, 225, 210, 211},
+                        new int[4] {237, 236, 221, 222},
+                        new int[4] {232, 231, 216, 217},
+                        new int[4] {227, 226, 211, 212},
+                        new int[4] {238, 237, 222, 223},
+                        new int[4] {233, 232, 217, 218},
+                        new int[4] {228, 227, 212, 213},
+                        new int[4] {239, 238, 223, 224},
+                        new int[4] {234, 233, 218, 219},
+                        new int[4] {229, 228, 213, 214},
+                        new int[4] {235, 234, 219, 220},
+                        new int[4] {230, 229, 214, 215},
+                        new int[4] {250, 249, 234, 235},
+                        new int[4] {245, 244, 229, 230},
+                        new int[4] {251, 250, 235, 236},
+                        new int[4] {246, 245, 230, 231},
+                        new int[4] {241, 240, 225, 226},
+                        new int[4] {252, 251, 236, 237},
+                        new int[4] {247, 246, 231, 232},
+                        new int[4] {242, 241, 226, 227},
+                        new int[4] {253, 252, 237, 238},
+                        new int[4] {248, 247, 232, 233},
+                        new int[4] {243, 242, 227, 228},
+                        new int[4] {254, 253, 238, 239},
+                        new int[4] {249, 248, 233, 234},
+                        new int[4] {244, 243, 228, 229},
+                        new int[4] {269, 268, 253, 254},
+                        new int[4] {264, 263, 248, 249},
+                        new int[4] {259, 258, 243, 244},
+                        new int[4] {265, 264, 249, 250},
+                        new int[4] {260, 259, 244, 245},
+                        new int[4] {266, 265, 250, 251},
+                        new int[4] {261, 260, 245, 246},
+                        new int[4] {256, 255, 240, 241},
+                        new int[4] {267, 266, 251, 252},
+                        new int[4] {262, 261, 246, 247},
+                        new int[4] {257, 256, 241, 242},
+                        new int[4] {268, 267, 252, 253},
+                        new int[4] {263, 262, 247, 248},
+                        new int[4] {258, 257, 242, 243},
+                        new int[4] {272, 271, 256, 257},
+                        new int[4] {283, 282, 267, 268},
+                        new int[4] {278, 277, 262, 263},
+                        new int[4] {273, 272, 257, 258},
+                        new int[4] {284, 283, 268, 269},
+                        new int[4] {279, 278, 263, 264},
+                        new int[4] {274, 273, 258, 259},
+                        new int[4] {280, 279, 264, 265},
+                        new int[4] {275, 274, 259, 260},
+                        new int[4] {281, 280, 265, 266},
+                        new int[4] {276, 275, 260, 261},
+                        new int[4] {271, 270, 255, 256},
+                        new int[4] {282, 281, 266, 267},
+                        new int[4] {277, 276, 261, 262},
+                        new int[4] {291, 290, 275, 276},
+                        new int[4] {286, 285, 270, 271},
+                        new int[4] {297, 296, 281, 282},
+                        new int[4] {292, 291, 276, 277},
+                        new int[4] {287, 286, 271, 272},
+                        new int[4] {298, 297, 282, 283},
+                        new int[4] {293, 292, 277, 278},
+                        new int[4] {288, 287, 272, 273},
+                        new int[4] {299, 298, 283, 284},
+                        new int[4] {294, 293, 278, 279},
+                        new int[4] {289, 288, 273, 274},
+                        new int[4] {295, 294, 279, 280},
+                        new int[4] {290, 289, 274, 275},
+                        new int[4] {296, 295, 280, 281},
+                        new int[4] {310, 309, 294, 295},
+                        new int[4] {305, 304, 289, 290},
+                        new int[4] {311, 310, 295, 296},
+                        new int[4] {306, 305, 290, 291},
+                        new int[4] {301, 300, 285, 286},
+                        new int[4] {312, 311, 296, 297},
+                        new int[4] {307, 306, 291, 292},
+                        new int[4] {302, 301, 286, 287},
+                        new int[4] {313, 312, 297, 298},
+                        new int[4] {308, 307, 292, 293},
+                        new int[4] {303, 302, 287, 288},
+                        new int[4] {314, 313, 298, 299},
+                        new int[4] {309, 308, 293, 294},
+                        new int[4] {304, 303, 288, 289},
+                        new int[4] {329, 328, 313, 314},
+                        new int[4] {324, 323, 308, 309},
+                        new int[4] {319, 318, 303, 304},
+                        new int[4] {325, 324, 309, 310},
+                        new int[4] {320, 319, 304, 305},
+                        new int[4] {326, 325, 310, 311},
+                        new int[4] {321, 320, 305, 306},
+                        new int[4] {316, 315, 300, 301},
+                        new int[4] {327, 326, 311, 312},
+                        new int[4] {322, 321, 306, 307},
+                        new int[4] {317, 316, 301, 302},
+                        new int[4] {328, 327, 312, 313},
+                        new int[4] {323, 322, 307, 308},
+                        new int[4] {318, 317, 302, 303},
+                        new int[4] {333, 332, 316, 317},
+                        new int[4] {344, 343, 327, 328},
+                        new int[4] {339, 338, 322, 323},
+                        new int[4] {334, 333, 317, 318},
+                        new int[4] {345, 344, 328, 329},
+                        new int[4] {340, 339, 323, 324},
+                        new int[4] {335, 334, 318, 319},
+                        new int[4] {341, 340, 324, 325},
+                        new int[4] {336, 335, 319, 320},
+                        new int[4] {342, 341, 325, 326},
+                        new int[4] {337, 336, 320, 321},
+                        new int[4] {332, 331, 315, 316},
+                        new int[4] {343, 342, 326, 327},
+                        new int[4] {338, 337, 321, 322},
+                        new int[4] {352, 351, 336, 337},
+                        new int[4] {347, 346, 331, 332},
+                        new int[4] {358, 357, 342, 343},
+                        new int[4] {353, 352, 337, 338},
+                        new int[4] {348, 347, 332, 333},
+                        new int[4] {359, 358, 343, 344},
+                        new int[4] {354, 353, 338, 339},
+                        new int[4] {349, 348, 333, 334},
+                        new int[4] {360, 359, 344, 345},
+                        new int[4] {355, 354, 339, 340},
+                        new int[4] {350, 349, 334, 335},
+                        new int[4] {356, 355, 340, 341},
+                        new int[4] {351, 350, 335, 336},
+                        new int[4] {357, 356, 341, 342},
+                        new int[4] {371, 370, 355, 356},
+                        new int[4] {366, 365, 350, 351},
+                        new int[4] {372, 371, 356, 357},
+                        new int[4] {367, 366, 351, 352},
+                        new int[4] {362, 361, 346, 347},
+                        new int[4] {373, 372, 357, 358},
+                        new int[4] {368, 367, 352, 353},
+                        new int[4] {363, 362, 347, 348},
+                        new int[4] {374, 373, 358, 359},
+                        new int[4] {369, 368, 353, 354},
+                        new int[4] {364, 363, 348, 349},
+                        new int[4] {375, 374, 359, 360},
+                        new int[4] {370, 369, 354, 355},
+                        new int[4] {365, 364, 349, 350},
+                        new int[4] {390, 389, 374, 375},
+                        new int[4] {385, 384, 369, 370},
+                        new int[4] {380, 379, 364, 365},
+                        new int[4] {386, 385, 370, 371},
+                        new int[4] {381, 380, 365, 366},
+                        new int[4] {387, 386, 371, 372},
+                        new int[4] {382, 381, 366, 367},
+                        new int[4] {377, 376, 361, 362},
+                        new int[4] {388, 387, 372, 373},
+                        new int[4] {383, 382, 367, 368},
+                        new int[4] {378, 377, 362, 363},
+                        new int[4] {389, 388, 373, 374},
+                        new int[4] {384, 383, 368, 369},
+                        new int[4] {379, 378, 363, 364},
+                        new int[4] {404, 403, 388, 389},
+                        new int[4] {399, 398, 383, 384},
+                        new int[4] {394, 393, 378, 379},
+                        new int[4] {405, 404, 389, 390},
+                        new int[4] {400, 399, 384, 385},
+                        new int[4] {395, 394, 379, 380},
+                        new int[4] {401, 400, 385, 386},
+                        new int[4] {396, 395, 380, 381},
+                        new int[4] {402, 401, 386, 387},
+                        new int[4] {397, 396, 381, 382},
+                        new int[4] {392, 391, 376, 377},
+                        new int[4] {403, 402, 387, 388},
+                        new int[4] {398, 397, 382, 383},
+                        new int[4] {393, 392, 377, 378},
+                        new int[4] {407, 406, 391, 392},
+                        new int[4] {418, 417, 402, 403},
+                        new int[4] {413, 412, 397, 398},
+                        new int[4] {408, 407, 392, 393},
+                        new int[4] {419, 418, 403, 404},
+                        new int[4] {414, 413, 398, 399},
+                        new int[4] {409, 408, 393, 394},
+                        new int[4] {420, 419, 404, 405},
+                        new int[4] {415, 414, 399, 400},
+                        new int[4] {410, 409, 394, 395},
+                        new int[4] {416, 415, 400, 401},
+                        new int[4] {411, 410, 395, 396},
+                        new int[4] {417, 416, 401, 402},
+                        new int[4] {412, 411, 396, 397},
+                        new int[4] {426, 425, 410, 411},
+                        new int[4] {432, 431, 416, 417},
+                        new int[4] {427, 426, 411, 412},
+                        new int[4] {422, 421, 406, 407},
+                        new int[4] {433, 432, 417, 418},
+                        new int[4] {428, 427, 412, 413},
+                        new int[4] {423, 422, 407, 408},
+                        new int[4] {434, 433, 418, 419},
+                        new int[4] {429, 428, 413, 414},
+                        new int[4] {424, 423, 408, 409},
+                        new int[4] {435, 434, 419, 420},
+                        new int[4] {430, 429, 414, 415},
+                        new int[4] {425, 424, 409, 410},
+                        new int[4] {431, 430, 415, 416},
+                        new int[4] {445, 444, 429, 430},
+                        new int[4] {440, 439, 424, 425},
+                        new int[4] {446, 445, 430, 431},
+                        new int[4] {441, 440, 425, 426},
+                        new int[4] {447, 446, 431, 432},
+                        new int[4] {442, 441, 426, 427},
+                        new int[4] {437, 436, 421, 422},
+                        new int[4] {448, 447, 432, 433},
+                        new int[4] {443, 442, 427, 428},
+                        new int[4] {438, 437, 422, 423},
+                        new int[4] {449, 448, 433, 434},
+                        new int[4] {444, 443, 428, 429},
+                        new int[4] {439, 438, 423, 424},
+                        new int[4] {450, 449, 434, 435},
+                        new int[4] {465, 464, 448, 449},
+                        new int[4] {460, 459, 443, 444},
+                        new int[4] {455, 454, 438, 439},
+                        new int[4] {466, 465, 449, 450},
+                        new int[4] {461, 460, 444, 445},
+                        new int[4] {456, 455, 439, 440},
+                        new int[4] {462, 461, 445, 446},
+                        new int[4] {457, 456, 440, 441},
+                        new int[4] {463, 462, 446, 447},
+                        new int[4] {458, 457, 441, 442},
+                        new int[4] {453, 452, 436, 437},
+                        new int[4] {464, 463, 447, 448},
+                        new int[4] {459, 458, 442, 443},
+                        new int[4] {454, 453, 437, 438},
+                        new int[4] {468, 467, 452, 453},
+                        new int[4] {479, 478, 463, 464},
+                        new int[4] {474, 473, 458, 459},
+                        new int[4] {469, 468, 453, 454},
+                        new int[4] {480, 479, 464, 465},
+                        new int[4] {475, 474, 459, 460},
+                        new int[4] {470, 469, 454, 455},
+                        new int[4] {481, 480, 465, 466},
+                        new int[4] {476, 475, 460, 461},
+                        new int[4] {471, 470, 455, 456},
+                        new int[4] {477, 476, 461, 462},
+                        new int[4] {472, 471, 456, 457},
+                        new int[4] {478, 477, 462, 463},
+                        new int[4] {473, 472, 457, 458},
+                        new int[3] {29, 14, 330},
+                        new int[3] {15, 451, 0},
+                        new int[3] {44, 29, 330},
+                        new int[3] {30, 451, 15},
+                        new int[3] {45, 451, 30},
+                        new int[3] {59, 44, 330},
+                        new int[3] {74, 59, 330},
+                        new int[3] {60, 451, 45},
+                        new int[3] {89, 74, 330},
+                        new int[3] {75, 451, 60},
+                        new int[3] {104, 89, 330},
+                        new int[3] {90, 451, 75},
+                        new int[3] {119, 104, 330},
+                        new int[3] {105, 451, 90},
+                        new int[3] {134, 119, 330},
+                        new int[3] {120, 451, 105},
+                        new int[3] {149, 134, 330},
+                        new int[3] {135, 451, 120},
+                        new int[3] {164, 149, 330},
+                        new int[3] {150, 451, 135},
+                        new int[3] {179, 164, 330},
+                        new int[3] {165, 451, 150},
+                        new int[3] {194, 179, 330},
+                        new int[3] {180, 451, 165},
+                        new int[3] {209, 194, 330},
+                        new int[3] {195, 451, 180},
+                        new int[3] {224, 209, 330},
+                        new int[3] {210, 451, 195},
+                        new int[3] {239, 224, 330},
+                        new int[3] {225, 451, 210},
+                        new int[3] {254, 239, 330},
+                        new int[3] {240, 451, 225},
+                        new int[3] {269, 254, 330},
+                        new int[3] {255, 451, 240},
+                        new int[3] {284, 269, 330},
+                        new int[3] {270, 451, 255},
+                        new int[3] {299, 284, 330},
+                        new int[3] {285, 451, 270},
+                        new int[3] {300, 451, 285},
+                        new int[3] {314, 299, 330},
+                        new int[3] {329, 314, 330},
+                        new int[3] {315, 451, 300},
+                        new int[3] {345, 329, 330},
+                        new int[3] {331, 451, 315},
+                        new int[3] {360, 345, 330},
+                        new int[3] {346, 451, 331},
+                        new int[3] {361, 451, 346},
+                        new int[3] {375, 360, 330},
+                        new int[3] {390, 375, 330},
+                        new int[3] {376, 451, 361},
+                        new int[3] {405, 390, 330},
+                        new int[3] {391, 451, 376},
+                        new int[3] {420, 405, 330},
+                        new int[3] {406, 451, 391},
+                        new int[3] {421, 451, 406},
+                        new int[3] {435, 420, 330},
+                        new int[3] {450, 435, 330},
+                        new int[3] {436, 451, 421},
+                        new int[3] {466, 450, 330},
+                        new int[3] {452, 451, 436},
+                        new int[3] {481, 466, 330},
+                        new int[3] {467, 451, 452},
+                        new int[4] {5, 4, 471, 472},
+                        new int[3] {0, 451, 467},
+                        new int[4] {11, 10, 477, 478},
+                        new int[4] {6, 5, 472, 473},
+                        new int[4] {1, 0, 467, 468},
+                        new int[4] {12, 11, 478, 479},
+                        new int[4] {7, 6, 473, 474},
+                        new int[4] {2, 1, 468, 469},
+                        new int[4] {13, 12, 479, 480},
+                        new int[4] {8, 7, 474, 475},
+                        new int[4] {3, 2, 469, 470},
+                        new int[4] {14, 13, 480, 481},
+                        new int[4] {9, 8, 475, 476},
+                        new int[4] {4, 3, 470, 471},
+                        new int[3] {14, 481, 330},
                         new int[4] {10, 9, 476, 477}
                     },
-                    modifiedVertices = new List<Vector3D>(),
+                modifiedVertices = new List<Vector3D>(),
 
-                    normals = new List<Vector3D>()
-                    {
+                normals = new List<Vector3D>()
+                {
                         new Vector3D(-0.633159f,  0.062361f, -0.771506f),
                         new Vector3D(-0.990438f,  0.097550f,  0.097550f),
                         new Vector3D(-0.470890f,  0.046379f,  0.880972f),
@@ -1669,600 +1667,599 @@ namespace DemoApplication
                         new Vector3D(-0.098012f, -0.009654f, -0.995138f),
                         new Vector3D(-0.878613f, -0.086540f, -0.469628f)
                     },
-                    normalGroups = new List<int[]>()
-                    {
-                        new int[4] {0, 0, 0, 0}, 
-                        new int[4] {1, 1, 1, 1}, 
-                        new int[4] {2, 2, 2, 2}, 
-                        new int[4] {3, 3, 3, 3}, 
-                        new int[4] {4, 4, 4, 4}, 
-                        new int[4] {5, 5, 5, 5}, 
-                        new int[4] {6, 6, 6, 6}, 
-                        new int[4] {7, 7, 7, 7}, 
-                        new int[4] {8, 8, 8, 8}, 
-                        new int[4] {9, 9, 9, 9}, 
-                        new int[4] {10, 10, 10, 10}, 
-                        new int[4] {11, 11, 11, 11}, 
-                        new int[4] {12, 12, 12, 12}, 
-                        new int[4] {13, 13, 13, 13}, 
-                        new int[4] {14, 14, 14, 14}, 
-                        new int[4] {15, 15, 15, 15}, 
-                        new int[4] {16, 16, 16, 16}, 
-                        new int[4] {17, 17, 17, 17}, 
-                        new int[4] {18, 18, 18, 18}, 
-                        new int[4] {19, 19, 19, 19}, 
-                        new int[4] {20, 20, 20, 20}, 
-                        new int[4] {21, 21, 21, 21}, 
-                        new int[4] {22, 22, 22, 22}, 
-                        new int[4] {23, 23, 23, 23}, 
-                        new int[4] {24, 24, 24, 24}, 
-                        new int[4] {25, 25, 25, 25}, 
-                        new int[4] {26, 26, 26, 26}, 
-                        new int[4] {27, 27, 27, 27}, 
-                        new int[4] {28, 28, 28, 28}, 
-                        new int[4] {29, 29, 29, 29}, 
-                        new int[4] {30, 30, 30, 30}, 
-                        new int[4] {31, 31, 31, 31}, 
-                        new int[4] {32, 32, 32, 32}, 
-                        new int[4] {33, 33, 33, 33}, 
-                        new int[4] {34, 34, 34, 34}, 
-                        new int[4] {35, 35, 35, 35}, 
-                        new int[4] {36, 36, 36, 36}, 
-                        new int[4] {37, 37, 37, 37}, 
-                        new int[4] {38, 38, 38, 38}, 
-                        new int[4] {39, 39, 39, 39}, 
-                        new int[4] {40, 40, 40, 40}, 
-                        new int[4] {41, 41, 41, 41}, 
-                        new int[4] {42, 42, 42, 42}, 
-                        new int[4] {43, 43, 43, 43}, 
-                        new int[4] {44, 44, 44, 44}, 
-                        new int[4] {45, 45, 45, 45}, 
-                        new int[4] {46, 46, 46, 46}, 
-                        new int[4] {47, 47, 47, 47}, 
-                        new int[4] {48, 48, 48, 48}, 
-                        new int[4] {49, 49, 49, 49}, 
-                        new int[4] {50, 50, 50, 50}, 
-                        new int[4] {51, 51, 51, 51}, 
-                        new int[4] {52, 52, 52, 52}, 
-                        new int[4] {53, 53, 53, 53}, 
-                        new int[4] {54, 54, 54, 54}, 
-                        new int[4] {55, 55, 55, 55}, 
-                        new int[4] {56, 56, 56, 56}, 
-                        new int[4] {57, 57, 57, 57}, 
-                        new int[4] {58, 58, 58, 58}, 
-                        new int[4] {59, 59, 59, 59}, 
-                        new int[4] {60, 60, 60, 60}, 
-                        new int[4] {61, 61, 61, 61}, 
-                        new int[4] {62, 62, 62, 62}, 
-                        new int[4] {63, 63, 63, 63}, 
-                        new int[4] {64, 64, 64, 64}, 
-                        new int[4] {65, 65, 65, 65}, 
-                        new int[4] {66, 66, 66, 66}, 
-                        new int[4] {67, 67, 67, 67}, 
-                        new int[4] {68, 68, 68, 68}, 
-                        new int[4] {69, 69, 69, 69}, 
-                        new int[4] {70, 70, 70, 70}, 
-                        new int[4] {71, 71, 71, 71}, 
-                        new int[4] {72, 72, 72, 72}, 
-                        new int[4] {73, 73, 73, 73}, 
-                        new int[4] {74, 74, 74, 74}, 
-                        new int[4] {75, 75, 75, 75}, 
-                        new int[4] {76, 76, 76, 76}, 
-                        new int[4] {77, 77, 77, 77}, 
-                        new int[4] {78, 78, 78, 78}, 
-                        new int[4] {79, 79, 79, 79}, 
-                        new int[4] {80, 80, 80, 80}, 
-                        new int[4] {81, 81, 81, 81}, 
-                        new int[4] {82, 82, 82, 82}, 
-                        new int[4] {83, 83, 83, 83}, 
-                        new int[4] {84, 84, 84, 84}, 
-                        new int[4] {85, 85, 85, 85}, 
-                        new int[4] {86, 86, 86, 86}, 
-                        new int[4] {87, 87, 87, 87}, 
-                        new int[4] {88, 88, 88, 88}, 
-                        new int[4] {89, 89, 89, 89}, 
-                        new int[4] {90, 90, 90, 90}, 
-                        new int[4] {91, 91, 91, 91}, 
-                        new int[4] {92, 92, 92, 92}, 
-                        new int[4] {93, 93, 93, 93}, 
-                        new int[4] {94, 94, 94, 94}, 
-                        new int[4] {95, 95, 95, 95}, 
-                        new int[4] {96, 96, 96, 96}, 
-                        new int[4] {97, 97, 97, 97}, 
-                        new int[4] {98, 98, 98, 98}, 
-                        new int[4] {99, 99, 99, 99}, 
-                        new int[4] {100, 100, 100, 100}, 
-                        new int[4] {101, 101, 101, 101}, 
-                        new int[4] {102, 102, 102, 102}, 
-                        new int[4] {103, 103, 103, 103}, 
-                        new int[4] {104, 104, 104, 104}, 
-                        new int[4] {105, 105, 105, 105}, 
-                        new int[4] {106, 106, 106, 106}, 
-                        new int[4] {107, 107, 107, 107}, 
-                        new int[4] {108, 108, 108, 108}, 
-                        new int[4] {109, 109, 109, 109}, 
-                        new int[4] {110, 110, 110, 110}, 
-                        new int[4] {111, 111, 111, 111}, 
-                        new int[4] {112, 112, 112, 112}, 
-                        new int[4] {113, 113, 113, 113}, 
-                        new int[4] {114, 114, 114, 114}, 
-                        new int[4] {115, 115, 115, 115}, 
-                        new int[4] {116, 116, 116, 116}, 
-                        new int[4] {117, 117, 117, 117}, 
-                        new int[4] {118, 118, 118, 118}, 
-                        new int[4] {119, 119, 119, 119}, 
-                        new int[4] {120, 120, 120, 120}, 
-                        new int[4] {121, 121, 121, 121}, 
-                        new int[4] {122, 122, 122, 122}, 
-                        new int[4] {123, 123, 123, 123}, 
-                        new int[4] {124, 124, 124, 124}, 
-                        new int[4] {125, 125, 125, 125}, 
-                        new int[4] {126, 126, 126, 126}, 
-                        new int[4] {127, 127, 127, 127}, 
-                        new int[4] {128, 128, 128, 128}, 
-                        new int[4] {129, 129, 129, 129}, 
-                        new int[4] {130, 130, 130, 130}, 
-                        new int[4] {131, 131, 131, 131}, 
-                        new int[4] {132, 132, 132, 132}, 
-                        new int[4] {133, 133, 133, 133}, 
-                        new int[4] {134, 134, 134, 134}, 
-                        new int[4] {135, 135, 135, 135}, 
-                        new int[4] {136, 136, 136, 136}, 
-                        new int[4] {137, 137, 137, 137}, 
-                        new int[4] {138, 138, 138, 138}, 
-                        new int[4] {139, 139, 139, 139}, 
-                        new int[4] {140, 140, 140, 140}, 
-                        new int[4] {141, 141, 141, 141}, 
-                        new int[4] {142, 142, 142, 142}, 
-                        new int[4] {143, 143, 143, 143}, 
-                        new int[4] {144, 144, 144, 144}, 
-                        new int[4] {145, 145, 145, 145}, 
-                        new int[4] {146, 146, 146, 146}, 
-                        new int[4] {147, 147, 147, 147}, 
-                        new int[4] {148, 148, 148, 148}, 
-                        new int[4] {149, 149, 149, 149}, 
-                        new int[4] {150, 150, 150, 150}, 
-                        new int[4] {151, 151, 151, 151}, 
-                        new int[4] {152, 152, 152, 152}, 
-                        new int[4] {153, 153, 153, 153}, 
-                        new int[4] {154, 154, 154, 154}, 
-                        new int[4] {155, 155, 155, 155}, 
-                        new int[4] {156, 156, 156, 156}, 
-                        new int[4] {157, 157, 157, 157}, 
-                        new int[4] {158, 158, 158, 158}, 
-                        new int[4] {159, 159, 159, 159}, 
-                        new int[4] {160, 160, 160, 160}, 
-                        new int[4] {161, 161, 161, 161}, 
-                        new int[4] {162, 162, 162, 162}, 
-                        new int[4] {163, 163, 163, 163}, 
-                        new int[4] {164, 164, 164, 164}, 
-                        new int[4] {165, 165, 165, 165}, 
-                        new int[4] {166, 166, 166, 166}, 
-                        new int[4] {167, 167, 167, 167}, 
-                        new int[4] {168, 168, 168, 168}, 
-                        new int[4] {169, 169, 169, 169}, 
-                        new int[4] {170, 170, 170, 170}, 
-                        new int[4] {171, 171, 171, 171}, 
-                        new int[4] {172, 172, 172, 172}, 
-                        new int[4] {173, 173, 173, 173}, 
-                        new int[4] {174, 174, 174, 174}, 
-                        new int[4] {175, 175, 175, 175}, 
-                        new int[4] {176, 176, 176, 176}, 
-                        new int[4] {177, 177, 177, 177}, 
-                        new int[4] {178, 178, 178, 178}, 
-                        new int[4] {179, 179, 179, 179}, 
-                        new int[4] {180, 180, 180, 180}, 
-                        new int[4] {181, 181, 181, 181}, 
-                        new int[4] {182, 182, 182, 182}, 
-                        new int[4] {183, 183, 183, 183}, 
-                        new int[4] {184, 184, 184, 184}, 
-                        new int[4] {185, 185, 185, 185}, 
-                        new int[4] {186, 186, 186, 186}, 
-                        new int[4] {187, 187, 187, 187}, 
-                        new int[4] {188, 188, 188, 188}, 
-                        new int[4] {189, 189, 189, 189}, 
-                        new int[4] {190, 190, 190, 190}, 
-                        new int[4] {191, 191, 191, 191}, 
-                        new int[4] {192, 192, 192, 192}, 
-                        new int[4] {193, 193, 193, 193}, 
-                        new int[4] {194, 194, 194, 194}, 
-                        new int[4] {195, 195, 195, 195}, 
-                        new int[4] {196, 196, 196, 196}, 
-                        new int[4] {197, 197, 197, 197}, 
-                        new int[4] {198, 198, 198, 198}, 
-                        new int[4] {199, 199, 199, 199}, 
-                        new int[4] {200, 200, 200, 200}, 
-                        new int[4] {201, 201, 201, 201}, 
-                        new int[4] {202, 202, 202, 202}, 
-                        new int[4] {203, 203, 203, 203}, 
-                        new int[4] {204, 204, 204, 204}, 
-                        new int[4] {205, 205, 205, 205}, 
-                        new int[4] {206, 206, 206, 206}, 
-                        new int[4] {207, 207, 207, 207}, 
-                        new int[4] {208, 208, 208, 208}, 
-                        new int[4] {209, 209, 209, 209}, 
-                        new int[4] {210, 210, 210, 210}, 
-                        new int[4] {211, 211, 211, 211}, 
-                        new int[4] {212, 212, 212, 212}, 
-                        new int[4] {213, 213, 213, 213}, 
-                        new int[4] {214, 214, 214, 214}, 
-                        new int[4] {215, 215, 215, 215}, 
-                        new int[4] {216, 216, 216, 216}, 
-                        new int[4] {217, 217, 217, 217}, 
-                        new int[4] {218, 218, 218, 218}, 
-                        new int[4] {219, 219, 219, 219}, 
-                        new int[4] {220, 220, 220, 220}, 
-                        new int[4] {221, 221, 221, 221}, 
-                        new int[4] {222, 222, 222, 222}, 
-                        new int[4] {223, 223, 223, 223}, 
-                        new int[4] {224, 224, 224, 224}, 
-                        new int[4] {225, 225, 225, 225}, 
-                        new int[4] {226, 226, 226, 226}, 
-                        new int[4] {227, 227, 227, 227}, 
-                        new int[4] {228, 228, 228, 228}, 
-                        new int[4] {229, 229, 229, 229}, 
-                        new int[4] {230, 230, 230, 230}, 
-                        new int[4] {231, 231, 231, 231}, 
-                        new int[4] {232, 232, 232, 232}, 
-                        new int[4] {233, 233, 233, 233}, 
-                        new int[4] {234, 234, 234, 234}, 
-                        new int[4] {235, 235, 235, 235}, 
-                        new int[4] {236, 236, 236, 236}, 
-                        new int[4] {237, 237, 237, 237}, 
-                        new int[4] {238, 238, 238, 238}, 
-                        new int[4] {239, 239, 239, 239}, 
-                        new int[4] {240, 240, 240, 240}, 
-                        new int[4] {241, 241, 241, 241}, 
-                        new int[4] {242, 242, 242, 242}, 
-                        new int[4] {243, 243, 243, 243}, 
-                        new int[4] {244, 244, 244, 244}, 
-                        new int[4] {245, 245, 245, 245}, 
-                        new int[4] {246, 246, 246, 246}, 
-                        new int[4] {247, 247, 247, 247}, 
-                        new int[4] {248, 248, 248, 248}, 
-                        new int[4] {249, 249, 249, 249}, 
-                        new int[4] {250, 250, 250, 250}, 
-                        new int[4] {251, 251, 251, 251}, 
-                        new int[4] {252, 252, 252, 252}, 
-                        new int[4] {253, 253, 253, 253}, 
-                        new int[4] {254, 254, 254, 254}, 
-                        new int[4] {255, 255, 255, 255}, 
-                        new int[4] {256, 256, 256, 256}, 
-                        new int[4] {257, 257, 257, 257}, 
-                        new int[4] {258, 258, 258, 258}, 
-                        new int[4] {259, 259, 259, 259}, 
-                        new int[4] {260, 260, 260, 260}, 
-                        new int[4] {261, 261, 261, 261}, 
-                        new int[4] {262, 262, 262, 262}, 
-                        new int[4] {263, 263, 263, 263}, 
-                        new int[4] {264, 264, 264, 264}, 
-                        new int[4] {265, 265, 265, 265}, 
-                        new int[4] {266, 266, 266, 266}, 
-                        new int[4] {267, 267, 267, 267}, 
-                        new int[4] {268, 268, 268, 268}, 
-                        new int[4] {269, 269, 269, 269}, 
-                        new int[4] {270, 270, 270, 270}, 
-                        new int[4] {271, 271, 271, 271}, 
-                        new int[4] {272, 272, 272, 272}, 
-                        new int[4] {273, 273, 273, 273}, 
-                        new int[4] {274, 274, 274, 274}, 
-                        new int[4] {275, 275, 275, 275}, 
-                        new int[4] {276, 276, 276, 276}, 
-                        new int[4] {277, 277, 277, 277}, 
-                        new int[4] {278, 278, 278, 278}, 
-                        new int[4] {279, 279, 279, 279}, 
-                        new int[4] {280, 280, 280, 280}, 
-                        new int[4] {281, 281, 281, 281}, 
-                        new int[4] {282, 282, 282, 282}, 
-                        new int[4] {283, 283, 283, 283}, 
-                        new int[4] {284, 284, 284, 284}, 
-                        new int[4] {285, 285, 285, 285}, 
-                        new int[4] {286, 286, 286, 286}, 
-                        new int[4] {287, 287, 287, 287}, 
-                        new int[4] {288, 288, 288, 288}, 
-                        new int[4] {289, 289, 289, 289}, 
-                        new int[4] {290, 290, 290, 290}, 
-                        new int[4] {291, 291, 291, 291}, 
-                        new int[4] {292, 292, 292, 292}, 
-                        new int[4] {293, 293, 293, 293}, 
-                        new int[4] {294, 294, 294, 294}, 
-                        new int[4] {295, 295, 295, 295}, 
-                        new int[4] {296, 296, 296, 296}, 
-                        new int[4] {297, 297, 297, 297}, 
-                        new int[4] {298, 298, 298, 298}, 
-                        new int[4] {299, 299, 299, 299}, 
-                        new int[4] {300, 300, 300, 300}, 
-                        new int[4] {301, 301, 301, 301}, 
-                        new int[4] {302, 302, 302, 302}, 
-                        new int[4] {303, 303, 303, 303}, 
-                        new int[4] {304, 304, 304, 304}, 
-                        new int[4] {305, 305, 305, 305}, 
-                        new int[4] {306, 306, 306, 306}, 
-                        new int[4] {307, 307, 307, 307}, 
-                        new int[4] {308, 308, 308, 308}, 
-                        new int[4] {309, 309, 309, 309}, 
-                        new int[4] {310, 310, 310, 310}, 
-                        new int[4] {311, 311, 311, 311}, 
-                        new int[4] {312, 312, 312, 312}, 
-                        new int[4] {313, 313, 313, 313}, 
-                        new int[4] {314, 314, 314, 314}, 
-                        new int[4] {315, 315, 315, 315}, 
-                        new int[4] {316, 316, 316, 316}, 
-                        new int[4] {317, 317, 317, 317}, 
-                        new int[4] {318, 318, 318, 318}, 
-                        new int[4] {319, 319, 319, 319}, 
-                        new int[4] {320, 320, 320, 320}, 
-                        new int[4] {321, 321, 321, 321}, 
-                        new int[4] {322, 322, 322, 322}, 
-                        new int[4] {323, 323, 323, 323}, 
-                        new int[4] {324, 324, 324, 324}, 
-                        new int[4] {325, 325, 325, 325}, 
-                        new int[4] {326, 326, 326, 326}, 
-                        new int[4] {327, 327, 327, 327}, 
-                        new int[4] {328, 328, 328, 328}, 
-                        new int[4] {329, 329, 329, 329}, 
-                        new int[4] {330, 330, 330, 330}, 
-                        new int[4] {331, 331, 331, 331}, 
-                        new int[4] {332, 332, 332, 332}, 
-                        new int[4] {333, 333, 333, 333}, 
-                        new int[4] {334, 334, 334, 334}, 
-                        new int[4] {335, 335, 335, 335}, 
-                        new int[4] {336, 336, 336, 336}, 
-                        new int[4] {337, 337, 337, 337}, 
-                        new int[4] {338, 338, 338, 338}, 
-                        new int[4] {339, 339, 339, 339}, 
-                        new int[4] {340, 340, 340, 340}, 
-                        new int[4] {341, 341, 341, 341}, 
-                        new int[4] {342, 342, 342, 342}, 
-                        new int[4] {343, 343, 343, 343}, 
-                        new int[4] {344, 344, 344, 344}, 
-                        new int[4] {345, 345, 345, 345}, 
-                        new int[4] {346, 346, 346, 346}, 
-                        new int[4] {347, 347, 347, 347}, 
-                        new int[4] {348, 348, 348, 348}, 
-                        new int[4] {349, 349, 349, 349}, 
-                        new int[4] {350, 350, 350, 350}, 
-                        new int[4] {351, 351, 351, 351}, 
-                        new int[4] {352, 352, 352, 352}, 
-                        new int[4] {353, 353, 353, 353}, 
-                        new int[4] {354, 354, 354, 354}, 
-                        new int[4] {355, 355, 355, 355}, 
-                        new int[4] {356, 356, 356, 356}, 
-                        new int[4] {357, 357, 357, 357}, 
-                        new int[4] {358, 358, 358, 358}, 
-                        new int[4] {359, 359, 359, 359}, 
-                        new int[4] {360, 360, 360, 360}, 
-                        new int[4] {361, 361, 361, 361}, 
-                        new int[4] {362, 362, 362, 362}, 
-                        new int[4] {363, 363, 363, 363}, 
-                        new int[4] {364, 364, 364, 364}, 
-                        new int[4] {365, 365, 365, 365}, 
-                        new int[4] {366, 366, 366, 366}, 
-                        new int[4] {367, 367, 367, 367}, 
-                        new int[4] {368, 368, 368, 368}, 
-                        new int[4] {369, 369, 369, 369}, 
-                        new int[4] {370, 370, 370, 370}, 
-                        new int[4] {371, 371, 371, 371}, 
-                        new int[4] {372, 372, 372, 372}, 
-                        new int[4] {373, 373, 373, 373}, 
-                        new int[4] {374, 374, 374, 374}, 
-                        new int[4] {375, 375, 375, 375}, 
-                        new int[4] {376, 376, 376, 376}, 
-                        new int[4] {377, 377, 377, 377}, 
-                        new int[4] {378, 378, 378, 378}, 
-                        new int[4] {379, 379, 379, 379}, 
-                        new int[4] {380, 380, 380, 380}, 
-                        new int[4] {381, 381, 381, 381}, 
-                        new int[4] {382, 382, 382, 382}, 
-                        new int[4] {383, 383, 383, 383}, 
-                        new int[4] {384, 384, 384, 384}, 
-                        new int[4] {385, 385, 385, 385}, 
-                        new int[4] {386, 386, 386, 386}, 
-                        new int[4] {387, 387, 387, 387}, 
-                        new int[4] {388, 388, 388, 388}, 
-                        new int[4] {389, 389, 389, 389}, 
-                        new int[4] {390, 390, 390, 390}, 
-                        new int[4] {391, 391, 391, 391}, 
-                        new int[4] {392, 392, 392, 392}, 
-                        new int[4] {393, 393, 393, 393}, 
-                        new int[4] {394, 394, 394, 394}, 
-                        new int[4] {395, 395, 395, 395}, 
-                        new int[4] {396, 396, 396, 396}, 
-                        new int[4] {397, 397, 397, 397}, 
-                        new int[4] {398, 398, 398, 398}, 
-                        new int[4] {399, 399, 399, 399}, 
-                        new int[4] {400, 400, 400, 400}, 
-                        new int[4] {401, 401, 401, 401}, 
-                        new int[4] {402, 402, 402, 402}, 
-                        new int[4] {403, 403, 403, 403}, 
-                        new int[4] {404, 404, 404, 404}, 
-                        new int[4] {405, 405, 405, 405}, 
-                        new int[4] {406, 406, 406, 406}, 
-                        new int[4] {407, 407, 407, 407}, 
-                        new int[4] {408, 408, 408, 408}, 
-                        new int[4] {409, 409, 409, 409}, 
-                        new int[4] {410, 410, 410, 410}, 
-                        new int[4] {411, 411, 411, 411}, 
-                        new int[4] {412, 412, 412, 412}, 
-                        new int[4] {413, 413, 413, 413}, 
-                        new int[4] {414, 414, 414, 414}, 
-                        new int[4] {415, 415, 415, 415}, 
-                        new int[4] {416, 416, 416, 416}, 
-                        new int[4] {417, 417, 417, 417}, 
-                        new int[4] {418, 418, 418, 418}, 
-                        new int[4] {419, 419, 419, 419}, 
-                        new int[4] {420, 420, 420, 420}, 
-                        new int[4] {421, 421, 421, 421}, 
-                        new int[4] {422, 422, 422, 422}, 
-                        new int[4] {423, 423, 423, 423}, 
-                        new int[4] {424, 424, 424, 424}, 
-                        new int[4] {425, 425, 425, 425}, 
-                        new int[4] {426, 426, 426, 426}, 
-                        new int[4] {427, 427, 427, 427}, 
-                        new int[4] {428, 428, 428, 428}, 
-                        new int[4] {429, 429, 429, 429}, 
-                        new int[4] {430, 430, 430, 430}, 
-                        new int[4] {431, 431, 431, 431}, 
-                        new int[4] {432, 432, 432, 432}, 
-                        new int[4] {433, 433, 433, 433}, 
-                        new int[3] {434, 434, 434}, 
-                        new int[3] {435, 435, 435}, 
-                        new int[3] {436, 436, 436}, 
-                        new int[3] {437, 437, 437}, 
-                        new int[3] {438, 438, 438}, 
-                        new int[3] {439, 439, 439}, 
-                        new int[3] {440, 440, 440}, 
-                        new int[3] {441, 441, 441}, 
-                        new int[3] {442, 442, 442}, 
-                        new int[3] {443, 443, 443}, 
-                        new int[3] {444, 444, 444}, 
-                        new int[3] {445, 445, 445}, 
-                        new int[3] {446, 446, 446}, 
-                        new int[3] {447, 447, 447}, 
-                        new int[3] {448, 448, 448}, 
-                        new int[3] {449, 449, 449}, 
-                        new int[3] {450, 450, 450}, 
-                        new int[3] {451, 451, 451}, 
-                        new int[3] {452, 452, 452}, 
-                        new int[3] {453, 453, 453}, 
-                        new int[3] {454, 454, 454}, 
-                        new int[3] {455, 455, 455}, 
-                        new int[3] {456, 456, 456}, 
-                        new int[3] {457, 457, 457}, 
-                        new int[3] {458, 458, 458}, 
-                        new int[3] {459, 459, 459}, 
-                        new int[3] {460, 460, 460}, 
-                        new int[3] {461, 461, 461}, 
-                        new int[3] {462, 462, 462}, 
-                        new int[3] {463, 463, 463}, 
-                        new int[3] {464, 464, 464}, 
-                        new int[3] {465, 465, 465}, 
-                        new int[3] {466, 466, 466}, 
-                        new int[3] {467, 467, 467}, 
-                        new int[3] {468, 468, 468}, 
-                        new int[3] {469, 469, 469}, 
-                        new int[3] {470, 470, 470}, 
-                        new int[3] {471, 471, 471}, 
-                        new int[3] {472, 472, 472}, 
-                        new int[3] {473, 473, 473}, 
-                        new int[3] {474, 474, 474}, 
-                        new int[3] {475, 475, 475}, 
-                        new int[3] {476, 476, 476}, 
-                        new int[3] {477, 477, 477}, 
-                        new int[3] {478, 478, 478}, 
-                        new int[3] {479, 479, 479}, 
-                        new int[3] {480, 480, 480}, 
-                        new int[3] {481, 481, 481}, 
-                        new int[3] {482, 482, 482}, 
-                        new int[3] {483, 483, 483}, 
-                        new int[3] {484, 484, 484}, 
-                        new int[3] {485, 485, 485}, 
-                        new int[3] {486, 486, 486}, 
-                        new int[3] {487, 487, 487}, 
-                        new int[3] {488, 488, 488}, 
-                        new int[3] {489, 489, 489}, 
-                        new int[3] {490, 490, 490}, 
-                        new int[3] {491, 491, 491}, 
-                        new int[3] {492, 492, 492}, 
-                        new int[3] {493, 493, 493}, 
-                        new int[3] {494, 494, 494}, 
-                        new int[3] {495, 495, 495}, 
-                        new int[4] {496, 496, 496, 496}, 
-                        new int[3] {497, 497, 497}, 
-                        new int[4] {498, 498, 498, 498}, 
-                        new int[4] {499, 499, 499, 499}, 
-                        new int[4] {500, 500, 500, 500}, 
-                        new int[4] {501, 501, 501, 501}, 
-                        new int[4] {502, 502, 502, 502}, 
-                        new int[4] {503, 503, 503, 503}, 
-                        new int[4] {504, 504, 504, 504}, 
-                        new int[4] {505, 505, 505, 505}, 
-                        new int[4] {506, 506, 506, 506}, 
-                        new int[4] {507, 507, 507, 507}, 
-                        new int[4] {508, 508, 508, 508}, 
-                        new int[4] {509, 509, 509, 509}, 
-                        new int[3] {510, 510, 510}, 
+                normalGroups = new List<int[]>()
+                {
+                        new int[4] {0, 0, 0, 0},
+                        new int[4] {1, 1, 1, 1},
+                        new int[4] {2, 2, 2, 2},
+                        new int[4] {3, 3, 3, 3},
+                        new int[4] {4, 4, 4, 4},
+                        new int[4] {5, 5, 5, 5},
+                        new int[4] {6, 6, 6, 6},
+                        new int[4] {7, 7, 7, 7},
+                        new int[4] {8, 8, 8, 8},
+                        new int[4] {9, 9, 9, 9},
+                        new int[4] {10, 10, 10, 10},
+                        new int[4] {11, 11, 11, 11},
+                        new int[4] {12, 12, 12, 12},
+                        new int[4] {13, 13, 13, 13},
+                        new int[4] {14, 14, 14, 14},
+                        new int[4] {15, 15, 15, 15},
+                        new int[4] {16, 16, 16, 16},
+                        new int[4] {17, 17, 17, 17},
+                        new int[4] {18, 18, 18, 18},
+                        new int[4] {19, 19, 19, 19},
+                        new int[4] {20, 20, 20, 20},
+                        new int[4] {21, 21, 21, 21},
+                        new int[4] {22, 22, 22, 22},
+                        new int[4] {23, 23, 23, 23},
+                        new int[4] {24, 24, 24, 24},
+                        new int[4] {25, 25, 25, 25},
+                        new int[4] {26, 26, 26, 26},
+                        new int[4] {27, 27, 27, 27},
+                        new int[4] {28, 28, 28, 28},
+                        new int[4] {29, 29, 29, 29},
+                        new int[4] {30, 30, 30, 30},
+                        new int[4] {31, 31, 31, 31},
+                        new int[4] {32, 32, 32, 32},
+                        new int[4] {33, 33, 33, 33},
+                        new int[4] {34, 34, 34, 34},
+                        new int[4] {35, 35, 35, 35},
+                        new int[4] {36, 36, 36, 36},
+                        new int[4] {37, 37, 37, 37},
+                        new int[4] {38, 38, 38, 38},
+                        new int[4] {39, 39, 39, 39},
+                        new int[4] {40, 40, 40, 40},
+                        new int[4] {41, 41, 41, 41},
+                        new int[4] {42, 42, 42, 42},
+                        new int[4] {43, 43, 43, 43},
+                        new int[4] {44, 44, 44, 44},
+                        new int[4] {45, 45, 45, 45},
+                        new int[4] {46, 46, 46, 46},
+                        new int[4] {47, 47, 47, 47},
+                        new int[4] {48, 48, 48, 48},
+                        new int[4] {49, 49, 49, 49},
+                        new int[4] {50, 50, 50, 50},
+                        new int[4] {51, 51, 51, 51},
+                        new int[4] {52, 52, 52, 52},
+                        new int[4] {53, 53, 53, 53},
+                        new int[4] {54, 54, 54, 54},
+                        new int[4] {55, 55, 55, 55},
+                        new int[4] {56, 56, 56, 56},
+                        new int[4] {57, 57, 57, 57},
+                        new int[4] {58, 58, 58, 58},
+                        new int[4] {59, 59, 59, 59},
+                        new int[4] {60, 60, 60, 60},
+                        new int[4] {61, 61, 61, 61},
+                        new int[4] {62, 62, 62, 62},
+                        new int[4] {63, 63, 63, 63},
+                        new int[4] {64, 64, 64, 64},
+                        new int[4] {65, 65, 65, 65},
+                        new int[4] {66, 66, 66, 66},
+                        new int[4] {67, 67, 67, 67},
+                        new int[4] {68, 68, 68, 68},
+                        new int[4] {69, 69, 69, 69},
+                        new int[4] {70, 70, 70, 70},
+                        new int[4] {71, 71, 71, 71},
+                        new int[4] {72, 72, 72, 72},
+                        new int[4] {73, 73, 73, 73},
+                        new int[4] {74, 74, 74, 74},
+                        new int[4] {75, 75, 75, 75},
+                        new int[4] {76, 76, 76, 76},
+                        new int[4] {77, 77, 77, 77},
+                        new int[4] {78, 78, 78, 78},
+                        new int[4] {79, 79, 79, 79},
+                        new int[4] {80, 80, 80, 80},
+                        new int[4] {81, 81, 81, 81},
+                        new int[4] {82, 82, 82, 82},
+                        new int[4] {83, 83, 83, 83},
+                        new int[4] {84, 84, 84, 84},
+                        new int[4] {85, 85, 85, 85},
+                        new int[4] {86, 86, 86, 86},
+                        new int[4] {87, 87, 87, 87},
+                        new int[4] {88, 88, 88, 88},
+                        new int[4] {89, 89, 89, 89},
+                        new int[4] {90, 90, 90, 90},
+                        new int[4] {91, 91, 91, 91},
+                        new int[4] {92, 92, 92, 92},
+                        new int[4] {93, 93, 93, 93},
+                        new int[4] {94, 94, 94, 94},
+                        new int[4] {95, 95, 95, 95},
+                        new int[4] {96, 96, 96, 96},
+                        new int[4] {97, 97, 97, 97},
+                        new int[4] {98, 98, 98, 98},
+                        new int[4] {99, 99, 99, 99},
+                        new int[4] {100, 100, 100, 100},
+                        new int[4] {101, 101, 101, 101},
+                        new int[4] {102, 102, 102, 102},
+                        new int[4] {103, 103, 103, 103},
+                        new int[4] {104, 104, 104, 104},
+                        new int[4] {105, 105, 105, 105},
+                        new int[4] {106, 106, 106, 106},
+                        new int[4] {107, 107, 107, 107},
+                        new int[4] {108, 108, 108, 108},
+                        new int[4] {109, 109, 109, 109},
+                        new int[4] {110, 110, 110, 110},
+                        new int[4] {111, 111, 111, 111},
+                        new int[4] {112, 112, 112, 112},
+                        new int[4] {113, 113, 113, 113},
+                        new int[4] {114, 114, 114, 114},
+                        new int[4] {115, 115, 115, 115},
+                        new int[4] {116, 116, 116, 116},
+                        new int[4] {117, 117, 117, 117},
+                        new int[4] {118, 118, 118, 118},
+                        new int[4] {119, 119, 119, 119},
+                        new int[4] {120, 120, 120, 120},
+                        new int[4] {121, 121, 121, 121},
+                        new int[4] {122, 122, 122, 122},
+                        new int[4] {123, 123, 123, 123},
+                        new int[4] {124, 124, 124, 124},
+                        new int[4] {125, 125, 125, 125},
+                        new int[4] {126, 126, 126, 126},
+                        new int[4] {127, 127, 127, 127},
+                        new int[4] {128, 128, 128, 128},
+                        new int[4] {129, 129, 129, 129},
+                        new int[4] {130, 130, 130, 130},
+                        new int[4] {131, 131, 131, 131},
+                        new int[4] {132, 132, 132, 132},
+                        new int[4] {133, 133, 133, 133},
+                        new int[4] {134, 134, 134, 134},
+                        new int[4] {135, 135, 135, 135},
+                        new int[4] {136, 136, 136, 136},
+                        new int[4] {137, 137, 137, 137},
+                        new int[4] {138, 138, 138, 138},
+                        new int[4] {139, 139, 139, 139},
+                        new int[4] {140, 140, 140, 140},
+                        new int[4] {141, 141, 141, 141},
+                        new int[4] {142, 142, 142, 142},
+                        new int[4] {143, 143, 143, 143},
+                        new int[4] {144, 144, 144, 144},
+                        new int[4] {145, 145, 145, 145},
+                        new int[4] {146, 146, 146, 146},
+                        new int[4] {147, 147, 147, 147},
+                        new int[4] {148, 148, 148, 148},
+                        new int[4] {149, 149, 149, 149},
+                        new int[4] {150, 150, 150, 150},
+                        new int[4] {151, 151, 151, 151},
+                        new int[4] {152, 152, 152, 152},
+                        new int[4] {153, 153, 153, 153},
+                        new int[4] {154, 154, 154, 154},
+                        new int[4] {155, 155, 155, 155},
+                        new int[4] {156, 156, 156, 156},
+                        new int[4] {157, 157, 157, 157},
+                        new int[4] {158, 158, 158, 158},
+                        new int[4] {159, 159, 159, 159},
+                        new int[4] {160, 160, 160, 160},
+                        new int[4] {161, 161, 161, 161},
+                        new int[4] {162, 162, 162, 162},
+                        new int[4] {163, 163, 163, 163},
+                        new int[4] {164, 164, 164, 164},
+                        new int[4] {165, 165, 165, 165},
+                        new int[4] {166, 166, 166, 166},
+                        new int[4] {167, 167, 167, 167},
+                        new int[4] {168, 168, 168, 168},
+                        new int[4] {169, 169, 169, 169},
+                        new int[4] {170, 170, 170, 170},
+                        new int[4] {171, 171, 171, 171},
+                        new int[4] {172, 172, 172, 172},
+                        new int[4] {173, 173, 173, 173},
+                        new int[4] {174, 174, 174, 174},
+                        new int[4] {175, 175, 175, 175},
+                        new int[4] {176, 176, 176, 176},
+                        new int[4] {177, 177, 177, 177},
+                        new int[4] {178, 178, 178, 178},
+                        new int[4] {179, 179, 179, 179},
+                        new int[4] {180, 180, 180, 180},
+                        new int[4] {181, 181, 181, 181},
+                        new int[4] {182, 182, 182, 182},
+                        new int[4] {183, 183, 183, 183},
+                        new int[4] {184, 184, 184, 184},
+                        new int[4] {185, 185, 185, 185},
+                        new int[4] {186, 186, 186, 186},
+                        new int[4] {187, 187, 187, 187},
+                        new int[4] {188, 188, 188, 188},
+                        new int[4] {189, 189, 189, 189},
+                        new int[4] {190, 190, 190, 190},
+                        new int[4] {191, 191, 191, 191},
+                        new int[4] {192, 192, 192, 192},
+                        new int[4] {193, 193, 193, 193},
+                        new int[4] {194, 194, 194, 194},
+                        new int[4] {195, 195, 195, 195},
+                        new int[4] {196, 196, 196, 196},
+                        new int[4] {197, 197, 197, 197},
+                        new int[4] {198, 198, 198, 198},
+                        new int[4] {199, 199, 199, 199},
+                        new int[4] {200, 200, 200, 200},
+                        new int[4] {201, 201, 201, 201},
+                        new int[4] {202, 202, 202, 202},
+                        new int[4] {203, 203, 203, 203},
+                        new int[4] {204, 204, 204, 204},
+                        new int[4] {205, 205, 205, 205},
+                        new int[4] {206, 206, 206, 206},
+                        new int[4] {207, 207, 207, 207},
+                        new int[4] {208, 208, 208, 208},
+                        new int[4] {209, 209, 209, 209},
+                        new int[4] {210, 210, 210, 210},
+                        new int[4] {211, 211, 211, 211},
+                        new int[4] {212, 212, 212, 212},
+                        new int[4] {213, 213, 213, 213},
+                        new int[4] {214, 214, 214, 214},
+                        new int[4] {215, 215, 215, 215},
+                        new int[4] {216, 216, 216, 216},
+                        new int[4] {217, 217, 217, 217},
+                        new int[4] {218, 218, 218, 218},
+                        new int[4] {219, 219, 219, 219},
+                        new int[4] {220, 220, 220, 220},
+                        new int[4] {221, 221, 221, 221},
+                        new int[4] {222, 222, 222, 222},
+                        new int[4] {223, 223, 223, 223},
+                        new int[4] {224, 224, 224, 224},
+                        new int[4] {225, 225, 225, 225},
+                        new int[4] {226, 226, 226, 226},
+                        new int[4] {227, 227, 227, 227},
+                        new int[4] {228, 228, 228, 228},
+                        new int[4] {229, 229, 229, 229},
+                        new int[4] {230, 230, 230, 230},
+                        new int[4] {231, 231, 231, 231},
+                        new int[4] {232, 232, 232, 232},
+                        new int[4] {233, 233, 233, 233},
+                        new int[4] {234, 234, 234, 234},
+                        new int[4] {235, 235, 235, 235},
+                        new int[4] {236, 236, 236, 236},
+                        new int[4] {237, 237, 237, 237},
+                        new int[4] {238, 238, 238, 238},
+                        new int[4] {239, 239, 239, 239},
+                        new int[4] {240, 240, 240, 240},
+                        new int[4] {241, 241, 241, 241},
+                        new int[4] {242, 242, 242, 242},
+                        new int[4] {243, 243, 243, 243},
+                        new int[4] {244, 244, 244, 244},
+                        new int[4] {245, 245, 245, 245},
+                        new int[4] {246, 246, 246, 246},
+                        new int[4] {247, 247, 247, 247},
+                        new int[4] {248, 248, 248, 248},
+                        new int[4] {249, 249, 249, 249},
+                        new int[4] {250, 250, 250, 250},
+                        new int[4] {251, 251, 251, 251},
+                        new int[4] {252, 252, 252, 252},
+                        new int[4] {253, 253, 253, 253},
+                        new int[4] {254, 254, 254, 254},
+                        new int[4] {255, 255, 255, 255},
+                        new int[4] {256, 256, 256, 256},
+                        new int[4] {257, 257, 257, 257},
+                        new int[4] {258, 258, 258, 258},
+                        new int[4] {259, 259, 259, 259},
+                        new int[4] {260, 260, 260, 260},
+                        new int[4] {261, 261, 261, 261},
+                        new int[4] {262, 262, 262, 262},
+                        new int[4] {263, 263, 263, 263},
+                        new int[4] {264, 264, 264, 264},
+                        new int[4] {265, 265, 265, 265},
+                        new int[4] {266, 266, 266, 266},
+                        new int[4] {267, 267, 267, 267},
+                        new int[4] {268, 268, 268, 268},
+                        new int[4] {269, 269, 269, 269},
+                        new int[4] {270, 270, 270, 270},
+                        new int[4] {271, 271, 271, 271},
+                        new int[4] {272, 272, 272, 272},
+                        new int[4] {273, 273, 273, 273},
+                        new int[4] {274, 274, 274, 274},
+                        new int[4] {275, 275, 275, 275},
+                        new int[4] {276, 276, 276, 276},
+                        new int[4] {277, 277, 277, 277},
+                        new int[4] {278, 278, 278, 278},
+                        new int[4] {279, 279, 279, 279},
+                        new int[4] {280, 280, 280, 280},
+                        new int[4] {281, 281, 281, 281},
+                        new int[4] {282, 282, 282, 282},
+                        new int[4] {283, 283, 283, 283},
+                        new int[4] {284, 284, 284, 284},
+                        new int[4] {285, 285, 285, 285},
+                        new int[4] {286, 286, 286, 286},
+                        new int[4] {287, 287, 287, 287},
+                        new int[4] {288, 288, 288, 288},
+                        new int[4] {289, 289, 289, 289},
+                        new int[4] {290, 290, 290, 290},
+                        new int[4] {291, 291, 291, 291},
+                        new int[4] {292, 292, 292, 292},
+                        new int[4] {293, 293, 293, 293},
+                        new int[4] {294, 294, 294, 294},
+                        new int[4] {295, 295, 295, 295},
+                        new int[4] {296, 296, 296, 296},
+                        new int[4] {297, 297, 297, 297},
+                        new int[4] {298, 298, 298, 298},
+                        new int[4] {299, 299, 299, 299},
+                        new int[4] {300, 300, 300, 300},
+                        new int[4] {301, 301, 301, 301},
+                        new int[4] {302, 302, 302, 302},
+                        new int[4] {303, 303, 303, 303},
+                        new int[4] {304, 304, 304, 304},
+                        new int[4] {305, 305, 305, 305},
+                        new int[4] {306, 306, 306, 306},
+                        new int[4] {307, 307, 307, 307},
+                        new int[4] {308, 308, 308, 308},
+                        new int[4] {309, 309, 309, 309},
+                        new int[4] {310, 310, 310, 310},
+                        new int[4] {311, 311, 311, 311},
+                        new int[4] {312, 312, 312, 312},
+                        new int[4] {313, 313, 313, 313},
+                        new int[4] {314, 314, 314, 314},
+                        new int[4] {315, 315, 315, 315},
+                        new int[4] {316, 316, 316, 316},
+                        new int[4] {317, 317, 317, 317},
+                        new int[4] {318, 318, 318, 318},
+                        new int[4] {319, 319, 319, 319},
+                        new int[4] {320, 320, 320, 320},
+                        new int[4] {321, 321, 321, 321},
+                        new int[4] {322, 322, 322, 322},
+                        new int[4] {323, 323, 323, 323},
+                        new int[4] {324, 324, 324, 324},
+                        new int[4] {325, 325, 325, 325},
+                        new int[4] {326, 326, 326, 326},
+                        new int[4] {327, 327, 327, 327},
+                        new int[4] {328, 328, 328, 328},
+                        new int[4] {329, 329, 329, 329},
+                        new int[4] {330, 330, 330, 330},
+                        new int[4] {331, 331, 331, 331},
+                        new int[4] {332, 332, 332, 332},
+                        new int[4] {333, 333, 333, 333},
+                        new int[4] {334, 334, 334, 334},
+                        new int[4] {335, 335, 335, 335},
+                        new int[4] {336, 336, 336, 336},
+                        new int[4] {337, 337, 337, 337},
+                        new int[4] {338, 338, 338, 338},
+                        new int[4] {339, 339, 339, 339},
+                        new int[4] {340, 340, 340, 340},
+                        new int[4] {341, 341, 341, 341},
+                        new int[4] {342, 342, 342, 342},
+                        new int[4] {343, 343, 343, 343},
+                        new int[4] {344, 344, 344, 344},
+                        new int[4] {345, 345, 345, 345},
+                        new int[4] {346, 346, 346, 346},
+                        new int[4] {347, 347, 347, 347},
+                        new int[4] {348, 348, 348, 348},
+                        new int[4] {349, 349, 349, 349},
+                        new int[4] {350, 350, 350, 350},
+                        new int[4] {351, 351, 351, 351},
+                        new int[4] {352, 352, 352, 352},
+                        new int[4] {353, 353, 353, 353},
+                        new int[4] {354, 354, 354, 354},
+                        new int[4] {355, 355, 355, 355},
+                        new int[4] {356, 356, 356, 356},
+                        new int[4] {357, 357, 357, 357},
+                        new int[4] {358, 358, 358, 358},
+                        new int[4] {359, 359, 359, 359},
+                        new int[4] {360, 360, 360, 360},
+                        new int[4] {361, 361, 361, 361},
+                        new int[4] {362, 362, 362, 362},
+                        new int[4] {363, 363, 363, 363},
+                        new int[4] {364, 364, 364, 364},
+                        new int[4] {365, 365, 365, 365},
+                        new int[4] {366, 366, 366, 366},
+                        new int[4] {367, 367, 367, 367},
+                        new int[4] {368, 368, 368, 368},
+                        new int[4] {369, 369, 369, 369},
+                        new int[4] {370, 370, 370, 370},
+                        new int[4] {371, 371, 371, 371},
+                        new int[4] {372, 372, 372, 372},
+                        new int[4] {373, 373, 373, 373},
+                        new int[4] {374, 374, 374, 374},
+                        new int[4] {375, 375, 375, 375},
+                        new int[4] {376, 376, 376, 376},
+                        new int[4] {377, 377, 377, 377},
+                        new int[4] {378, 378, 378, 378},
+                        new int[4] {379, 379, 379, 379},
+                        new int[4] {380, 380, 380, 380},
+                        new int[4] {381, 381, 381, 381},
+                        new int[4] {382, 382, 382, 382},
+                        new int[4] {383, 383, 383, 383},
+                        new int[4] {384, 384, 384, 384},
+                        new int[4] {385, 385, 385, 385},
+                        new int[4] {386, 386, 386, 386},
+                        new int[4] {387, 387, 387, 387},
+                        new int[4] {388, 388, 388, 388},
+                        new int[4] {389, 389, 389, 389},
+                        new int[4] {390, 390, 390, 390},
+                        new int[4] {391, 391, 391, 391},
+                        new int[4] {392, 392, 392, 392},
+                        new int[4] {393, 393, 393, 393},
+                        new int[4] {394, 394, 394, 394},
+                        new int[4] {395, 395, 395, 395},
+                        new int[4] {396, 396, 396, 396},
+                        new int[4] {397, 397, 397, 397},
+                        new int[4] {398, 398, 398, 398},
+                        new int[4] {399, 399, 399, 399},
+                        new int[4] {400, 400, 400, 400},
+                        new int[4] {401, 401, 401, 401},
+                        new int[4] {402, 402, 402, 402},
+                        new int[4] {403, 403, 403, 403},
+                        new int[4] {404, 404, 404, 404},
+                        new int[4] {405, 405, 405, 405},
+                        new int[4] {406, 406, 406, 406},
+                        new int[4] {407, 407, 407, 407},
+                        new int[4] {408, 408, 408, 408},
+                        new int[4] {409, 409, 409, 409},
+                        new int[4] {410, 410, 410, 410},
+                        new int[4] {411, 411, 411, 411},
+                        new int[4] {412, 412, 412, 412},
+                        new int[4] {413, 413, 413, 413},
+                        new int[4] {414, 414, 414, 414},
+                        new int[4] {415, 415, 415, 415},
+                        new int[4] {416, 416, 416, 416},
+                        new int[4] {417, 417, 417, 417},
+                        new int[4] {418, 418, 418, 418},
+                        new int[4] {419, 419, 419, 419},
+                        new int[4] {420, 420, 420, 420},
+                        new int[4] {421, 421, 421, 421},
+                        new int[4] {422, 422, 422, 422},
+                        new int[4] {423, 423, 423, 423},
+                        new int[4] {424, 424, 424, 424},
+                        new int[4] {425, 425, 425, 425},
+                        new int[4] {426, 426, 426, 426},
+                        new int[4] {427, 427, 427, 427},
+                        new int[4] {428, 428, 428, 428},
+                        new int[4] {429, 429, 429, 429},
+                        new int[4] {430, 430, 430, 430},
+                        new int[4] {431, 431, 431, 431},
+                        new int[4] {432, 432, 432, 432},
+                        new int[4] {433, 433, 433, 433},
+                        new int[3] {434, 434, 434},
+                        new int[3] {435, 435, 435},
+                        new int[3] {436, 436, 436},
+                        new int[3] {437, 437, 437},
+                        new int[3] {438, 438, 438},
+                        new int[3] {439, 439, 439},
+                        new int[3] {440, 440, 440},
+                        new int[3] {441, 441, 441},
+                        new int[3] {442, 442, 442},
+                        new int[3] {443, 443, 443},
+                        new int[3] {444, 444, 444},
+                        new int[3] {445, 445, 445},
+                        new int[3] {446, 446, 446},
+                        new int[3] {447, 447, 447},
+                        new int[3] {448, 448, 448},
+                        new int[3] {449, 449, 449},
+                        new int[3] {450, 450, 450},
+                        new int[3] {451, 451, 451},
+                        new int[3] {452, 452, 452},
+                        new int[3] {453, 453, 453},
+                        new int[3] {454, 454, 454},
+                        new int[3] {455, 455, 455},
+                        new int[3] {456, 456, 456},
+                        new int[3] {457, 457, 457},
+                        new int[3] {458, 458, 458},
+                        new int[3] {459, 459, 459},
+                        new int[3] {460, 460, 460},
+                        new int[3] {461, 461, 461},
+                        new int[3] {462, 462, 462},
+                        new int[3] {463, 463, 463},
+                        new int[3] {464, 464, 464},
+                        new int[3] {465, 465, 465},
+                        new int[3] {466, 466, 466},
+                        new int[3] {467, 467, 467},
+                        new int[3] {468, 468, 468},
+                        new int[3] {469, 469, 469},
+                        new int[3] {470, 470, 470},
+                        new int[3] {471, 471, 471},
+                        new int[3] {472, 472, 472},
+                        new int[3] {473, 473, 473},
+                        new int[3] {474, 474, 474},
+                        new int[3] {475, 475, 475},
+                        new int[3] {476, 476, 476},
+                        new int[3] {477, 477, 477},
+                        new int[3] {478, 478, 478},
+                        new int[3] {479, 479, 479},
+                        new int[3] {480, 480, 480},
+                        new int[3] {481, 481, 481},
+                        new int[3] {482, 482, 482},
+                        new int[3] {483, 483, 483},
+                        new int[3] {484, 484, 484},
+                        new int[3] {485, 485, 485},
+                        new int[3] {486, 486, 486},
+                        new int[3] {487, 487, 487},
+                        new int[3] {488, 488, 488},
+                        new int[3] {489, 489, 489},
+                        new int[3] {490, 490, 490},
+                        new int[3] {491, 491, 491},
+                        new int[3] {492, 492, 492},
+                        new int[3] {493, 493, 493},
+                        new int[3] {494, 494, 494},
+                        new int[3] {495, 495, 495},
+                        new int[4] {496, 496, 496, 496},
+                        new int[3] {497, 497, 497},
+                        new int[4] {498, 498, 498, 498},
+                        new int[4] {499, 499, 499, 499},
+                        new int[4] {500, 500, 500, 500},
+                        new int[4] {501, 501, 501, 501},
+                        new int[4] {502, 502, 502, 502},
+                        new int[4] {503, 503, 503, 503},
+                        new int[4] {504, 504, 504, 504},
+                        new int[4] {505, 505, 505, 505},
+                        new int[4] {506, 506, 506, 506},
+                        new int[4] {507, 507, 507, 507},
+                        new int[4] {508, 508, 508, 508},
+                        new int[4] {509, 509, 509, 509},
+                        new int[3] {510, 510, 510},
                         new int[4] {511, 511, 511, 511}
                     },
-                    modifiedNormals = new List<Vector3D>()
-                };
-                _primitives.Add(primitive);
+                modifiedNormals = new List<Vector3D>()
+            };
+            _primitives.Add(primitive);
 
-                var item = new ListBoxItem();
-                {
-                    item.Content = "Sphere";
-                }
-                _primitiveListBox.Items.Add(item);
-            }
-
-            private void CreateCylinder()
+            var item = new ListBoxItem();
             {
-                /*
-                Polygon primitive = new Polygon()
-                {
-                    vertices = new List<Vector3D>()
-                    {
-                    },
-                    verticeGroups = new List<int[]>()
-                    {
-                    },
-                    modifiedVertices = new List<Vector3D>(),
-
-                    normals = new List<Vector3D>()
-                    {
-                    },
-                    normalGroups = new List<int[]>()
-                    {
-                    },
-                    modifiedNormals = new List<Vector3D>()
-                };
-                primitives.Add(primitive);
-
-                ListBoxItem item = new ListBoxItem();
-                {
-                    item.Content = "Cylinder";
-                }
-                primitiveListBox.Items.Add(item);
-                */
+                item.Content = "Sphere";
             }
+            _primitiveListBox.Items.Add(item);
+        }
 
-            private void CreateCone()
+        private void CreateCylinder()
+        {
+            /*
+            Polygon primitive = new Polygon()
             {
-                /*
-                Polygon primitive = new Polygon()
+                vertices = new List<Vector3D>()
                 {
-                    vertices = new List<Vector3D>()
-                    {
-                    },
-                    verticeGroups = new List<int[]>()
-                    {
-                    },
-                    modifiedVertices = new List<Vector3D>(),
-
-                    normals = new List<Vector3D>()
-                    {
-                    },
-                    normalGroups = new List<int[]>()
-                    {
-                    },
-                    modifiedNormals = new List<Vector3D>()
-                };
-                primitives.Add(primitive);
-
-                ListBoxItem item = new ListBoxItem();
+                },
+                verticeGroups = new List<int[]>()
                 {
-                    item.Content = "Cone";
-                }
-                primitiveListBox.Items.Add(item);
-                */
+                },
+                modifiedVertices = new List<Vector3D>(),
+
+                normals = new List<Vector3D>()
+                {
+                },
+                normalGroups = new List<int[]>()
+                {
+                },
+                modifiedNormals = new List<Vector3D>()
+            };
+            primitives.Add(primitive);
+
+            ListBoxItem item = new ListBoxItem();
+            {
+                item.Content = "Cylinder";
             }
+            primitiveListBox.Items.Add(item);
+            */
+        }
 
-            private void CreateTorus()
+        private void CreateCone()
+        {
+            /*
+            Polygon primitive = new Polygon()
             {
-                var primitive = new Polygon()
+                vertices = new List<Vector3D>()
                 {
-                    vertices = new List<Vector3D>()
-                    {
+                },
+                verticeGroups = new List<int[]>()
+                {
+                },
+                modifiedVertices = new List<Vector3D>(),
+
+                normals = new List<Vector3D>()
+                {
+                },
+                normalGroups = new List<int[]>()
+                {
+                },
+                modifiedNormals = new List<Vector3D>()
+            };
+            primitives.Add(primitive);
+
+            ListBoxItem item = new ListBoxItem();
+            {
+                item.Content = "Cone";
+            }
+            primitiveListBox.Items.Add(item);
+            */
+        }
+
+        private void CreateTorus()
+        {
+            var primitive = new Polygon() {
+                vertices = new List<Vector3D>()
+                {
                         new Vector3D(1.250000f,  0.000000f,  0.000000f),
                         new Vector3D(1.216506f,  0.000000f,  0.125000f),
                         new Vector3D(1.125000f,  0.000000f,  0.216506f),
@@ -2840,589 +2837,589 @@ namespace DemoApplication
                         new Vector3D(1.115376f, -0.146842f, -0.216506f),
                         new Vector3D(1.206099f, -0.158786f, -0.125000f)
                     },
-                    verticeGroups = new List<int[]>()
-                    {
-                        new int[4] {1, 13, 12, 0}, 
-                        new int[4] {2, 14, 13, 1}, 
-                        new int[4] {3, 15, 14, 2}, 
-                        new int[4] {4, 16, 15, 3}, 
-                        new int[4] {5, 17, 16, 4}, 
-                        new int[4] {6, 18, 17, 5}, 
-                        new int[4] {7, 19, 18, 6}, 
-                        new int[4] {8, 20, 19, 7}, 
-                        new int[4] {9, 21, 20, 8}, 
-                        new int[4] {10, 22, 21, 9}, 
-                        new int[4] {11, 23, 22, 10}, 
-                        new int[4] {12, 23, 11, 0}, 
-                        new int[4] {13, 25, 24, 12}, 
-                        new int[4] {14, 26, 25, 13}, 
-                        new int[4] {15, 27, 26, 14}, 
-                        new int[4] {16, 28, 27, 15}, 
-                        new int[4] {17, 29, 28, 16}, 
-                        new int[4] {18, 30, 29, 17}, 
-                        new int[4] {19, 31, 30, 18}, 
-                        new int[4] {20, 32, 31, 19}, 
-                        new int[4] {21, 33, 32, 20}, 
-                        new int[4] {22, 34, 33, 21}, 
-                        new int[4] {23, 35, 34, 22}, 
-                        new int[4] {12, 24, 35, 23}, 
-                        new int[4] {25, 37, 36, 24}, 
-                        new int[4] {26, 38, 37, 25}, 
-                        new int[4] {27, 39, 38, 26}, 
-                        new int[4] {28, 40, 39, 27}, 
-                        new int[4] {29, 41, 40, 28}, 
-                        new int[4] {30, 42, 41, 29}, 
-                        new int[4] {31, 43, 42, 30}, 
-                        new int[4] {32, 44, 43, 31}, 
-                        new int[4] {33, 45, 44, 32}, 
-                        new int[4] {34, 46, 45, 33}, 
-                        new int[4] {35, 47, 46, 34}, 
-                        new int[4] {24, 36, 47, 35}, 
-                        new int[4] {37, 49, 48, 36}, 
-                        new int[4] {38, 50, 49, 37}, 
-                        new int[4] {39, 51, 50, 38}, 
-                        new int[4] {40, 52, 51, 39}, 
-                        new int[4] {41, 53, 52, 40}, 
-                        new int[4] {42, 54, 53, 41}, 
-                        new int[4] {43, 55, 54, 42}, 
-                        new int[4] {44, 56, 55, 43}, 
-                        new int[4] {45, 57, 56, 44}, 
-                        new int[4] {46, 58, 57, 45}, 
-                        new int[4] {47, 59, 58, 46}, 
-                        new int[4] {36, 48, 59, 47}, 
-                        new int[4] {49, 61, 60, 48}, 
-                        new int[4] {50, 62, 61, 49}, 
-                        new int[4] {51, 63, 62, 50}, 
-                        new int[4] {52, 64, 63, 51}, 
-                        new int[4] {53, 65, 64, 52}, 
-                        new int[4] {54, 66, 65, 53}, 
-                        new int[4] {55, 67, 66, 54}, 
-                        new int[4] {56, 68, 67, 55}, 
-                        new int[4] {57, 69, 68, 56}, 
-                        new int[4] {58, 70, 69, 57}, 
-                        new int[4] {59, 71, 70, 58}, 
-                        new int[4] {48, 60, 71, 59}, 
-                        new int[4] {61, 73, 72, 60}, 
-                        new int[4] {62, 74, 73, 61}, 
-                        new int[4] {63, 75, 74, 62}, 
-                        new int[4] {64, 76, 75, 63}, 
-                        new int[4] {65, 77, 76, 64}, 
-                        new int[4] {66, 78, 77, 65}, 
-                        new int[4] {67, 79, 78, 66}, 
-                        new int[4] {68, 80, 79, 67}, 
-                        new int[4] {69, 81, 80, 68}, 
-                        new int[4] {70, 82, 81, 69}, 
-                        new int[4] {71, 83, 82, 70}, 
-                        new int[4] {60, 72, 83, 71}, 
-                        new int[4] {73, 85, 84, 72}, 
-                        new int[4] {74, 86, 85, 73}, 
-                        new int[4] {75, 87, 86, 74}, 
-                        new int[4] {76, 88, 87, 75}, 
-                        new int[4] {77, 89, 88, 76}, 
-                        new int[4] {78, 90, 89, 77}, 
-                        new int[4] {79, 91, 90, 78}, 
-                        new int[4] {80, 92, 91, 79}, 
-                        new int[4] {81, 93, 92, 80}, 
-                        new int[4] {82, 94, 93, 81}, 
-                        new int[4] {83, 95, 94, 82}, 
-                        new int[4] {72, 84, 95, 83}, 
-                        new int[4] {85, 97, 96, 84}, 
-                        new int[4] {86, 98, 97, 85}, 
-                        new int[4] {87, 99, 98, 86}, 
-                        new int[4] {88, 100, 99, 87}, 
-                        new int[4] {89, 101, 100, 88}, 
-                        new int[4] {90, 102, 101, 89}, 
-                        new int[4] {91, 103, 102, 90}, 
-                        new int[4] {92, 104, 103, 91}, 
-                        new int[4] {93, 105, 104, 92}, 
-                        new int[4] {94, 106, 105, 93}, 
-                        new int[4] {95, 107, 106, 94}, 
-                        new int[4] {84, 96, 107, 95}, 
-                        new int[4] {97, 109, 108, 96}, 
-                        new int[4] {98, 110, 109, 97}, 
-                        new int[4] {99, 111, 110, 98}, 
-                        new int[4] {100, 112, 111, 99}, 
-                        new int[4] {101, 113, 112, 100}, 
-                        new int[4] {102, 114, 113, 101}, 
-                        new int[4] {103, 115, 114, 102}, 
-                        new int[4] {104, 116, 115, 103}, 
-                        new int[4] {105, 117, 116, 104}, 
-                        new int[4] {106, 118, 117, 105}, 
-                        new int[4] {107, 119, 118, 106}, 
-                        new int[4] {96, 108, 119, 107}, 
-                        new int[4] {109, 121, 120, 108}, 
-                        new int[4] {110, 122, 121, 109}, 
-                        new int[4] {111, 123, 122, 110}, 
-                        new int[4] {112, 124, 123, 111}, 
-                        new int[4] {113, 125, 124, 112}, 
-                        new int[4] {114, 126, 125, 113}, 
-                        new int[4] {115, 127, 126, 114}, 
-                        new int[4] {116, 128, 127, 115}, 
-                        new int[4] {117, 129, 128, 116}, 
-                        new int[4] {118, 130, 129, 117}, 
-                        new int[4] {119, 131, 130, 118}, 
-                        new int[4] {108, 120, 131, 119}, 
-                        new int[4] {121, 133, 132, 120}, 
-                        new int[4] {122, 134, 133, 121}, 
-                        new int[4] {123, 135, 134, 122}, 
-                        new int[4] {124, 136, 135, 123}, 
-                        new int[4] {125, 137, 136, 124}, 
-                        new int[4] {126, 138, 137, 125}, 
-                        new int[4] {127, 139, 138, 126}, 
-                        new int[4] {128, 140, 139, 127}, 
-                        new int[4] {129, 141, 140, 128}, 
-                        new int[4] {130, 142, 141, 129}, 
-                        new int[4] {131, 143, 142, 130}, 
-                        new int[4] {120, 132, 143, 131}, 
-                        new int[4] {133, 145, 144, 132}, 
-                        new int[4] {134, 146, 145, 133}, 
-                        new int[4] {135, 147, 146, 134}, 
-                        new int[4] {136, 148, 147, 135}, 
-                        new int[4] {137, 149, 148, 136}, 
-                        new int[4] {138, 150, 149, 137}, 
-                        new int[4] {139, 151, 150, 138}, 
-                        new int[4] {140, 152, 151, 139}, 
-                        new int[4] {141, 153, 152, 140}, 
-                        new int[4] {142, 154, 153, 141}, 
-                        new int[4] {143, 155, 154, 142}, 
-                        new int[4] {132, 144, 155, 143}, 
-                        new int[4] {145, 157, 156, 144}, 
-                        new int[4] {146, 158, 157, 145}, 
-                        new int[4] {147, 159, 158, 146}, 
-                        new int[4] {148, 160, 159, 147}, 
-                        new int[4] {149, 161, 160, 148}, 
-                        new int[4] {150, 162, 161, 149}, 
-                        new int[4] {151, 163, 162, 150}, 
-                        new int[4] {152, 164, 163, 151}, 
-                        new int[4] {153, 165, 164, 152}, 
-                        new int[4] {154, 166, 165, 153}, 
-                        new int[4] {155, 167, 166, 154}, 
-                        new int[4] {144, 156, 167, 155}, 
-                        new int[4] {157, 169, 168, 156}, 
-                        new int[4] {158, 170, 169, 157}, 
-                        new int[4] {159, 171, 170, 158}, 
-                        new int[4] {160, 172, 171, 159}, 
-                        new int[4] {161, 173, 172, 160}, 
-                        new int[4] {162, 174, 173, 161}, 
-                        new int[4] {163, 175, 174, 162}, 
-                        new int[4] {164, 176, 175, 163}, 
-                        new int[4] {165, 177, 176, 164}, 
-                        new int[4] {166, 178, 177, 165}, 
-                        new int[4] {167, 179, 178, 166}, 
-                        new int[4] {156, 168, 179, 167}, 
-                        new int[4] {169, 181, 180, 168}, 
-                        new int[4] {170, 182, 181, 169}, 
-                        new int[4] {171, 183, 182, 170}, 
-                        new int[4] {172, 184, 183, 171}, 
-                        new int[4] {173, 185, 184, 172}, 
-                        new int[4] {174, 186, 185, 173}, 
-                        new int[4] {175, 187, 186, 174}, 
-                        new int[4] {176, 188, 187, 175}, 
-                        new int[4] {177, 189, 188, 176}, 
-                        new int[4] {178, 190, 189, 177}, 
-                        new int[4] {179, 191, 190, 178}, 
-                        new int[4] {168, 180, 191, 179}, 
-                        new int[4] {181, 193, 192, 180}, 
-                        new int[4] {182, 194, 193, 181}, 
-                        new int[4] {183, 195, 194, 182}, 
-                        new int[4] {184, 196, 195, 183}, 
-                        new int[4] {185, 197, 196, 184}, 
-                        new int[4] {186, 198, 197, 185}, 
-                        new int[4] {187, 199, 198, 186}, 
-                        new int[4] {188, 200, 199, 187}, 
-                        new int[4] {189, 201, 200, 188}, 
-                        new int[4] {190, 202, 201, 189}, 
-                        new int[4] {191, 203, 202, 190}, 
-                        new int[4] {180, 192, 203, 191}, 
-                        new int[4] {193, 205, 204, 192}, 
-                        new int[4] {194, 206, 205, 193}, 
-                        new int[4] {195, 207, 206, 194}, 
-                        new int[4] {196, 208, 207, 195}, 
-                        new int[4] {197, 209, 208, 196}, 
-                        new int[4] {198, 210, 209, 197}, 
-                        new int[4] {199, 211, 210, 198}, 
-                        new int[4] {200, 212, 211, 199}, 
-                        new int[4] {201, 213, 212, 200}, 
-                        new int[4] {202, 214, 213, 201}, 
-                        new int[4] {203, 215, 214, 202}, 
-                        new int[4] {192, 204, 215, 203}, 
-                        new int[4] {205, 217, 216, 204}, 
-                        new int[4] {206, 218, 217, 205}, 
-                        new int[4] {207, 219, 218, 206}, 
-                        new int[4] {208, 220, 219, 207}, 
-                        new int[4] {209, 221, 220, 208}, 
-                        new int[4] {210, 222, 221, 209}, 
-                        new int[4] {211, 223, 222, 210}, 
-                        new int[4] {212, 224, 223, 211}, 
-                        new int[4] {213, 225, 224, 212}, 
-                        new int[4] {214, 226, 225, 213}, 
-                        new int[4] {215, 227, 226, 214}, 
-                        new int[4] {204, 216, 227, 215}, 
-                        new int[4] {217, 229, 228, 216}, 
-                        new int[4] {218, 230, 229, 217}, 
-                        new int[4] {219, 231, 230, 218}, 
-                        new int[4] {220, 232, 231, 219}, 
-                        new int[4] {221, 233, 232, 220}, 
-                        new int[4] {222, 234, 233, 221}, 
-                        new int[4] {223, 235, 234, 222}, 
-                        new int[4] {224, 236, 235, 223}, 
-                        new int[4] {225, 237, 236, 224}, 
-                        new int[4] {226, 238, 237, 225}, 
-                        new int[4] {227, 239, 238, 226}, 
-                        new int[4] {216, 228, 239, 227}, 
-                        new int[4] {229, 241, 240, 228}, 
-                        new int[4] {230, 242, 241, 229}, 
-                        new int[4] {231, 243, 242, 230}, 
-                        new int[4] {232, 244, 243, 231}, 
-                        new int[4] {233, 245, 244, 232}, 
-                        new int[4] {234, 246, 245, 233}, 
-                        new int[4] {235, 247, 246, 234}, 
-                        new int[4] {236, 248, 247, 235}, 
-                        new int[4] {237, 249, 248, 236}, 
-                        new int[4] {238, 250, 249, 237}, 
-                        new int[4] {239, 251, 250, 238}, 
-                        new int[4] {228, 240, 251, 239}, 
-                        new int[4] {241, 253, 252, 240}, 
-                        new int[4] {242, 254, 253, 241}, 
-                        new int[4] {243, 255, 254, 242}, 
-                        new int[4] {244, 256, 255, 243}, 
-                        new int[4] {245, 257, 256, 244}, 
-                        new int[4] {246, 258, 257, 245}, 
-                        new int[4] {247, 259, 258, 246}, 
-                        new int[4] {248, 260, 259, 247}, 
-                        new int[4] {249, 261, 260, 248}, 
-                        new int[4] {250, 262, 261, 249}, 
-                        new int[4] {251, 263, 262, 250}, 
-                        new int[4] {240, 252, 263, 251}, 
-                        new int[4] {253, 265, 264, 252}, 
-                        new int[4] {254, 266, 265, 253}, 
-                        new int[4] {255, 267, 266, 254}, 
-                        new int[4] {256, 268, 267, 255}, 
-                        new int[4] {257, 269, 268, 256}, 
-                        new int[4] {258, 270, 269, 257}, 
-                        new int[4] {259, 271, 270, 258}, 
-                        new int[4] {260, 272, 271, 259}, 
-                        new int[4] {261, 273, 272, 260}, 
-                        new int[4] {262, 274, 273, 261}, 
-                        new int[4] {263, 275, 274, 262}, 
-                        new int[4] {252, 264, 275, 263}, 
-                        new int[4] {265, 277, 276, 264}, 
-                        new int[4] {266, 278, 277, 265}, 
-                        new int[4] {267, 279, 278, 266}, 
-                        new int[4] {268, 280, 279, 267}, 
-                        new int[4] {269, 281, 280, 268}, 
-                        new int[4] {270, 282, 281, 269}, 
-                        new int[4] {271, 283, 282, 270}, 
-                        new int[4] {272, 284, 283, 271}, 
-                        new int[4] {273, 285, 284, 272}, 
-                        new int[4] {274, 286, 285, 273}, 
-                        new int[4] {275, 287, 286, 274}, 
-                        new int[4] {264, 276, 287, 275}, 
-                        new int[4] {277, 289, 288, 276}, 
-                        new int[4] {278, 290, 289, 277}, 
-                        new int[4] {279, 291, 290, 278}, 
-                        new int[4] {280, 292, 291, 279}, 
-                        new int[4] {281, 293, 292, 280}, 
-                        new int[4] {282, 294, 293, 281}, 
-                        new int[4] {283, 295, 294, 282}, 
-                        new int[4] {284, 296, 295, 283}, 
-                        new int[4] {285, 297, 296, 284}, 
-                        new int[4] {286, 298, 297, 285}, 
-                        new int[4] {287, 299, 298, 286}, 
-                        new int[4] {276, 288, 299, 287}, 
-                        new int[4] {289, 301, 300, 288}, 
-                        new int[4] {290, 302, 301, 289}, 
-                        new int[4] {291, 303, 302, 290}, 
-                        new int[4] {292, 304, 303, 291}, 
-                        new int[4] {293, 305, 304, 292}, 
-                        new int[4] {294, 306, 305, 293}, 
-                        new int[4] {295, 307, 306, 294}, 
-                        new int[4] {296, 308, 307, 295}, 
-                        new int[4] {297, 309, 308, 296}, 
-                        new int[4] {298, 310, 309, 297}, 
-                        new int[4] {299, 311, 310, 298}, 
-                        new int[4] {288, 300, 311, 299}, 
-                        new int[4] {301, 313, 312, 300}, 
-                        new int[4] {302, 314, 313, 301}, 
-                        new int[4] {303, 315, 314, 302}, 
-                        new int[4] {304, 316, 315, 303}, 
-                        new int[4] {305, 317, 316, 304}, 
-                        new int[4] {306, 318, 317, 305}, 
-                        new int[4] {307, 319, 318, 306}, 
-                        new int[4] {308, 320, 319, 307}, 
-                        new int[4] {309, 321, 320, 308}, 
-                        new int[4] {310, 322, 321, 309}, 
-                        new int[4] {311, 323, 322, 310}, 
-                        new int[4] {300, 312, 323, 311}, 
-                        new int[4] {313, 325, 324, 312}, 
-                        new int[4] {314, 326, 325, 313}, 
-                        new int[4] {315, 327, 326, 314}, 
-                        new int[4] {316, 328, 327, 315}, 
-                        new int[4] {317, 329, 328, 316}, 
-                        new int[4] {318, 330, 329, 317}, 
-                        new int[4] {319, 331, 330, 318}, 
-                        new int[4] {320, 332, 331, 319}, 
-                        new int[4] {321, 333, 332, 320}, 
-                        new int[4] {322, 334, 333, 321}, 
-                        new int[4] {323, 335, 334, 322}, 
-                        new int[4] {312, 324, 335, 323}, 
-                        new int[4] {325, 337, 336, 324}, 
-                        new int[4] {326, 338, 337, 325}, 
-                        new int[4] {327, 339, 338, 326}, 
-                        new int[4] {328, 340, 339, 327}, 
-                        new int[4] {329, 341, 340, 328}, 
-                        new int[4] {330, 342, 341, 329}, 
-                        new int[4] {331, 343, 342, 330}, 
-                        new int[4] {332, 344, 343, 331}, 
-                        new int[4] {333, 345, 344, 332}, 
-                        new int[4] {334, 346, 345, 333}, 
-                        new int[4] {335, 347, 346, 334}, 
-                        new int[4] {324, 336, 347, 335}, 
-                        new int[4] {337, 349, 348, 336}, 
-                        new int[4] {338, 350, 349, 337}, 
-                        new int[4] {339, 351, 350, 338}, 
-                        new int[4] {340, 352, 351, 339}, 
-                        new int[4] {341, 353, 352, 340}, 
-                        new int[4] {342, 354, 353, 341}, 
-                        new int[4] {343, 355, 354, 342}, 
-                        new int[4] {344, 356, 355, 343}, 
-                        new int[4] {345, 357, 356, 344}, 
-                        new int[4] {346, 358, 357, 345}, 
-                        new int[4] {347, 359, 358, 346}, 
-                        new int[4] {336, 348, 359, 347}, 
-                        new int[4] {349, 361, 360, 348}, 
-                        new int[4] {350, 362, 361, 349}, 
-                        new int[4] {351, 363, 362, 350}, 
-                        new int[4] {352, 364, 363, 351}, 
-                        new int[4] {353, 365, 364, 352}, 
-                        new int[4] {354, 366, 365, 353}, 
-                        new int[4] {355, 367, 366, 354}, 
-                        new int[4] {356, 368, 367, 355}, 
-                        new int[4] {357, 369, 368, 356}, 
-                        new int[4] {358, 370, 369, 357}, 
-                        new int[4] {359, 371, 370, 358}, 
-                        new int[4] {348, 360, 371, 359}, 
-                        new int[4] {361, 373, 372, 360}, 
-                        new int[4] {362, 374, 373, 361}, 
-                        new int[4] {363, 375, 374, 362}, 
-                        new int[4] {364, 376, 375, 363}, 
-                        new int[4] {365, 377, 376, 364}, 
-                        new int[4] {366, 378, 377, 365}, 
-                        new int[4] {367, 379, 378, 366}, 
-                        new int[4] {368, 380, 379, 367}, 
-                        new int[4] {369, 381, 380, 368}, 
-                        new int[4] {370, 382, 381, 369}, 
-                        new int[4] {371, 383, 382, 370}, 
-                        new int[4] {360, 372, 383, 371}, 
-                        new int[4] {373, 385, 384, 372}, 
-                        new int[4] {374, 386, 385, 373}, 
-                        new int[4] {375, 387, 386, 374}, 
-                        new int[4] {376, 388, 387, 375}, 
-                        new int[4] {377, 389, 388, 376}, 
-                        new int[4] {378, 390, 389, 377}, 
-                        new int[4] {379, 391, 390, 378}, 
-                        new int[4] {380, 392, 391, 379}, 
-                        new int[4] {381, 393, 392, 380}, 
-                        new int[4] {382, 394, 393, 381}, 
-                        new int[4] {383, 395, 394, 382}, 
-                        new int[4] {372, 384, 395, 383}, 
-                        new int[4] {385, 397, 396, 384}, 
-                        new int[4] {386, 398, 397, 385}, 
-                        new int[4] {387, 399, 398, 386}, 
-                        new int[4] {388, 400, 399, 387}, 
-                        new int[4] {389, 401, 400, 388}, 
-                        new int[4] {390, 402, 401, 389}, 
-                        new int[4] {391, 403, 402, 390}, 
-                        new int[4] {392, 404, 403, 391}, 
-                        new int[4] {393, 405, 404, 392}, 
-                        new int[4] {394, 406, 405, 393}, 
-                        new int[4] {395, 407, 406, 394}, 
-                        new int[4] {384, 396, 407, 395}, 
-                        new int[4] {397, 409, 408, 396}, 
-                        new int[4] {398, 410, 409, 397}, 
-                        new int[4] {399, 411, 410, 398}, 
-                        new int[4] {400, 412, 411, 399}, 
-                        new int[4] {401, 413, 412, 400}, 
-                        new int[4] {402, 414, 413, 401}, 
-                        new int[4] {403, 415, 414, 402}, 
-                        new int[4] {404, 416, 415, 403}, 
-                        new int[4] {405, 417, 416, 404}, 
-                        new int[4] {406, 418, 417, 405}, 
-                        new int[4] {407, 419, 418, 406}, 
-                        new int[4] {396, 408, 419, 407}, 
-                        new int[4] {409, 421, 420, 408}, 
-                        new int[4] {410, 422, 421, 409}, 
-                        new int[4] {411, 423, 422, 410}, 
-                        new int[4] {412, 424, 423, 411}, 
-                        new int[4] {413, 425, 424, 412}, 
-                        new int[4] {414, 426, 425, 413}, 
-                        new int[4] {415, 427, 426, 414}, 
-                        new int[4] {416, 428, 427, 415}, 
-                        new int[4] {417, 429, 428, 416}, 
-                        new int[4] {418, 430, 429, 417}, 
-                        new int[4] {419, 431, 430, 418}, 
-                        new int[4] {408, 420, 431, 419}, 
-                        new int[4] {421, 433, 432, 420}, 
-                        new int[4] {422, 434, 433, 421}, 
-                        new int[4] {423, 435, 434, 422}, 
-                        new int[4] {424, 436, 435, 423}, 
-                        new int[4] {425, 437, 436, 424}, 
-                        new int[4] {426, 438, 437, 425}, 
-                        new int[4] {427, 439, 438, 426}, 
-                        new int[4] {428, 440, 439, 427}, 
-                        new int[4] {429, 441, 440, 428}, 
-                        new int[4] {430, 442, 441, 429}, 
-                        new int[4] {431, 443, 442, 430}, 
-                        new int[4] {420, 432, 443, 431}, 
-                        new int[4] {433, 445, 444, 432}, 
-                        new int[4] {434, 446, 445, 433}, 
-                        new int[4] {435, 447, 446, 434}, 
-                        new int[4] {436, 448, 447, 435}, 
-                        new int[4] {437, 449, 448, 436}, 
-                        new int[4] {438, 450, 449, 437}, 
-                        new int[4] {439, 451, 450, 438}, 
-                        new int[4] {440, 452, 451, 439}, 
-                        new int[4] {441, 453, 452, 440}, 
-                        new int[4] {442, 454, 453, 441}, 
-                        new int[4] {443, 455, 454, 442}, 
-                        new int[4] {432, 444, 455, 443}, 
-                        new int[4] {445, 457, 456, 444}, 
-                        new int[4] {446, 458, 457, 445}, 
-                        new int[4] {447, 459, 458, 446}, 
-                        new int[4] {448, 460, 459, 447}, 
-                        new int[4] {449, 461, 460, 448}, 
-                        new int[4] {450, 462, 461, 449}, 
-                        new int[4] {451, 463, 462, 450}, 
-                        new int[4] {452, 464, 463, 451}, 
-                        new int[4] {453, 465, 464, 452}, 
-                        new int[4] {454, 466, 465, 453}, 
-                        new int[4] {455, 467, 466, 454}, 
-                        new int[4] {444, 456, 467, 455}, 
-                        new int[4] {457, 469, 468, 456}, 
-                        new int[4] {458, 470, 469, 457}, 
-                        new int[4] {459, 471, 470, 458}, 
-                        new int[4] {460, 472, 471, 459}, 
-                        new int[4] {461, 473, 472, 460}, 
-                        new int[4] {462, 474, 473, 461}, 
-                        new int[4] {463, 475, 474, 462}, 
-                        new int[4] {464, 476, 475, 463}, 
-                        new int[4] {465, 477, 476, 464}, 
-                        new int[4] {466, 478, 477, 465}, 
-                        new int[4] {467, 479, 478, 466}, 
-                        new int[4] {456, 468, 479, 467}, 
-                        new int[4] {469, 481, 480, 468}, 
-                        new int[4] {470, 482, 481, 469}, 
-                        new int[4] {471, 483, 482, 470}, 
-                        new int[4] {472, 484, 483, 471}, 
-                        new int[4] {473, 485, 484, 472}, 
-                        new int[4] {474, 486, 485, 473}, 
-                        new int[4] {475, 487, 486, 474}, 
-                        new int[4] {476, 488, 487, 475}, 
-                        new int[4] {477, 489, 488, 476}, 
-                        new int[4] {478, 490, 489, 477}, 
-                        new int[4] {479, 491, 490, 478}, 
-                        new int[4] {468, 480, 491, 479}, 
-                        new int[4] {481, 493, 492, 480}, 
-                        new int[4] {482, 494, 493, 481}, 
-                        new int[4] {483, 495, 494, 482}, 
-                        new int[4] {484, 496, 495, 483}, 
-                        new int[4] {485, 497, 496, 484}, 
-                        new int[4] {486, 498, 497, 485}, 
-                        new int[4] {487, 499, 498, 486}, 
-                        new int[4] {488, 500, 499, 487}, 
-                        new int[4] {489, 501, 500, 488}, 
-                        new int[4] {490, 502, 501, 489}, 
-                        new int[4] {491, 503, 502, 490}, 
-                        new int[4] {480, 492, 503, 491}, 
-                        new int[4] {493, 505, 504, 492}, 
-                        new int[4] {494, 506, 505, 493}, 
-                        new int[4] {495, 507, 506, 494}, 
-                        new int[4] {496, 508, 507, 495}, 
-                        new int[4] {497, 509, 508, 496}, 
-                        new int[4] {498, 510, 509, 497}, 
-                        new int[4] {499, 511, 510, 498}, 
-                        new int[4] {500, 512, 511, 499}, 
-                        new int[4] {501, 513, 512, 500}, 
-                        new int[4] {502, 514, 513, 501}, 
-                        new int[4] {503, 515, 514, 502}, 
-                        new int[4] {492, 504, 515, 503}, 
-                        new int[4] {505, 517, 516, 504}, 
-                        new int[4] {506, 518, 517, 505}, 
-                        new int[4] {507, 519, 518, 506}, 
-                        new int[4] {508, 520, 519, 507}, 
-                        new int[4] {509, 521, 520, 508}, 
-                        new int[4] {510, 522, 521, 509}, 
-                        new int[4] {511, 523, 522, 510}, 
-                        new int[4] {512, 524, 523, 511}, 
-                        new int[4] {513, 525, 524, 512}, 
-                        new int[4] {514, 526, 525, 513}, 
-                        new int[4] {515, 527, 526, 514}, 
-                        new int[4] {504, 516, 527, 515}, 
-                        new int[4] {517, 529, 528, 516}, 
-                        new int[4] {518, 530, 529, 517}, 
-                        new int[4] {519, 531, 530, 518}, 
-                        new int[4] {520, 532, 531, 519}, 
-                        new int[4] {521, 533, 532, 520}, 
-                        new int[4] {522, 534, 533, 521}, 
-                        new int[4] {523, 535, 534, 522}, 
-                        new int[4] {524, 536, 535, 523}, 
-                        new int[4] {525, 537, 536, 524}, 
-                        new int[4] {526, 538, 537, 525}, 
-                        new int[4] {527, 539, 538, 526}, 
-                        new int[4] {516, 528, 539, 527}, 
-                        new int[4] {529, 541, 540, 528}, 
-                        new int[4] {530, 542, 541, 529}, 
-                        new int[4] {531, 543, 542, 530}, 
-                        new int[4] {532, 544, 543, 531}, 
-                        new int[4] {533, 545, 544, 532}, 
-                        new int[4] {534, 546, 545, 533}, 
-                        new int[4] {535, 547, 546, 534}, 
-                        new int[4] {536, 548, 547, 535}, 
-                        new int[4] {537, 549, 548, 536}, 
-                        new int[4] {538, 550, 549, 537}, 
-                        new int[4] {539, 551, 550, 538}, 
-                        new int[4] {528, 540, 551, 539}, 
-                        new int[4] {541, 553, 552, 540}, 
-                        new int[4] {542, 554, 553, 541}, 
-                        new int[4] {543, 555, 554, 542}, 
-                        new int[4] {544, 556, 555, 543}, 
-                        new int[4] {545, 557, 556, 544}, 
-                        new int[4] {546, 558, 557, 545}, 
-                        new int[4] {547, 559, 558, 546}, 
-                        new int[4] {548, 560, 559, 547}, 
-                        new int[4] {549, 561, 560, 548}, 
-                        new int[4] {550, 562, 561, 549}, 
-                        new int[4] {551, 563, 562, 550}, 
-                        new int[4] {540, 552, 563, 551}, 
-                        new int[4] {553, 565, 564, 552}, 
-                        new int[4] {554, 566, 565, 553}, 
-                        new int[4] {555, 567, 566, 554}, 
-                        new int[4] {556, 568, 567, 555}, 
-                        new int[4] {557, 569, 568, 556}, 
-                        new int[4] {558, 570, 569, 557}, 
-                        new int[4] {559, 571, 570, 558}, 
-                        new int[4] {560, 572, 571, 559}, 
-                        new int[4] {561, 573, 572, 560}, 
-                        new int[4] {562, 574, 573, 561}, 
-                        new int[4] {563, 575, 574, 562}, 
-                        new int[4] {552, 564, 575, 563}, 
-                        new int[4] {565, 1, 0, 564}, 
-                        new int[4] {566, 2, 1, 565}, 
-                        new int[4] {567, 3, 2, 566}, 
-                        new int[4] {568, 4, 3, 567}, 
-                        new int[4] {569, 5, 4, 568}, 
-                        new int[4] {570, 6, 5, 569}, 
-                        new int[4] {571, 7, 6, 570}, 
-                        new int[4] {572, 8, 7, 571}, 
-                        new int[4] {573, 9, 8, 572}, 
-                        new int[4] {574, 10, 9, 573}, 
-                        new int[4] {575, 11, 10, 574}, 
+                verticeGroups = new List<int[]>()
+                {
+                        new int[4] {1, 13, 12, 0},
+                        new int[4] {2, 14, 13, 1},
+                        new int[4] {3, 15, 14, 2},
+                        new int[4] {4, 16, 15, 3},
+                        new int[4] {5, 17, 16, 4},
+                        new int[4] {6, 18, 17, 5},
+                        new int[4] {7, 19, 18, 6},
+                        new int[4] {8, 20, 19, 7},
+                        new int[4] {9, 21, 20, 8},
+                        new int[4] {10, 22, 21, 9},
+                        new int[4] {11, 23, 22, 10},
+                        new int[4] {12, 23, 11, 0},
+                        new int[4] {13, 25, 24, 12},
+                        new int[4] {14, 26, 25, 13},
+                        new int[4] {15, 27, 26, 14},
+                        new int[4] {16, 28, 27, 15},
+                        new int[4] {17, 29, 28, 16},
+                        new int[4] {18, 30, 29, 17},
+                        new int[4] {19, 31, 30, 18},
+                        new int[4] {20, 32, 31, 19},
+                        new int[4] {21, 33, 32, 20},
+                        new int[4] {22, 34, 33, 21},
+                        new int[4] {23, 35, 34, 22},
+                        new int[4] {12, 24, 35, 23},
+                        new int[4] {25, 37, 36, 24},
+                        new int[4] {26, 38, 37, 25},
+                        new int[4] {27, 39, 38, 26},
+                        new int[4] {28, 40, 39, 27},
+                        new int[4] {29, 41, 40, 28},
+                        new int[4] {30, 42, 41, 29},
+                        new int[4] {31, 43, 42, 30},
+                        new int[4] {32, 44, 43, 31},
+                        new int[4] {33, 45, 44, 32},
+                        new int[4] {34, 46, 45, 33},
+                        new int[4] {35, 47, 46, 34},
+                        new int[4] {24, 36, 47, 35},
+                        new int[4] {37, 49, 48, 36},
+                        new int[4] {38, 50, 49, 37},
+                        new int[4] {39, 51, 50, 38},
+                        new int[4] {40, 52, 51, 39},
+                        new int[4] {41, 53, 52, 40},
+                        new int[4] {42, 54, 53, 41},
+                        new int[4] {43, 55, 54, 42},
+                        new int[4] {44, 56, 55, 43},
+                        new int[4] {45, 57, 56, 44},
+                        new int[4] {46, 58, 57, 45},
+                        new int[4] {47, 59, 58, 46},
+                        new int[4] {36, 48, 59, 47},
+                        new int[4] {49, 61, 60, 48},
+                        new int[4] {50, 62, 61, 49},
+                        new int[4] {51, 63, 62, 50},
+                        new int[4] {52, 64, 63, 51},
+                        new int[4] {53, 65, 64, 52},
+                        new int[4] {54, 66, 65, 53},
+                        new int[4] {55, 67, 66, 54},
+                        new int[4] {56, 68, 67, 55},
+                        new int[4] {57, 69, 68, 56},
+                        new int[4] {58, 70, 69, 57},
+                        new int[4] {59, 71, 70, 58},
+                        new int[4] {48, 60, 71, 59},
+                        new int[4] {61, 73, 72, 60},
+                        new int[4] {62, 74, 73, 61},
+                        new int[4] {63, 75, 74, 62},
+                        new int[4] {64, 76, 75, 63},
+                        new int[4] {65, 77, 76, 64},
+                        new int[4] {66, 78, 77, 65},
+                        new int[4] {67, 79, 78, 66},
+                        new int[4] {68, 80, 79, 67},
+                        new int[4] {69, 81, 80, 68},
+                        new int[4] {70, 82, 81, 69},
+                        new int[4] {71, 83, 82, 70},
+                        new int[4] {60, 72, 83, 71},
+                        new int[4] {73, 85, 84, 72},
+                        new int[4] {74, 86, 85, 73},
+                        new int[4] {75, 87, 86, 74},
+                        new int[4] {76, 88, 87, 75},
+                        new int[4] {77, 89, 88, 76},
+                        new int[4] {78, 90, 89, 77},
+                        new int[4] {79, 91, 90, 78},
+                        new int[4] {80, 92, 91, 79},
+                        new int[4] {81, 93, 92, 80},
+                        new int[4] {82, 94, 93, 81},
+                        new int[4] {83, 95, 94, 82},
+                        new int[4] {72, 84, 95, 83},
+                        new int[4] {85, 97, 96, 84},
+                        new int[4] {86, 98, 97, 85},
+                        new int[4] {87, 99, 98, 86},
+                        new int[4] {88, 100, 99, 87},
+                        new int[4] {89, 101, 100, 88},
+                        new int[4] {90, 102, 101, 89},
+                        new int[4] {91, 103, 102, 90},
+                        new int[4] {92, 104, 103, 91},
+                        new int[4] {93, 105, 104, 92},
+                        new int[4] {94, 106, 105, 93},
+                        new int[4] {95, 107, 106, 94},
+                        new int[4] {84, 96, 107, 95},
+                        new int[4] {97, 109, 108, 96},
+                        new int[4] {98, 110, 109, 97},
+                        new int[4] {99, 111, 110, 98},
+                        new int[4] {100, 112, 111, 99},
+                        new int[4] {101, 113, 112, 100},
+                        new int[4] {102, 114, 113, 101},
+                        new int[4] {103, 115, 114, 102},
+                        new int[4] {104, 116, 115, 103},
+                        new int[4] {105, 117, 116, 104},
+                        new int[4] {106, 118, 117, 105},
+                        new int[4] {107, 119, 118, 106},
+                        new int[4] {96, 108, 119, 107},
+                        new int[4] {109, 121, 120, 108},
+                        new int[4] {110, 122, 121, 109},
+                        new int[4] {111, 123, 122, 110},
+                        new int[4] {112, 124, 123, 111},
+                        new int[4] {113, 125, 124, 112},
+                        new int[4] {114, 126, 125, 113},
+                        new int[4] {115, 127, 126, 114},
+                        new int[4] {116, 128, 127, 115},
+                        new int[4] {117, 129, 128, 116},
+                        new int[4] {118, 130, 129, 117},
+                        new int[4] {119, 131, 130, 118},
+                        new int[4] {108, 120, 131, 119},
+                        new int[4] {121, 133, 132, 120},
+                        new int[4] {122, 134, 133, 121},
+                        new int[4] {123, 135, 134, 122},
+                        new int[4] {124, 136, 135, 123},
+                        new int[4] {125, 137, 136, 124},
+                        new int[4] {126, 138, 137, 125},
+                        new int[4] {127, 139, 138, 126},
+                        new int[4] {128, 140, 139, 127},
+                        new int[4] {129, 141, 140, 128},
+                        new int[4] {130, 142, 141, 129},
+                        new int[4] {131, 143, 142, 130},
+                        new int[4] {120, 132, 143, 131},
+                        new int[4] {133, 145, 144, 132},
+                        new int[4] {134, 146, 145, 133},
+                        new int[4] {135, 147, 146, 134},
+                        new int[4] {136, 148, 147, 135},
+                        new int[4] {137, 149, 148, 136},
+                        new int[4] {138, 150, 149, 137},
+                        new int[4] {139, 151, 150, 138},
+                        new int[4] {140, 152, 151, 139},
+                        new int[4] {141, 153, 152, 140},
+                        new int[4] {142, 154, 153, 141},
+                        new int[4] {143, 155, 154, 142},
+                        new int[4] {132, 144, 155, 143},
+                        new int[4] {145, 157, 156, 144},
+                        new int[4] {146, 158, 157, 145},
+                        new int[4] {147, 159, 158, 146},
+                        new int[4] {148, 160, 159, 147},
+                        new int[4] {149, 161, 160, 148},
+                        new int[4] {150, 162, 161, 149},
+                        new int[4] {151, 163, 162, 150},
+                        new int[4] {152, 164, 163, 151},
+                        new int[4] {153, 165, 164, 152},
+                        new int[4] {154, 166, 165, 153},
+                        new int[4] {155, 167, 166, 154},
+                        new int[4] {144, 156, 167, 155},
+                        new int[4] {157, 169, 168, 156},
+                        new int[4] {158, 170, 169, 157},
+                        new int[4] {159, 171, 170, 158},
+                        new int[4] {160, 172, 171, 159},
+                        new int[4] {161, 173, 172, 160},
+                        new int[4] {162, 174, 173, 161},
+                        new int[4] {163, 175, 174, 162},
+                        new int[4] {164, 176, 175, 163},
+                        new int[4] {165, 177, 176, 164},
+                        new int[4] {166, 178, 177, 165},
+                        new int[4] {167, 179, 178, 166},
+                        new int[4] {156, 168, 179, 167},
+                        new int[4] {169, 181, 180, 168},
+                        new int[4] {170, 182, 181, 169},
+                        new int[4] {171, 183, 182, 170},
+                        new int[4] {172, 184, 183, 171},
+                        new int[4] {173, 185, 184, 172},
+                        new int[4] {174, 186, 185, 173},
+                        new int[4] {175, 187, 186, 174},
+                        new int[4] {176, 188, 187, 175},
+                        new int[4] {177, 189, 188, 176},
+                        new int[4] {178, 190, 189, 177},
+                        new int[4] {179, 191, 190, 178},
+                        new int[4] {168, 180, 191, 179},
+                        new int[4] {181, 193, 192, 180},
+                        new int[4] {182, 194, 193, 181},
+                        new int[4] {183, 195, 194, 182},
+                        new int[4] {184, 196, 195, 183},
+                        new int[4] {185, 197, 196, 184},
+                        new int[4] {186, 198, 197, 185},
+                        new int[4] {187, 199, 198, 186},
+                        new int[4] {188, 200, 199, 187},
+                        new int[4] {189, 201, 200, 188},
+                        new int[4] {190, 202, 201, 189},
+                        new int[4] {191, 203, 202, 190},
+                        new int[4] {180, 192, 203, 191},
+                        new int[4] {193, 205, 204, 192},
+                        new int[4] {194, 206, 205, 193},
+                        new int[4] {195, 207, 206, 194},
+                        new int[4] {196, 208, 207, 195},
+                        new int[4] {197, 209, 208, 196},
+                        new int[4] {198, 210, 209, 197},
+                        new int[4] {199, 211, 210, 198},
+                        new int[4] {200, 212, 211, 199},
+                        new int[4] {201, 213, 212, 200},
+                        new int[4] {202, 214, 213, 201},
+                        new int[4] {203, 215, 214, 202},
+                        new int[4] {192, 204, 215, 203},
+                        new int[4] {205, 217, 216, 204},
+                        new int[4] {206, 218, 217, 205},
+                        new int[4] {207, 219, 218, 206},
+                        new int[4] {208, 220, 219, 207},
+                        new int[4] {209, 221, 220, 208},
+                        new int[4] {210, 222, 221, 209},
+                        new int[4] {211, 223, 222, 210},
+                        new int[4] {212, 224, 223, 211},
+                        new int[4] {213, 225, 224, 212},
+                        new int[4] {214, 226, 225, 213},
+                        new int[4] {215, 227, 226, 214},
+                        new int[4] {204, 216, 227, 215},
+                        new int[4] {217, 229, 228, 216},
+                        new int[4] {218, 230, 229, 217},
+                        new int[4] {219, 231, 230, 218},
+                        new int[4] {220, 232, 231, 219},
+                        new int[4] {221, 233, 232, 220},
+                        new int[4] {222, 234, 233, 221},
+                        new int[4] {223, 235, 234, 222},
+                        new int[4] {224, 236, 235, 223},
+                        new int[4] {225, 237, 236, 224},
+                        new int[4] {226, 238, 237, 225},
+                        new int[4] {227, 239, 238, 226},
+                        new int[4] {216, 228, 239, 227},
+                        new int[4] {229, 241, 240, 228},
+                        new int[4] {230, 242, 241, 229},
+                        new int[4] {231, 243, 242, 230},
+                        new int[4] {232, 244, 243, 231},
+                        new int[4] {233, 245, 244, 232},
+                        new int[4] {234, 246, 245, 233},
+                        new int[4] {235, 247, 246, 234},
+                        new int[4] {236, 248, 247, 235},
+                        new int[4] {237, 249, 248, 236},
+                        new int[4] {238, 250, 249, 237},
+                        new int[4] {239, 251, 250, 238},
+                        new int[4] {228, 240, 251, 239},
+                        new int[4] {241, 253, 252, 240},
+                        new int[4] {242, 254, 253, 241},
+                        new int[4] {243, 255, 254, 242},
+                        new int[4] {244, 256, 255, 243},
+                        new int[4] {245, 257, 256, 244},
+                        new int[4] {246, 258, 257, 245},
+                        new int[4] {247, 259, 258, 246},
+                        new int[4] {248, 260, 259, 247},
+                        new int[4] {249, 261, 260, 248},
+                        new int[4] {250, 262, 261, 249},
+                        new int[4] {251, 263, 262, 250},
+                        new int[4] {240, 252, 263, 251},
+                        new int[4] {253, 265, 264, 252},
+                        new int[4] {254, 266, 265, 253},
+                        new int[4] {255, 267, 266, 254},
+                        new int[4] {256, 268, 267, 255},
+                        new int[4] {257, 269, 268, 256},
+                        new int[4] {258, 270, 269, 257},
+                        new int[4] {259, 271, 270, 258},
+                        new int[4] {260, 272, 271, 259},
+                        new int[4] {261, 273, 272, 260},
+                        new int[4] {262, 274, 273, 261},
+                        new int[4] {263, 275, 274, 262},
+                        new int[4] {252, 264, 275, 263},
+                        new int[4] {265, 277, 276, 264},
+                        new int[4] {266, 278, 277, 265},
+                        new int[4] {267, 279, 278, 266},
+                        new int[4] {268, 280, 279, 267},
+                        new int[4] {269, 281, 280, 268},
+                        new int[4] {270, 282, 281, 269},
+                        new int[4] {271, 283, 282, 270},
+                        new int[4] {272, 284, 283, 271},
+                        new int[4] {273, 285, 284, 272},
+                        new int[4] {274, 286, 285, 273},
+                        new int[4] {275, 287, 286, 274},
+                        new int[4] {264, 276, 287, 275},
+                        new int[4] {277, 289, 288, 276},
+                        new int[4] {278, 290, 289, 277},
+                        new int[4] {279, 291, 290, 278},
+                        new int[4] {280, 292, 291, 279},
+                        new int[4] {281, 293, 292, 280},
+                        new int[4] {282, 294, 293, 281},
+                        new int[4] {283, 295, 294, 282},
+                        new int[4] {284, 296, 295, 283},
+                        new int[4] {285, 297, 296, 284},
+                        new int[4] {286, 298, 297, 285},
+                        new int[4] {287, 299, 298, 286},
+                        new int[4] {276, 288, 299, 287},
+                        new int[4] {289, 301, 300, 288},
+                        new int[4] {290, 302, 301, 289},
+                        new int[4] {291, 303, 302, 290},
+                        new int[4] {292, 304, 303, 291},
+                        new int[4] {293, 305, 304, 292},
+                        new int[4] {294, 306, 305, 293},
+                        new int[4] {295, 307, 306, 294},
+                        new int[4] {296, 308, 307, 295},
+                        new int[4] {297, 309, 308, 296},
+                        new int[4] {298, 310, 309, 297},
+                        new int[4] {299, 311, 310, 298},
+                        new int[4] {288, 300, 311, 299},
+                        new int[4] {301, 313, 312, 300},
+                        new int[4] {302, 314, 313, 301},
+                        new int[4] {303, 315, 314, 302},
+                        new int[4] {304, 316, 315, 303},
+                        new int[4] {305, 317, 316, 304},
+                        new int[4] {306, 318, 317, 305},
+                        new int[4] {307, 319, 318, 306},
+                        new int[4] {308, 320, 319, 307},
+                        new int[4] {309, 321, 320, 308},
+                        new int[4] {310, 322, 321, 309},
+                        new int[4] {311, 323, 322, 310},
+                        new int[4] {300, 312, 323, 311},
+                        new int[4] {313, 325, 324, 312},
+                        new int[4] {314, 326, 325, 313},
+                        new int[4] {315, 327, 326, 314},
+                        new int[4] {316, 328, 327, 315},
+                        new int[4] {317, 329, 328, 316},
+                        new int[4] {318, 330, 329, 317},
+                        new int[4] {319, 331, 330, 318},
+                        new int[4] {320, 332, 331, 319},
+                        new int[4] {321, 333, 332, 320},
+                        new int[4] {322, 334, 333, 321},
+                        new int[4] {323, 335, 334, 322},
+                        new int[4] {312, 324, 335, 323},
+                        new int[4] {325, 337, 336, 324},
+                        new int[4] {326, 338, 337, 325},
+                        new int[4] {327, 339, 338, 326},
+                        new int[4] {328, 340, 339, 327},
+                        new int[4] {329, 341, 340, 328},
+                        new int[4] {330, 342, 341, 329},
+                        new int[4] {331, 343, 342, 330},
+                        new int[4] {332, 344, 343, 331},
+                        new int[4] {333, 345, 344, 332},
+                        new int[4] {334, 346, 345, 333},
+                        new int[4] {335, 347, 346, 334},
+                        new int[4] {324, 336, 347, 335},
+                        new int[4] {337, 349, 348, 336},
+                        new int[4] {338, 350, 349, 337},
+                        new int[4] {339, 351, 350, 338},
+                        new int[4] {340, 352, 351, 339},
+                        new int[4] {341, 353, 352, 340},
+                        new int[4] {342, 354, 353, 341},
+                        new int[4] {343, 355, 354, 342},
+                        new int[4] {344, 356, 355, 343},
+                        new int[4] {345, 357, 356, 344},
+                        new int[4] {346, 358, 357, 345},
+                        new int[4] {347, 359, 358, 346},
+                        new int[4] {336, 348, 359, 347},
+                        new int[4] {349, 361, 360, 348},
+                        new int[4] {350, 362, 361, 349},
+                        new int[4] {351, 363, 362, 350},
+                        new int[4] {352, 364, 363, 351},
+                        new int[4] {353, 365, 364, 352},
+                        new int[4] {354, 366, 365, 353},
+                        new int[4] {355, 367, 366, 354},
+                        new int[4] {356, 368, 367, 355},
+                        new int[4] {357, 369, 368, 356},
+                        new int[4] {358, 370, 369, 357},
+                        new int[4] {359, 371, 370, 358},
+                        new int[4] {348, 360, 371, 359},
+                        new int[4] {361, 373, 372, 360},
+                        new int[4] {362, 374, 373, 361},
+                        new int[4] {363, 375, 374, 362},
+                        new int[4] {364, 376, 375, 363},
+                        new int[4] {365, 377, 376, 364},
+                        new int[4] {366, 378, 377, 365},
+                        new int[4] {367, 379, 378, 366},
+                        new int[4] {368, 380, 379, 367},
+                        new int[4] {369, 381, 380, 368},
+                        new int[4] {370, 382, 381, 369},
+                        new int[4] {371, 383, 382, 370},
+                        new int[4] {360, 372, 383, 371},
+                        new int[4] {373, 385, 384, 372},
+                        new int[4] {374, 386, 385, 373},
+                        new int[4] {375, 387, 386, 374},
+                        new int[4] {376, 388, 387, 375},
+                        new int[4] {377, 389, 388, 376},
+                        new int[4] {378, 390, 389, 377},
+                        new int[4] {379, 391, 390, 378},
+                        new int[4] {380, 392, 391, 379},
+                        new int[4] {381, 393, 392, 380},
+                        new int[4] {382, 394, 393, 381},
+                        new int[4] {383, 395, 394, 382},
+                        new int[4] {372, 384, 395, 383},
+                        new int[4] {385, 397, 396, 384},
+                        new int[4] {386, 398, 397, 385},
+                        new int[4] {387, 399, 398, 386},
+                        new int[4] {388, 400, 399, 387},
+                        new int[4] {389, 401, 400, 388},
+                        new int[4] {390, 402, 401, 389},
+                        new int[4] {391, 403, 402, 390},
+                        new int[4] {392, 404, 403, 391},
+                        new int[4] {393, 405, 404, 392},
+                        new int[4] {394, 406, 405, 393},
+                        new int[4] {395, 407, 406, 394},
+                        new int[4] {384, 396, 407, 395},
+                        new int[4] {397, 409, 408, 396},
+                        new int[4] {398, 410, 409, 397},
+                        new int[4] {399, 411, 410, 398},
+                        new int[4] {400, 412, 411, 399},
+                        new int[4] {401, 413, 412, 400},
+                        new int[4] {402, 414, 413, 401},
+                        new int[4] {403, 415, 414, 402},
+                        new int[4] {404, 416, 415, 403},
+                        new int[4] {405, 417, 416, 404},
+                        new int[4] {406, 418, 417, 405},
+                        new int[4] {407, 419, 418, 406},
+                        new int[4] {396, 408, 419, 407},
+                        new int[4] {409, 421, 420, 408},
+                        new int[4] {410, 422, 421, 409},
+                        new int[4] {411, 423, 422, 410},
+                        new int[4] {412, 424, 423, 411},
+                        new int[4] {413, 425, 424, 412},
+                        new int[4] {414, 426, 425, 413},
+                        new int[4] {415, 427, 426, 414},
+                        new int[4] {416, 428, 427, 415},
+                        new int[4] {417, 429, 428, 416},
+                        new int[4] {418, 430, 429, 417},
+                        new int[4] {419, 431, 430, 418},
+                        new int[4] {408, 420, 431, 419},
+                        new int[4] {421, 433, 432, 420},
+                        new int[4] {422, 434, 433, 421},
+                        new int[4] {423, 435, 434, 422},
+                        new int[4] {424, 436, 435, 423},
+                        new int[4] {425, 437, 436, 424},
+                        new int[4] {426, 438, 437, 425},
+                        new int[4] {427, 439, 438, 426},
+                        new int[4] {428, 440, 439, 427},
+                        new int[4] {429, 441, 440, 428},
+                        new int[4] {430, 442, 441, 429},
+                        new int[4] {431, 443, 442, 430},
+                        new int[4] {420, 432, 443, 431},
+                        new int[4] {433, 445, 444, 432},
+                        new int[4] {434, 446, 445, 433},
+                        new int[4] {435, 447, 446, 434},
+                        new int[4] {436, 448, 447, 435},
+                        new int[4] {437, 449, 448, 436},
+                        new int[4] {438, 450, 449, 437},
+                        new int[4] {439, 451, 450, 438},
+                        new int[4] {440, 452, 451, 439},
+                        new int[4] {441, 453, 452, 440},
+                        new int[4] {442, 454, 453, 441},
+                        new int[4] {443, 455, 454, 442},
+                        new int[4] {432, 444, 455, 443},
+                        new int[4] {445, 457, 456, 444},
+                        new int[4] {446, 458, 457, 445},
+                        new int[4] {447, 459, 458, 446},
+                        new int[4] {448, 460, 459, 447},
+                        new int[4] {449, 461, 460, 448},
+                        new int[4] {450, 462, 461, 449},
+                        new int[4] {451, 463, 462, 450},
+                        new int[4] {452, 464, 463, 451},
+                        new int[4] {453, 465, 464, 452},
+                        new int[4] {454, 466, 465, 453},
+                        new int[4] {455, 467, 466, 454},
+                        new int[4] {444, 456, 467, 455},
+                        new int[4] {457, 469, 468, 456},
+                        new int[4] {458, 470, 469, 457},
+                        new int[4] {459, 471, 470, 458},
+                        new int[4] {460, 472, 471, 459},
+                        new int[4] {461, 473, 472, 460},
+                        new int[4] {462, 474, 473, 461},
+                        new int[4] {463, 475, 474, 462},
+                        new int[4] {464, 476, 475, 463},
+                        new int[4] {465, 477, 476, 464},
+                        new int[4] {466, 478, 477, 465},
+                        new int[4] {467, 479, 478, 466},
+                        new int[4] {456, 468, 479, 467},
+                        new int[4] {469, 481, 480, 468},
+                        new int[4] {470, 482, 481, 469},
+                        new int[4] {471, 483, 482, 470},
+                        new int[4] {472, 484, 483, 471},
+                        new int[4] {473, 485, 484, 472},
+                        new int[4] {474, 486, 485, 473},
+                        new int[4] {475, 487, 486, 474},
+                        new int[4] {476, 488, 487, 475},
+                        new int[4] {477, 489, 488, 476},
+                        new int[4] {478, 490, 489, 477},
+                        new int[4] {479, 491, 490, 478},
+                        new int[4] {468, 480, 491, 479},
+                        new int[4] {481, 493, 492, 480},
+                        new int[4] {482, 494, 493, 481},
+                        new int[4] {483, 495, 494, 482},
+                        new int[4] {484, 496, 495, 483},
+                        new int[4] {485, 497, 496, 484},
+                        new int[4] {486, 498, 497, 485},
+                        new int[4] {487, 499, 498, 486},
+                        new int[4] {488, 500, 499, 487},
+                        new int[4] {489, 501, 500, 488},
+                        new int[4] {490, 502, 501, 489},
+                        new int[4] {491, 503, 502, 490},
+                        new int[4] {480, 492, 503, 491},
+                        new int[4] {493, 505, 504, 492},
+                        new int[4] {494, 506, 505, 493},
+                        new int[4] {495, 507, 506, 494},
+                        new int[4] {496, 508, 507, 495},
+                        new int[4] {497, 509, 508, 496},
+                        new int[4] {498, 510, 509, 497},
+                        new int[4] {499, 511, 510, 498},
+                        new int[4] {500, 512, 511, 499},
+                        new int[4] {501, 513, 512, 500},
+                        new int[4] {502, 514, 513, 501},
+                        new int[4] {503, 515, 514, 502},
+                        new int[4] {492, 504, 515, 503},
+                        new int[4] {505, 517, 516, 504},
+                        new int[4] {506, 518, 517, 505},
+                        new int[4] {507, 519, 518, 506},
+                        new int[4] {508, 520, 519, 507},
+                        new int[4] {509, 521, 520, 508},
+                        new int[4] {510, 522, 521, 509},
+                        new int[4] {511, 523, 522, 510},
+                        new int[4] {512, 524, 523, 511},
+                        new int[4] {513, 525, 524, 512},
+                        new int[4] {514, 526, 525, 513},
+                        new int[4] {515, 527, 526, 514},
+                        new int[4] {504, 516, 527, 515},
+                        new int[4] {517, 529, 528, 516},
+                        new int[4] {518, 530, 529, 517},
+                        new int[4] {519, 531, 530, 518},
+                        new int[4] {520, 532, 531, 519},
+                        new int[4] {521, 533, 532, 520},
+                        new int[4] {522, 534, 533, 521},
+                        new int[4] {523, 535, 534, 522},
+                        new int[4] {524, 536, 535, 523},
+                        new int[4] {525, 537, 536, 524},
+                        new int[4] {526, 538, 537, 525},
+                        new int[4] {527, 539, 538, 526},
+                        new int[4] {516, 528, 539, 527},
+                        new int[4] {529, 541, 540, 528},
+                        new int[4] {530, 542, 541, 529},
+                        new int[4] {531, 543, 542, 530},
+                        new int[4] {532, 544, 543, 531},
+                        new int[4] {533, 545, 544, 532},
+                        new int[4] {534, 546, 545, 533},
+                        new int[4] {535, 547, 546, 534},
+                        new int[4] {536, 548, 547, 535},
+                        new int[4] {537, 549, 548, 536},
+                        new int[4] {538, 550, 549, 537},
+                        new int[4] {539, 551, 550, 538},
+                        new int[4] {528, 540, 551, 539},
+                        new int[4] {541, 553, 552, 540},
+                        new int[4] {542, 554, 553, 541},
+                        new int[4] {543, 555, 554, 542},
+                        new int[4] {544, 556, 555, 543},
+                        new int[4] {545, 557, 556, 544},
+                        new int[4] {546, 558, 557, 545},
+                        new int[4] {547, 559, 558, 546},
+                        new int[4] {548, 560, 559, 547},
+                        new int[4] {549, 561, 560, 548},
+                        new int[4] {550, 562, 561, 549},
+                        new int[4] {551, 563, 562, 550},
+                        new int[4] {540, 552, 563, 551},
+                        new int[4] {553, 565, 564, 552},
+                        new int[4] {554, 566, 565, 553},
+                        new int[4] {555, 567, 566, 554},
+                        new int[4] {556, 568, 567, 555},
+                        new int[4] {557, 569, 568, 556},
+                        new int[4] {558, 570, 569, 557},
+                        new int[4] {559, 571, 570, 558},
+                        new int[4] {560, 572, 571, 559},
+                        new int[4] {561, 573, 572, 560},
+                        new int[4] {562, 574, 573, 561},
+                        new int[4] {563, 575, 574, 562},
+                        new int[4] {552, 564, 575, 563},
+                        new int[4] {565, 1, 0, 564},
+                        new int[4] {566, 2, 1, 565},
+                        new int[4] {567, 3, 2, 566},
+                        new int[4] {568, 4, 3, 567},
+                        new int[4] {569, 5, 4, 568},
+                        new int[4] {570, 6, 5, 569},
+                        new int[4] {571, 7, 6, 570},
+                        new int[4] {572, 8, 7, 571},
+                        new int[4] {573, 9, 8, 572},
+                        new int[4] {574, 10, 9, 573},
+                        new int[4] {575, 11, 10, 574},
                         new int[4] {564, 0, 11, 575}
                     },
-                    modifiedVertices = new List<Vector3D>(),
+                modifiedVertices = new List<Vector3D>(),
 
-                    normals = new List<Vector3D>()
-                    {
+                normals = new List<Vector3D>()
+                {
                         new Vector3D( 0.963996f,  0.063183f,  0.258302f),
                         new Vector3D( 0.706349f,  0.046296f,  0.706349f),
                         new Vector3D( 0.258782f,  0.016961f,  0.965787f),
@@ -4000,1030 +3997,1014 @@ namespace DemoApplication
                         new Vector3D( 0.706349f, -0.046296f, -0.706349f),
                         new Vector3D( 0.963996f, -0.063183f, -0.258302f)
                     },
-                    normalGroups = new List<int[]>()
-                    {
-                        new int[4] {0, 0, 0, 0}, 
-                        new int[4] {1, 1, 1, 1}, 
-                        new int[4] {2, 2, 2, 2}, 
-                        new int[4] {3, 3, 3, 3}, 
-                        new int[4] {4, 4, 4, 4}, 
-                        new int[4] {5, 5, 5, 5}, 
-                        new int[4] {6, 6, 6, 6}, 
-                        new int[4] {7, 7, 7, 7}, 
-                        new int[4] {8, 8, 8, 8}, 
-                        new int[4] {9, 9, 9, 9}, 
-                        new int[4] {10, 10, 10, 10}, 
-                        new int[4] {11, 11, 11, 11}, 
-                        new int[4] {12, 12, 12, 12}, 
-                        new int[4] {13, 13, 13, 13}, 
-                        new int[4] {14, 14, 14, 14}, 
-                        new int[4] {15, 15, 15, 15}, 
-                        new int[4] {16, 16, 16, 16}, 
-                        new int[4] {17, 17, 17, 17}, 
-                        new int[4] {18, 18, 18, 18}, 
-                        new int[4] {19, 19, 19, 19}, 
-                        new int[4] {20, 20, 20, 20}, 
-                        new int[4] {21, 21, 21, 21}, 
-                        new int[4] {22, 22, 22, 22}, 
-                        new int[4] {23, 23, 23, 23}, 
-                        new int[4] {24, 24, 24, 24}, 
-                        new int[4] {25, 25, 25, 25}, 
-                        new int[4] {26, 26, 26, 26}, 
-                        new int[4] {27, 27, 27, 27}, 
-                        new int[4] {28, 28, 28, 28}, 
-                        new int[4] {29, 29, 29, 29}, 
-                        new int[4] {30, 30, 30, 30}, 
-                        new int[4] {31, 31, 31, 31}, 
-                        new int[4] {32, 32, 32, 32}, 
-                        new int[4] {33, 33, 33, 33}, 
-                        new int[4] {34, 34, 34, 34}, 
-                        new int[4] {35, 35, 35, 35}, 
-                        new int[4] {36, 36, 36, 36}, 
-                        new int[4] {37, 37, 37, 37}, 
-                        new int[4] {38, 38, 38, 38}, 
-                        new int[4] {39, 39, 39, 39}, 
-                        new int[4] {40, 40, 40, 40}, 
-                        new int[4] {41, 41, 41, 41}, 
-                        new int[4] {42, 42, 42, 42}, 
-                        new int[4] {43, 43, 43, 43}, 
-                        new int[4] {44, 44, 44, 44}, 
-                        new int[4] {45, 45, 45, 45}, 
-                        new int[4] {46, 46, 46, 46}, 
-                        new int[4] {47, 47, 47, 47}, 
-                        new int[4] {48, 48, 48, 48}, 
-                        new int[4] {49, 49, 49, 49}, 
-                        new int[4] {50, 50, 50, 50}, 
-                        new int[4] {51, 51, 51, 51}, 
-                        new int[4] {52, 52, 52, 52}, 
-                        new int[4] {53, 53, 53, 53}, 
-                        new int[4] {54, 54, 54, 54}, 
-                        new int[4] {55, 55, 55, 55}, 
-                        new int[4] {56, 56, 56, 56}, 
-                        new int[4] {57, 57, 57, 57}, 
-                        new int[4] {58, 58, 58, 58}, 
-                        new int[4] {59, 59, 59, 59}, 
-                        new int[4] {60, 60, 60, 60}, 
-                        new int[4] {61, 61, 61, 61}, 
-                        new int[4] {62, 62, 62, 62}, 
-                        new int[4] {63, 63, 63, 63}, 
-                        new int[4] {64, 64, 64, 64}, 
-                        new int[4] {65, 65, 65, 65}, 
-                        new int[4] {66, 66, 66, 66}, 
-                        new int[4] {67, 67, 67, 67}, 
-                        new int[4] {68, 68, 68, 68}, 
-                        new int[4] {69, 69, 69, 69}, 
-                        new int[4] {70, 70, 70, 70}, 
-                        new int[4] {71, 71, 71, 71}, 
-                        new int[4] {72, 72, 72, 72}, 
-                        new int[4] {73, 73, 73, 73}, 
-                        new int[4] {74, 74, 74, 74}, 
-                        new int[4] {75, 75, 75, 75}, 
-                        new int[4] {76, 76, 76, 76}, 
-                        new int[4] {77, 77, 77, 77}, 
-                        new int[4] {78, 78, 78, 78}, 
-                        new int[4] {79, 79, 79, 79}, 
-                        new int[4] {80, 80, 80, 80}, 
-                        new int[4] {81, 81, 81, 81}, 
-                        new int[4] {82, 82, 82, 82}, 
-                        new int[4] {83, 83, 83, 83}, 
-                        new int[4] {84, 84, 84, 84}, 
-                        new int[4] {85, 85, 85, 85}, 
-                        new int[4] {86, 86, 86, 86}, 
-                        new int[4] {87, 87, 87, 87}, 
-                        new int[4] {88, 88, 88, 88}, 
-                        new int[4] {89, 89, 89, 89}, 
-                        new int[4] {90, 90, 90, 90}, 
-                        new int[4] {91, 91, 91, 91}, 
-                        new int[4] {92, 92, 92, 92}, 
-                        new int[4] {93, 93, 93, 93}, 
-                        new int[4] {94, 94, 94, 94}, 
-                        new int[4] {95, 95, 95, 95}, 
-                        new int[4] {96, 96, 96, 96}, 
-                        new int[4] {97, 97, 97, 97}, 
-                        new int[4] {98, 98, 98, 98}, 
-                        new int[4] {99, 99, 99, 99}, 
-                        new int[4] {100, 100, 100, 100}, 
-                        new int[4] {101, 101, 101, 101}, 
-                        new int[4] {102, 102, 102, 102}, 
-                        new int[4] {103, 103, 103, 103}, 
-                        new int[4] {104, 104, 104, 104}, 
-                        new int[4] {105, 105, 105, 105}, 
-                        new int[4] {106, 106, 106, 106}, 
-                        new int[4] {107, 107, 107, 107}, 
-                        new int[4] {108, 108, 108, 108}, 
-                        new int[4] {109, 109, 109, 109}, 
-                        new int[4] {110, 110, 110, 110}, 
-                        new int[4] {111, 111, 111, 111}, 
-                        new int[4] {112, 112, 112, 112}, 
-                        new int[4] {113, 113, 113, 113}, 
-                        new int[4] {114, 114, 114, 114}, 
-                        new int[4] {115, 115, 115, 115}, 
-                        new int[4] {116, 116, 116, 116}, 
-                        new int[4] {117, 117, 117, 117}, 
-                        new int[4] {118, 118, 118, 118}, 
-                        new int[4] {119, 119, 119, 119}, 
-                        new int[4] {120, 120, 120, 120}, 
-                        new int[4] {121, 121, 121, 121}, 
-                        new int[4] {122, 122, 122, 122}, 
-                        new int[4] {123, 123, 123, 123}, 
-                        new int[4] {124, 124, 124, 124}, 
-                        new int[4] {125, 125, 125, 125}, 
-                        new int[4] {126, 126, 126, 126}, 
-                        new int[4] {127, 127, 127, 127}, 
-                        new int[4] {128, 128, 128, 128}, 
-                        new int[4] {129, 129, 129, 129}, 
-                        new int[4] {130, 130, 130, 130}, 
-                        new int[4] {131, 131, 131, 131}, 
-                        new int[4] {132, 132, 132, 132}, 
-                        new int[4] {133, 133, 133, 133}, 
-                        new int[4] {134, 134, 134, 134}, 
-                        new int[4] {135, 135, 135, 135}, 
-                        new int[4] {136, 136, 136, 136}, 
-                        new int[4] {137, 137, 137, 137}, 
-                        new int[4] {138, 138, 138, 138}, 
-                        new int[4] {139, 139, 139, 139}, 
-                        new int[4] {140, 140, 140, 140}, 
-                        new int[4] {141, 141, 141, 141}, 
-                        new int[4] {142, 142, 142, 142}, 
-                        new int[4] {143, 143, 143, 143}, 
-                        new int[4] {144, 144, 144, 144}, 
-                        new int[4] {145, 145, 145, 145}, 
-                        new int[4] {146, 146, 146, 146}, 
-                        new int[4] {147, 147, 147, 147}, 
-                        new int[4] {148, 148, 148, 148}, 
-                        new int[4] {149, 149, 149, 149}, 
-                        new int[4] {150, 150, 150, 150}, 
-                        new int[4] {151, 151, 151, 151}, 
-                        new int[4] {152, 152, 152, 152}, 
-                        new int[4] {153, 153, 153, 153}, 
-                        new int[4] {154, 154, 154, 154}, 
-                        new int[4] {155, 155, 155, 155}, 
-                        new int[4] {156, 156, 156, 156}, 
-                        new int[4] {157, 157, 157, 157}, 
-                        new int[4] {158, 158, 158, 158}, 
-                        new int[4] {159, 159, 159, 159}, 
-                        new int[4] {160, 160, 160, 160}, 
-                        new int[4] {161, 161, 161, 161}, 
-                        new int[4] {162, 162, 162, 162}, 
-                        new int[4] {163, 163, 163, 163}, 
-                        new int[4] {164, 164, 164, 164}, 
-                        new int[4] {165, 165, 165, 165}, 
-                        new int[4] {166, 166, 166, 166}, 
-                        new int[4] {167, 167, 167, 167}, 
-                        new int[4] {168, 168, 168, 168}, 
-                        new int[4] {169, 169, 169, 169}, 
-                        new int[4] {170, 170, 170, 170}, 
-                        new int[4] {171, 171, 171, 171}, 
-                        new int[4] {172, 172, 172, 172}, 
-                        new int[4] {173, 173, 173, 173}, 
-                        new int[4] {174, 174, 174, 174}, 
-                        new int[4] {175, 175, 175, 175}, 
-                        new int[4] {176, 176, 176, 176}, 
-                        new int[4] {177, 177, 177, 177}, 
-                        new int[4] {178, 178, 178, 178}, 
-                        new int[4] {179, 179, 179, 179}, 
-                        new int[4] {180, 180, 180, 180}, 
-                        new int[4] {181, 181, 181, 181}, 
-                        new int[4] {182, 182, 182, 182}, 
-                        new int[4] {183, 183, 183, 183}, 
-                        new int[4] {184, 184, 184, 184}, 
-                        new int[4] {185, 185, 185, 185}, 
-                        new int[4] {186, 186, 186, 186}, 
-                        new int[4] {187, 187, 187, 187}, 
-                        new int[4] {188, 188, 188, 188}, 
-                        new int[4] {189, 189, 189, 189}, 
-                        new int[4] {190, 190, 190, 190}, 
-                        new int[4] {191, 191, 191, 191}, 
-                        new int[4] {192, 192, 192, 192}, 
-                        new int[4] {193, 193, 193, 193}, 
-                        new int[4] {194, 194, 194, 194}, 
-                        new int[4] {195, 195, 195, 195}, 
-                        new int[4] {196, 196, 196, 196}, 
-                        new int[4] {197, 197, 197, 197}, 
-                        new int[4] {198, 198, 198, 198}, 
-                        new int[4] {199, 199, 199, 199}, 
-                        new int[4] {200, 200, 200, 200}, 
-                        new int[4] {201, 201, 201, 201}, 
-                        new int[4] {202, 202, 202, 202}, 
-                        new int[4] {203, 203, 203, 203}, 
-                        new int[4] {204, 204, 204, 204}, 
-                        new int[4] {205, 205, 205, 205}, 
-                        new int[4] {206, 206, 206, 206}, 
-                        new int[4] {207, 207, 207, 207}, 
-                        new int[4] {208, 208, 208, 208}, 
-                        new int[4] {209, 209, 209, 209}, 
-                        new int[4] {210, 210, 210, 210}, 
-                        new int[4] {211, 211, 211, 211}, 
-                        new int[4] {212, 212, 212, 212}, 
-                        new int[4] {213, 213, 213, 213}, 
-                        new int[4] {214, 214, 214, 214}, 
-                        new int[4] {215, 215, 215, 215}, 
-                        new int[4] {216, 216, 216, 216}, 
-                        new int[4] {217, 217, 217, 217}, 
-                        new int[4] {218, 218, 218, 218}, 
-                        new int[4] {219, 219, 219, 219}, 
-                        new int[4] {220, 220, 220, 220}, 
-                        new int[4] {221, 221, 221, 221}, 
-                        new int[4] {222, 222, 222, 222}, 
-                        new int[4] {223, 223, 223, 223}, 
-                        new int[4] {224, 224, 224, 224}, 
-                        new int[4] {225, 225, 225, 225}, 
-                        new int[4] {226, 226, 226, 226}, 
-                        new int[4] {227, 227, 227, 227}, 
-                        new int[4] {228, 228, 228, 228}, 
-                        new int[4] {229, 229, 229, 229}, 
-                        new int[4] {230, 230, 230, 230}, 
-                        new int[4] {231, 231, 231, 231}, 
-                        new int[4] {232, 232, 232, 232}, 
-                        new int[4] {233, 233, 233, 233}, 
-                        new int[4] {234, 234, 234, 234}, 
-                        new int[4] {235, 235, 235, 235}, 
-                        new int[4] {236, 236, 236, 236}, 
-                        new int[4] {237, 237, 237, 237}, 
-                        new int[4] {238, 238, 238, 238}, 
-                        new int[4] {239, 239, 239, 239}, 
-                        new int[4] {240, 240, 240, 240}, 
-                        new int[4] {241, 241, 241, 241}, 
-                        new int[4] {242, 242, 242, 242}, 
-                        new int[4] {243, 243, 243, 243}, 
-                        new int[4] {244, 244, 244, 244}, 
-                        new int[4] {245, 245, 245, 245}, 
-                        new int[4] {246, 246, 246, 246}, 
-                        new int[4] {247, 247, 247, 247}, 
-                        new int[4] {248, 248, 248, 248}, 
-                        new int[4] {249, 249, 249, 249}, 
-                        new int[4] {250, 250, 250, 250}, 
-                        new int[4] {251, 251, 251, 251}, 
-                        new int[4] {252, 252, 252, 252}, 
-                        new int[4] {253, 253, 253, 253}, 
-                        new int[4] {254, 254, 254, 254}, 
-                        new int[4] {255, 255, 255, 255}, 
-                        new int[4] {256, 256, 256, 256}, 
-                        new int[4] {257, 257, 257, 257}, 
-                        new int[4] {258, 258, 258, 258}, 
-                        new int[4] {259, 259, 259, 259}, 
-                        new int[4] {260, 260, 260, 260}, 
-                        new int[4] {261, 261, 261, 261}, 
-                        new int[4] {262, 262, 262, 262}, 
-                        new int[4] {263, 263, 263, 263}, 
-                        new int[4] {264, 264, 264, 264}, 
-                        new int[4] {265, 265, 265, 265}, 
-                        new int[4] {266, 266, 266, 266}, 
-                        new int[4] {267, 267, 267, 267}, 
-                        new int[4] {268, 268, 268, 268}, 
-                        new int[4] {269, 269, 269, 269}, 
-                        new int[4] {270, 270, 270, 270}, 
-                        new int[4] {271, 271, 271, 271}, 
-                        new int[4] {272, 272, 272, 272}, 
-                        new int[4] {273, 273, 273, 273}, 
-                        new int[4] {274, 274, 274, 274}, 
-                        new int[4] {275, 275, 275, 275}, 
-                        new int[4] {276, 276, 276, 276}, 
-                        new int[4] {277, 277, 277, 277}, 
-                        new int[4] {278, 278, 278, 278}, 
-                        new int[4] {279, 279, 279, 279}, 
-                        new int[4] {280, 280, 280, 280}, 
-                        new int[4] {281, 281, 281, 281}, 
-                        new int[4] {282, 282, 282, 282}, 
-                        new int[4] {283, 283, 283, 283}, 
-                        new int[4] {284, 284, 284, 284}, 
-                        new int[4] {285, 285, 285, 285}, 
-                        new int[4] {286, 286, 286, 286}, 
-                        new int[4] {287, 287, 287, 287}, 
-                        new int[4] {288, 288, 288, 288}, 
-                        new int[4] {289, 289, 289, 289}, 
-                        new int[4] {290, 290, 290, 290}, 
-                        new int[4] {291, 291, 291, 291}, 
-                        new int[4] {292, 292, 292, 292}, 
-                        new int[4] {293, 293, 293, 293}, 
-                        new int[4] {294, 294, 294, 294}, 
-                        new int[4] {295, 295, 295, 295}, 
-                        new int[4] {296, 296, 296, 296}, 
-                        new int[4] {297, 297, 297, 297}, 
-                        new int[4] {298, 298, 298, 298}, 
-                        new int[4] {299, 299, 299, 299}, 
-                        new int[4] {300, 300, 300, 300}, 
-                        new int[4] {301, 301, 301, 301}, 
-                        new int[4] {302, 302, 302, 302}, 
-                        new int[4] {303, 303, 303, 303}, 
-                        new int[4] {304, 304, 304, 304}, 
-                        new int[4] {305, 305, 305, 305}, 
-                        new int[4] {306, 306, 306, 306}, 
-                        new int[4] {307, 307, 307, 307}, 
-                        new int[4] {308, 308, 308, 308}, 
-                        new int[4] {309, 309, 309, 309}, 
-                        new int[4] {310, 310, 310, 310}, 
-                        new int[4] {311, 311, 311, 311}, 
-                        new int[4] {312, 312, 312, 312}, 
-                        new int[4] {313, 313, 313, 313}, 
-                        new int[4] {314, 314, 314, 314}, 
-                        new int[4] {315, 315, 315, 315}, 
-                        new int[4] {316, 316, 316, 316}, 
-                        new int[4] {317, 317, 317, 317}, 
-                        new int[4] {318, 318, 318, 318}, 
-                        new int[4] {319, 319, 319, 319}, 
-                        new int[4] {320, 320, 320, 320}, 
-                        new int[4] {321, 321, 321, 321}, 
-                        new int[4] {322, 322, 322, 322}, 
-                        new int[4] {323, 323, 323, 323}, 
-                        new int[4] {324, 324, 324, 324}, 
-                        new int[4] {325, 325, 325, 325}, 
-                        new int[4] {326, 326, 326, 326}, 
-                        new int[4] {327, 327, 327, 327}, 
-                        new int[4] {328, 328, 328, 328}, 
-                        new int[4] {329, 329, 329, 329}, 
-                        new int[4] {330, 330, 330, 330}, 
-                        new int[4] {331, 331, 331, 331}, 
-                        new int[4] {332, 332, 332, 332}, 
-                        new int[4] {333, 333, 333, 333}, 
-                        new int[4] {334, 334, 334, 334}, 
-                        new int[4] {335, 335, 335, 335}, 
-                        new int[4] {336, 336, 336, 336}, 
-                        new int[4] {337, 337, 337, 337}, 
-                        new int[4] {338, 338, 338, 338}, 
-                        new int[4] {339, 339, 339, 339}, 
-                        new int[4] {340, 340, 340, 340}, 
-                        new int[4] {341, 341, 341, 341}, 
-                        new int[4] {342, 342, 342, 342}, 
-                        new int[4] {343, 343, 343, 343}, 
-                        new int[4] {344, 344, 344, 344}, 
-                        new int[4] {345, 345, 345, 345}, 
-                        new int[4] {346, 346, 346, 346}, 
-                        new int[4] {347, 347, 347, 347}, 
-                        new int[4] {348, 348, 348, 348}, 
-                        new int[4] {349, 349, 349, 349}, 
-                        new int[4] {350, 350, 350, 350}, 
-                        new int[4] {351, 351, 351, 351}, 
-                        new int[4] {352, 352, 352, 352}, 
-                        new int[4] {353, 353, 353, 353}, 
-                        new int[4] {354, 354, 354, 354}, 
-                        new int[4] {355, 355, 355, 355}, 
-                        new int[4] {356, 356, 356, 356}, 
-                        new int[4] {357, 357, 357, 357}, 
-                        new int[4] {358, 358, 358, 358}, 
-                        new int[4] {359, 359, 359, 359}, 
-                        new int[4] {360, 360, 360, 360}, 
-                        new int[4] {361, 361, 361, 361}, 
-                        new int[4] {362, 362, 362, 362}, 
-                        new int[4] {363, 363, 363, 363}, 
-                        new int[4] {364, 364, 364, 364}, 
-                        new int[4] {365, 365, 365, 365}, 
-                        new int[4] {366, 366, 366, 366}, 
-                        new int[4] {367, 367, 367, 367}, 
-                        new int[4] {368, 368, 368, 368}, 
-                        new int[4] {369, 369, 369, 369}, 
-                        new int[4] {370, 370, 370, 370}, 
-                        new int[4] {371, 371, 371, 371}, 
-                        new int[4] {372, 372, 372, 372}, 
-                        new int[4] {373, 373, 373, 373}, 
-                        new int[4] {374, 374, 374, 374}, 
-                        new int[4] {375, 375, 375, 375}, 
-                        new int[4] {376, 376, 376, 376}, 
-                        new int[4] {377, 377, 377, 377}, 
-                        new int[4] {378, 378, 378, 378}, 
-                        new int[4] {379, 379, 379, 379}, 
-                        new int[4] {380, 380, 380, 380}, 
-                        new int[4] {381, 381, 381, 381}, 
-                        new int[4] {382, 382, 382, 382}, 
-                        new int[4] {383, 383, 383, 383}, 
-                        new int[4] {384, 384, 384, 384}, 
-                        new int[4] {385, 385, 385, 385}, 
-                        new int[4] {386, 386, 386, 386}, 
-                        new int[4] {387, 387, 387, 387}, 
-                        new int[4] {388, 388, 388, 388}, 
-                        new int[4] {389, 389, 389, 389}, 
-                        new int[4] {390, 390, 390, 390}, 
-                        new int[4] {391, 391, 391, 391}, 
-                        new int[4] {392, 392, 392, 392}, 
-                        new int[4] {393, 393, 393, 393}, 
-                        new int[4] {394, 394, 394, 394}, 
-                        new int[4] {395, 395, 395, 395}, 
-                        new int[4] {396, 396, 396, 396}, 
-                        new int[4] {397, 397, 397, 397}, 
-                        new int[4] {398, 398, 398, 398}, 
-                        new int[4] {399, 399, 399, 399}, 
-                        new int[4] {400, 400, 400, 400}, 
-                        new int[4] {401, 401, 401, 401}, 
-                        new int[4] {402, 402, 402, 402}, 
-                        new int[4] {403, 403, 403, 403}, 
-                        new int[4] {404, 404, 404, 404}, 
-                        new int[4] {405, 405, 405, 405}, 
-                        new int[4] {406, 406, 406, 406}, 
-                        new int[4] {407, 407, 407, 407}, 
-                        new int[4] {408, 408, 408, 408}, 
-                        new int[4] {409, 409, 409, 409}, 
-                        new int[4] {410, 410, 410, 410}, 
-                        new int[4] {411, 411, 411, 411}, 
-                        new int[4] {412, 412, 412, 412}, 
-                        new int[4] {413, 413, 413, 413}, 
-                        new int[4] {414, 414, 414, 414}, 
-                        new int[4] {415, 415, 415, 415}, 
-                        new int[4] {416, 416, 416, 416}, 
-                        new int[4] {417, 417, 417, 417}, 
-                        new int[4] {418, 418, 418, 418}, 
-                        new int[4] {419, 419, 419, 419}, 
-                        new int[4] {420, 420, 420, 420}, 
-                        new int[4] {421, 421, 421, 421}, 
-                        new int[4] {422, 422, 422, 422}, 
-                        new int[4] {423, 423, 423, 423}, 
-                        new int[4] {424, 424, 424, 424}, 
-                        new int[4] {425, 425, 425, 425}, 
-                        new int[4] {426, 426, 426, 426}, 
-                        new int[4] {427, 427, 427, 427}, 
-                        new int[4] {428, 428, 428, 428}, 
-                        new int[4] {429, 429, 429, 429}, 
-                        new int[4] {430, 430, 430, 430}, 
-                        new int[4] {431, 431, 431, 431}, 
-                        new int[4] {432, 432, 432, 432}, 
-                        new int[4] {433, 433, 433, 433}, 
-                        new int[4] {434, 434, 434, 434}, 
-                        new int[4] {435, 435, 435, 435}, 
-                        new int[4] {436, 436, 436, 436}, 
-                        new int[4] {437, 437, 437, 437}, 
-                        new int[4] {438, 438, 438, 438}, 
-                        new int[4] {439, 439, 439, 439}, 
-                        new int[4] {440, 440, 440, 440}, 
-                        new int[4] {441, 441, 441, 441}, 
-                        new int[4] {442, 442, 442, 442}, 
-                        new int[4] {443, 443, 443, 443}, 
-                        new int[4] {444, 444, 444, 444}, 
-                        new int[4] {445, 445, 445, 445}, 
-                        new int[4] {446, 446, 446, 446}, 
-                        new int[4] {447, 447, 447, 447}, 
-                        new int[4] {448, 448, 448, 448}, 
-                        new int[4] {449, 449, 449, 449}, 
-                        new int[4] {450, 450, 450, 450}, 
-                        new int[4] {451, 451, 451, 451}, 
-                        new int[4] {452, 452, 452, 452}, 
-                        new int[4] {453, 453, 453, 453}, 
-                        new int[4] {454, 454, 454, 454}, 
-                        new int[4] {455, 455, 455, 455}, 
-                        new int[4] {456, 456, 456, 456}, 
-                        new int[4] {457, 457, 457, 457}, 
-                        new int[4] {458, 458, 458, 458}, 
-                        new int[4] {459, 459, 459, 459}, 
-                        new int[4] {460, 460, 460, 460}, 
-                        new int[4] {461, 461, 461, 461}, 
-                        new int[4] {462, 462, 462, 462}, 
-                        new int[4] {463, 463, 463, 463}, 
-                        new int[4] {464, 464, 464, 464}, 
-                        new int[4] {465, 465, 465, 465}, 
-                        new int[4] {466, 466, 466, 466}, 
-                        new int[4] {467, 467, 467, 467}, 
-                        new int[4] {468, 468, 468, 468}, 
-                        new int[4] {469, 469, 469, 469}, 
-                        new int[4] {470, 470, 470, 470}, 
-                        new int[4] {471, 471, 471, 471}, 
-                        new int[4] {472, 472, 472, 472}, 
-                        new int[4] {473, 473, 473, 473}, 
-                        new int[4] {474, 474, 474, 474}, 
-                        new int[4] {475, 475, 475, 475}, 
-                        new int[4] {476, 476, 476, 476}, 
-                        new int[4] {477, 477, 477, 477}, 
-                        new int[4] {478, 478, 478, 478}, 
-                        new int[4] {479, 479, 479, 479}, 
-                        new int[4] {480, 480, 480, 480}, 
-                        new int[4] {481, 481, 481, 481}, 
-                        new int[4] {482, 482, 482, 482}, 
-                        new int[4] {483, 483, 483, 483}, 
-                        new int[4] {484, 484, 484, 484}, 
-                        new int[4] {485, 485, 485, 485}, 
-                        new int[4] {486, 486, 486, 486}, 
-                        new int[4] {487, 487, 487, 487}, 
-                        new int[4] {488, 488, 488, 488}, 
-                        new int[4] {489, 489, 489, 489}, 
-                        new int[4] {490, 490, 490, 490}, 
-                        new int[4] {491, 491, 491, 491}, 
-                        new int[4] {492, 492, 492, 492}, 
-                        new int[4] {493, 493, 493, 493}, 
-                        new int[4] {494, 494, 494, 494}, 
-                        new int[4] {495, 495, 495, 495}, 
-                        new int[4] {496, 496, 496, 496}, 
-                        new int[4] {497, 497, 497, 497}, 
-                        new int[4] {498, 498, 498, 498}, 
-                        new int[4] {499, 499, 499, 499}, 
-                        new int[4] {500, 500, 500, 500}, 
-                        new int[4] {501, 501, 501, 501}, 
-                        new int[4] {502, 502, 502, 502}, 
-                        new int[4] {503, 503, 503, 503}, 
-                        new int[4] {504, 504, 504, 504}, 
-                        new int[4] {505, 505, 505, 505}, 
-                        new int[4] {506, 506, 506, 506}, 
-                        new int[4] {507, 507, 507, 507}, 
-                        new int[4] {508, 508, 508, 508}, 
-                        new int[4] {509, 509, 509, 509}, 
-                        new int[4] {510, 510, 510, 510}, 
-                        new int[4] {511, 511, 511, 511}, 
-                        new int[4] {512, 512, 512, 512}, 
-                        new int[4] {513, 513, 513, 513}, 
-                        new int[4] {514, 514, 514, 514}, 
-                        new int[4] {515, 515, 515, 515}, 
-                        new int[4] {516, 516, 516, 516}, 
-                        new int[4] {517, 517, 517, 517}, 
-                        new int[4] {518, 518, 518, 518}, 
-                        new int[4] {519, 519, 519, 519}, 
-                        new int[4] {520, 520, 520, 520}, 
-                        new int[4] {521, 521, 521, 521}, 
-                        new int[4] {522, 522, 522, 522}, 
-                        new int[4] {523, 523, 523, 523}, 
-                        new int[4] {524, 524, 524, 524}, 
-                        new int[4] {525, 525, 525, 525}, 
-                        new int[4] {526, 526, 526, 526}, 
-                        new int[4] {527, 527, 527, 527}, 
-                        new int[4] {528, 528, 528, 528}, 
-                        new int[4] {529, 529, 529, 529}, 
-                        new int[4] {530, 530, 530, 530}, 
-                        new int[4] {531, 531, 531, 531}, 
-                        new int[4] {532, 532, 532, 532}, 
-                        new int[4] {533, 533, 533, 533}, 
-                        new int[4] {534, 534, 534, 534}, 
-                        new int[4] {535, 535, 535, 535}, 
-                        new int[4] {536, 536, 536, 536}, 
-                        new int[4] {537, 537, 537, 537}, 
-                        new int[4] {538, 538, 538, 538}, 
-                        new int[4] {539, 539, 539, 539}, 
-                        new int[4] {540, 540, 540, 540}, 
-                        new int[4] {541, 541, 541, 541}, 
-                        new int[4] {542, 542, 542, 542}, 
-                        new int[4] {543, 543, 543, 543}, 
-                        new int[4] {544, 544, 544, 544}, 
-                        new int[4] {545, 545, 545, 545}, 
-                        new int[4] {546, 546, 546, 546}, 
-                        new int[4] {547, 547, 547, 547}, 
-                        new int[4] {548, 548, 548, 548}, 
-                        new int[4] {549, 549, 549, 549}, 
-                        new int[4] {550, 550, 550, 550}, 
-                        new int[4] {551, 551, 551, 551}, 
-                        new int[4] {552, 552, 552, 552}, 
-                        new int[4] {553, 553, 553, 553}, 
-                        new int[4] {554, 554, 554, 554}, 
-                        new int[4] {555, 555, 555, 555}, 
-                        new int[4] {556, 556, 556, 556}, 
-                        new int[4] {557, 557, 557, 557}, 
-                        new int[4] {558, 558, 558, 558}, 
-                        new int[4] {559, 559, 559, 559}, 
-                        new int[4] {560, 560, 560, 560}, 
-                        new int[4] {561, 561, 561, 561}, 
-                        new int[4] {562, 562, 562, 562}, 
-                        new int[4] {563, 563, 563, 563}, 
-                        new int[4] {564, 564, 564, 564}, 
-                        new int[4] {565, 565, 565, 565}, 
-                        new int[4] {566, 566, 566, 566}, 
-                        new int[4] {567, 567, 567, 567}, 
-                        new int[4] {568, 568, 568, 568}, 
-                        new int[4] {569, 569, 569, 569}, 
-                        new int[4] {570, 570, 570, 570}, 
-                        new int[4] {571, 571, 571, 571}, 
-                        new int[4] {572, 572, 572, 572}, 
-                        new int[4] {573, 573, 573, 573}, 
-                        new int[4] {574, 574, 574, 574}, 
+                normalGroups = new List<int[]>()
+                {
+                        new int[4] {0, 0, 0, 0},
+                        new int[4] {1, 1, 1, 1},
+                        new int[4] {2, 2, 2, 2},
+                        new int[4] {3, 3, 3, 3},
+                        new int[4] {4, 4, 4, 4},
+                        new int[4] {5, 5, 5, 5},
+                        new int[4] {6, 6, 6, 6},
+                        new int[4] {7, 7, 7, 7},
+                        new int[4] {8, 8, 8, 8},
+                        new int[4] {9, 9, 9, 9},
+                        new int[4] {10, 10, 10, 10},
+                        new int[4] {11, 11, 11, 11},
+                        new int[4] {12, 12, 12, 12},
+                        new int[4] {13, 13, 13, 13},
+                        new int[4] {14, 14, 14, 14},
+                        new int[4] {15, 15, 15, 15},
+                        new int[4] {16, 16, 16, 16},
+                        new int[4] {17, 17, 17, 17},
+                        new int[4] {18, 18, 18, 18},
+                        new int[4] {19, 19, 19, 19},
+                        new int[4] {20, 20, 20, 20},
+                        new int[4] {21, 21, 21, 21},
+                        new int[4] {22, 22, 22, 22},
+                        new int[4] {23, 23, 23, 23},
+                        new int[4] {24, 24, 24, 24},
+                        new int[4] {25, 25, 25, 25},
+                        new int[4] {26, 26, 26, 26},
+                        new int[4] {27, 27, 27, 27},
+                        new int[4] {28, 28, 28, 28},
+                        new int[4] {29, 29, 29, 29},
+                        new int[4] {30, 30, 30, 30},
+                        new int[4] {31, 31, 31, 31},
+                        new int[4] {32, 32, 32, 32},
+                        new int[4] {33, 33, 33, 33},
+                        new int[4] {34, 34, 34, 34},
+                        new int[4] {35, 35, 35, 35},
+                        new int[4] {36, 36, 36, 36},
+                        new int[4] {37, 37, 37, 37},
+                        new int[4] {38, 38, 38, 38},
+                        new int[4] {39, 39, 39, 39},
+                        new int[4] {40, 40, 40, 40},
+                        new int[4] {41, 41, 41, 41},
+                        new int[4] {42, 42, 42, 42},
+                        new int[4] {43, 43, 43, 43},
+                        new int[4] {44, 44, 44, 44},
+                        new int[4] {45, 45, 45, 45},
+                        new int[4] {46, 46, 46, 46},
+                        new int[4] {47, 47, 47, 47},
+                        new int[4] {48, 48, 48, 48},
+                        new int[4] {49, 49, 49, 49},
+                        new int[4] {50, 50, 50, 50},
+                        new int[4] {51, 51, 51, 51},
+                        new int[4] {52, 52, 52, 52},
+                        new int[4] {53, 53, 53, 53},
+                        new int[4] {54, 54, 54, 54},
+                        new int[4] {55, 55, 55, 55},
+                        new int[4] {56, 56, 56, 56},
+                        new int[4] {57, 57, 57, 57},
+                        new int[4] {58, 58, 58, 58},
+                        new int[4] {59, 59, 59, 59},
+                        new int[4] {60, 60, 60, 60},
+                        new int[4] {61, 61, 61, 61},
+                        new int[4] {62, 62, 62, 62},
+                        new int[4] {63, 63, 63, 63},
+                        new int[4] {64, 64, 64, 64},
+                        new int[4] {65, 65, 65, 65},
+                        new int[4] {66, 66, 66, 66},
+                        new int[4] {67, 67, 67, 67},
+                        new int[4] {68, 68, 68, 68},
+                        new int[4] {69, 69, 69, 69},
+                        new int[4] {70, 70, 70, 70},
+                        new int[4] {71, 71, 71, 71},
+                        new int[4] {72, 72, 72, 72},
+                        new int[4] {73, 73, 73, 73},
+                        new int[4] {74, 74, 74, 74},
+                        new int[4] {75, 75, 75, 75},
+                        new int[4] {76, 76, 76, 76},
+                        new int[4] {77, 77, 77, 77},
+                        new int[4] {78, 78, 78, 78},
+                        new int[4] {79, 79, 79, 79},
+                        new int[4] {80, 80, 80, 80},
+                        new int[4] {81, 81, 81, 81},
+                        new int[4] {82, 82, 82, 82},
+                        new int[4] {83, 83, 83, 83},
+                        new int[4] {84, 84, 84, 84},
+                        new int[4] {85, 85, 85, 85},
+                        new int[4] {86, 86, 86, 86},
+                        new int[4] {87, 87, 87, 87},
+                        new int[4] {88, 88, 88, 88},
+                        new int[4] {89, 89, 89, 89},
+                        new int[4] {90, 90, 90, 90},
+                        new int[4] {91, 91, 91, 91},
+                        new int[4] {92, 92, 92, 92},
+                        new int[4] {93, 93, 93, 93},
+                        new int[4] {94, 94, 94, 94},
+                        new int[4] {95, 95, 95, 95},
+                        new int[4] {96, 96, 96, 96},
+                        new int[4] {97, 97, 97, 97},
+                        new int[4] {98, 98, 98, 98},
+                        new int[4] {99, 99, 99, 99},
+                        new int[4] {100, 100, 100, 100},
+                        new int[4] {101, 101, 101, 101},
+                        new int[4] {102, 102, 102, 102},
+                        new int[4] {103, 103, 103, 103},
+                        new int[4] {104, 104, 104, 104},
+                        new int[4] {105, 105, 105, 105},
+                        new int[4] {106, 106, 106, 106},
+                        new int[4] {107, 107, 107, 107},
+                        new int[4] {108, 108, 108, 108},
+                        new int[4] {109, 109, 109, 109},
+                        new int[4] {110, 110, 110, 110},
+                        new int[4] {111, 111, 111, 111},
+                        new int[4] {112, 112, 112, 112},
+                        new int[4] {113, 113, 113, 113},
+                        new int[4] {114, 114, 114, 114},
+                        new int[4] {115, 115, 115, 115},
+                        new int[4] {116, 116, 116, 116},
+                        new int[4] {117, 117, 117, 117},
+                        new int[4] {118, 118, 118, 118},
+                        new int[4] {119, 119, 119, 119},
+                        new int[4] {120, 120, 120, 120},
+                        new int[4] {121, 121, 121, 121},
+                        new int[4] {122, 122, 122, 122},
+                        new int[4] {123, 123, 123, 123},
+                        new int[4] {124, 124, 124, 124},
+                        new int[4] {125, 125, 125, 125},
+                        new int[4] {126, 126, 126, 126},
+                        new int[4] {127, 127, 127, 127},
+                        new int[4] {128, 128, 128, 128},
+                        new int[4] {129, 129, 129, 129},
+                        new int[4] {130, 130, 130, 130},
+                        new int[4] {131, 131, 131, 131},
+                        new int[4] {132, 132, 132, 132},
+                        new int[4] {133, 133, 133, 133},
+                        new int[4] {134, 134, 134, 134},
+                        new int[4] {135, 135, 135, 135},
+                        new int[4] {136, 136, 136, 136},
+                        new int[4] {137, 137, 137, 137},
+                        new int[4] {138, 138, 138, 138},
+                        new int[4] {139, 139, 139, 139},
+                        new int[4] {140, 140, 140, 140},
+                        new int[4] {141, 141, 141, 141},
+                        new int[4] {142, 142, 142, 142},
+                        new int[4] {143, 143, 143, 143},
+                        new int[4] {144, 144, 144, 144},
+                        new int[4] {145, 145, 145, 145},
+                        new int[4] {146, 146, 146, 146},
+                        new int[4] {147, 147, 147, 147},
+                        new int[4] {148, 148, 148, 148},
+                        new int[4] {149, 149, 149, 149},
+                        new int[4] {150, 150, 150, 150},
+                        new int[4] {151, 151, 151, 151},
+                        new int[4] {152, 152, 152, 152},
+                        new int[4] {153, 153, 153, 153},
+                        new int[4] {154, 154, 154, 154},
+                        new int[4] {155, 155, 155, 155},
+                        new int[4] {156, 156, 156, 156},
+                        new int[4] {157, 157, 157, 157},
+                        new int[4] {158, 158, 158, 158},
+                        new int[4] {159, 159, 159, 159},
+                        new int[4] {160, 160, 160, 160},
+                        new int[4] {161, 161, 161, 161},
+                        new int[4] {162, 162, 162, 162},
+                        new int[4] {163, 163, 163, 163},
+                        new int[4] {164, 164, 164, 164},
+                        new int[4] {165, 165, 165, 165},
+                        new int[4] {166, 166, 166, 166},
+                        new int[4] {167, 167, 167, 167},
+                        new int[4] {168, 168, 168, 168},
+                        new int[4] {169, 169, 169, 169},
+                        new int[4] {170, 170, 170, 170},
+                        new int[4] {171, 171, 171, 171},
+                        new int[4] {172, 172, 172, 172},
+                        new int[4] {173, 173, 173, 173},
+                        new int[4] {174, 174, 174, 174},
+                        new int[4] {175, 175, 175, 175},
+                        new int[4] {176, 176, 176, 176},
+                        new int[4] {177, 177, 177, 177},
+                        new int[4] {178, 178, 178, 178},
+                        new int[4] {179, 179, 179, 179},
+                        new int[4] {180, 180, 180, 180},
+                        new int[4] {181, 181, 181, 181},
+                        new int[4] {182, 182, 182, 182},
+                        new int[4] {183, 183, 183, 183},
+                        new int[4] {184, 184, 184, 184},
+                        new int[4] {185, 185, 185, 185},
+                        new int[4] {186, 186, 186, 186},
+                        new int[4] {187, 187, 187, 187},
+                        new int[4] {188, 188, 188, 188},
+                        new int[4] {189, 189, 189, 189},
+                        new int[4] {190, 190, 190, 190},
+                        new int[4] {191, 191, 191, 191},
+                        new int[4] {192, 192, 192, 192},
+                        new int[4] {193, 193, 193, 193},
+                        new int[4] {194, 194, 194, 194},
+                        new int[4] {195, 195, 195, 195},
+                        new int[4] {196, 196, 196, 196},
+                        new int[4] {197, 197, 197, 197},
+                        new int[4] {198, 198, 198, 198},
+                        new int[4] {199, 199, 199, 199},
+                        new int[4] {200, 200, 200, 200},
+                        new int[4] {201, 201, 201, 201},
+                        new int[4] {202, 202, 202, 202},
+                        new int[4] {203, 203, 203, 203},
+                        new int[4] {204, 204, 204, 204},
+                        new int[4] {205, 205, 205, 205},
+                        new int[4] {206, 206, 206, 206},
+                        new int[4] {207, 207, 207, 207},
+                        new int[4] {208, 208, 208, 208},
+                        new int[4] {209, 209, 209, 209},
+                        new int[4] {210, 210, 210, 210},
+                        new int[4] {211, 211, 211, 211},
+                        new int[4] {212, 212, 212, 212},
+                        new int[4] {213, 213, 213, 213},
+                        new int[4] {214, 214, 214, 214},
+                        new int[4] {215, 215, 215, 215},
+                        new int[4] {216, 216, 216, 216},
+                        new int[4] {217, 217, 217, 217},
+                        new int[4] {218, 218, 218, 218},
+                        new int[4] {219, 219, 219, 219},
+                        new int[4] {220, 220, 220, 220},
+                        new int[4] {221, 221, 221, 221},
+                        new int[4] {222, 222, 222, 222},
+                        new int[4] {223, 223, 223, 223},
+                        new int[4] {224, 224, 224, 224},
+                        new int[4] {225, 225, 225, 225},
+                        new int[4] {226, 226, 226, 226},
+                        new int[4] {227, 227, 227, 227},
+                        new int[4] {228, 228, 228, 228},
+                        new int[4] {229, 229, 229, 229},
+                        new int[4] {230, 230, 230, 230},
+                        new int[4] {231, 231, 231, 231},
+                        new int[4] {232, 232, 232, 232},
+                        new int[4] {233, 233, 233, 233},
+                        new int[4] {234, 234, 234, 234},
+                        new int[4] {235, 235, 235, 235},
+                        new int[4] {236, 236, 236, 236},
+                        new int[4] {237, 237, 237, 237},
+                        new int[4] {238, 238, 238, 238},
+                        new int[4] {239, 239, 239, 239},
+                        new int[4] {240, 240, 240, 240},
+                        new int[4] {241, 241, 241, 241},
+                        new int[4] {242, 242, 242, 242},
+                        new int[4] {243, 243, 243, 243},
+                        new int[4] {244, 244, 244, 244},
+                        new int[4] {245, 245, 245, 245},
+                        new int[4] {246, 246, 246, 246},
+                        new int[4] {247, 247, 247, 247},
+                        new int[4] {248, 248, 248, 248},
+                        new int[4] {249, 249, 249, 249},
+                        new int[4] {250, 250, 250, 250},
+                        new int[4] {251, 251, 251, 251},
+                        new int[4] {252, 252, 252, 252},
+                        new int[4] {253, 253, 253, 253},
+                        new int[4] {254, 254, 254, 254},
+                        new int[4] {255, 255, 255, 255},
+                        new int[4] {256, 256, 256, 256},
+                        new int[4] {257, 257, 257, 257},
+                        new int[4] {258, 258, 258, 258},
+                        new int[4] {259, 259, 259, 259},
+                        new int[4] {260, 260, 260, 260},
+                        new int[4] {261, 261, 261, 261},
+                        new int[4] {262, 262, 262, 262},
+                        new int[4] {263, 263, 263, 263},
+                        new int[4] {264, 264, 264, 264},
+                        new int[4] {265, 265, 265, 265},
+                        new int[4] {266, 266, 266, 266},
+                        new int[4] {267, 267, 267, 267},
+                        new int[4] {268, 268, 268, 268},
+                        new int[4] {269, 269, 269, 269},
+                        new int[4] {270, 270, 270, 270},
+                        new int[4] {271, 271, 271, 271},
+                        new int[4] {272, 272, 272, 272},
+                        new int[4] {273, 273, 273, 273},
+                        new int[4] {274, 274, 274, 274},
+                        new int[4] {275, 275, 275, 275},
+                        new int[4] {276, 276, 276, 276},
+                        new int[4] {277, 277, 277, 277},
+                        new int[4] {278, 278, 278, 278},
+                        new int[4] {279, 279, 279, 279},
+                        new int[4] {280, 280, 280, 280},
+                        new int[4] {281, 281, 281, 281},
+                        new int[4] {282, 282, 282, 282},
+                        new int[4] {283, 283, 283, 283},
+                        new int[4] {284, 284, 284, 284},
+                        new int[4] {285, 285, 285, 285},
+                        new int[4] {286, 286, 286, 286},
+                        new int[4] {287, 287, 287, 287},
+                        new int[4] {288, 288, 288, 288},
+                        new int[4] {289, 289, 289, 289},
+                        new int[4] {290, 290, 290, 290},
+                        new int[4] {291, 291, 291, 291},
+                        new int[4] {292, 292, 292, 292},
+                        new int[4] {293, 293, 293, 293},
+                        new int[4] {294, 294, 294, 294},
+                        new int[4] {295, 295, 295, 295},
+                        new int[4] {296, 296, 296, 296},
+                        new int[4] {297, 297, 297, 297},
+                        new int[4] {298, 298, 298, 298},
+                        new int[4] {299, 299, 299, 299},
+                        new int[4] {300, 300, 300, 300},
+                        new int[4] {301, 301, 301, 301},
+                        new int[4] {302, 302, 302, 302},
+                        new int[4] {303, 303, 303, 303},
+                        new int[4] {304, 304, 304, 304},
+                        new int[4] {305, 305, 305, 305},
+                        new int[4] {306, 306, 306, 306},
+                        new int[4] {307, 307, 307, 307},
+                        new int[4] {308, 308, 308, 308},
+                        new int[4] {309, 309, 309, 309},
+                        new int[4] {310, 310, 310, 310},
+                        new int[4] {311, 311, 311, 311},
+                        new int[4] {312, 312, 312, 312},
+                        new int[4] {313, 313, 313, 313},
+                        new int[4] {314, 314, 314, 314},
+                        new int[4] {315, 315, 315, 315},
+                        new int[4] {316, 316, 316, 316},
+                        new int[4] {317, 317, 317, 317},
+                        new int[4] {318, 318, 318, 318},
+                        new int[4] {319, 319, 319, 319},
+                        new int[4] {320, 320, 320, 320},
+                        new int[4] {321, 321, 321, 321},
+                        new int[4] {322, 322, 322, 322},
+                        new int[4] {323, 323, 323, 323},
+                        new int[4] {324, 324, 324, 324},
+                        new int[4] {325, 325, 325, 325},
+                        new int[4] {326, 326, 326, 326},
+                        new int[4] {327, 327, 327, 327},
+                        new int[4] {328, 328, 328, 328},
+                        new int[4] {329, 329, 329, 329},
+                        new int[4] {330, 330, 330, 330},
+                        new int[4] {331, 331, 331, 331},
+                        new int[4] {332, 332, 332, 332},
+                        new int[4] {333, 333, 333, 333},
+                        new int[4] {334, 334, 334, 334},
+                        new int[4] {335, 335, 335, 335},
+                        new int[4] {336, 336, 336, 336},
+                        new int[4] {337, 337, 337, 337},
+                        new int[4] {338, 338, 338, 338},
+                        new int[4] {339, 339, 339, 339},
+                        new int[4] {340, 340, 340, 340},
+                        new int[4] {341, 341, 341, 341},
+                        new int[4] {342, 342, 342, 342},
+                        new int[4] {343, 343, 343, 343},
+                        new int[4] {344, 344, 344, 344},
+                        new int[4] {345, 345, 345, 345},
+                        new int[4] {346, 346, 346, 346},
+                        new int[4] {347, 347, 347, 347},
+                        new int[4] {348, 348, 348, 348},
+                        new int[4] {349, 349, 349, 349},
+                        new int[4] {350, 350, 350, 350},
+                        new int[4] {351, 351, 351, 351},
+                        new int[4] {352, 352, 352, 352},
+                        new int[4] {353, 353, 353, 353},
+                        new int[4] {354, 354, 354, 354},
+                        new int[4] {355, 355, 355, 355},
+                        new int[4] {356, 356, 356, 356},
+                        new int[4] {357, 357, 357, 357},
+                        new int[4] {358, 358, 358, 358},
+                        new int[4] {359, 359, 359, 359},
+                        new int[4] {360, 360, 360, 360},
+                        new int[4] {361, 361, 361, 361},
+                        new int[4] {362, 362, 362, 362},
+                        new int[4] {363, 363, 363, 363},
+                        new int[4] {364, 364, 364, 364},
+                        new int[4] {365, 365, 365, 365},
+                        new int[4] {366, 366, 366, 366},
+                        new int[4] {367, 367, 367, 367},
+                        new int[4] {368, 368, 368, 368},
+                        new int[4] {369, 369, 369, 369},
+                        new int[4] {370, 370, 370, 370},
+                        new int[4] {371, 371, 371, 371},
+                        new int[4] {372, 372, 372, 372},
+                        new int[4] {373, 373, 373, 373},
+                        new int[4] {374, 374, 374, 374},
+                        new int[4] {375, 375, 375, 375},
+                        new int[4] {376, 376, 376, 376},
+                        new int[4] {377, 377, 377, 377},
+                        new int[4] {378, 378, 378, 378},
+                        new int[4] {379, 379, 379, 379},
+                        new int[4] {380, 380, 380, 380},
+                        new int[4] {381, 381, 381, 381},
+                        new int[4] {382, 382, 382, 382},
+                        new int[4] {383, 383, 383, 383},
+                        new int[4] {384, 384, 384, 384},
+                        new int[4] {385, 385, 385, 385},
+                        new int[4] {386, 386, 386, 386},
+                        new int[4] {387, 387, 387, 387},
+                        new int[4] {388, 388, 388, 388},
+                        new int[4] {389, 389, 389, 389},
+                        new int[4] {390, 390, 390, 390},
+                        new int[4] {391, 391, 391, 391},
+                        new int[4] {392, 392, 392, 392},
+                        new int[4] {393, 393, 393, 393},
+                        new int[4] {394, 394, 394, 394},
+                        new int[4] {395, 395, 395, 395},
+                        new int[4] {396, 396, 396, 396},
+                        new int[4] {397, 397, 397, 397},
+                        new int[4] {398, 398, 398, 398},
+                        new int[4] {399, 399, 399, 399},
+                        new int[4] {400, 400, 400, 400},
+                        new int[4] {401, 401, 401, 401},
+                        new int[4] {402, 402, 402, 402},
+                        new int[4] {403, 403, 403, 403},
+                        new int[4] {404, 404, 404, 404},
+                        new int[4] {405, 405, 405, 405},
+                        new int[4] {406, 406, 406, 406},
+                        new int[4] {407, 407, 407, 407},
+                        new int[4] {408, 408, 408, 408},
+                        new int[4] {409, 409, 409, 409},
+                        new int[4] {410, 410, 410, 410},
+                        new int[4] {411, 411, 411, 411},
+                        new int[4] {412, 412, 412, 412},
+                        new int[4] {413, 413, 413, 413},
+                        new int[4] {414, 414, 414, 414},
+                        new int[4] {415, 415, 415, 415},
+                        new int[4] {416, 416, 416, 416},
+                        new int[4] {417, 417, 417, 417},
+                        new int[4] {418, 418, 418, 418},
+                        new int[4] {419, 419, 419, 419},
+                        new int[4] {420, 420, 420, 420},
+                        new int[4] {421, 421, 421, 421},
+                        new int[4] {422, 422, 422, 422},
+                        new int[4] {423, 423, 423, 423},
+                        new int[4] {424, 424, 424, 424},
+                        new int[4] {425, 425, 425, 425},
+                        new int[4] {426, 426, 426, 426},
+                        new int[4] {427, 427, 427, 427},
+                        new int[4] {428, 428, 428, 428},
+                        new int[4] {429, 429, 429, 429},
+                        new int[4] {430, 430, 430, 430},
+                        new int[4] {431, 431, 431, 431},
+                        new int[4] {432, 432, 432, 432},
+                        new int[4] {433, 433, 433, 433},
+                        new int[4] {434, 434, 434, 434},
+                        new int[4] {435, 435, 435, 435},
+                        new int[4] {436, 436, 436, 436},
+                        new int[4] {437, 437, 437, 437},
+                        new int[4] {438, 438, 438, 438},
+                        new int[4] {439, 439, 439, 439},
+                        new int[4] {440, 440, 440, 440},
+                        new int[4] {441, 441, 441, 441},
+                        new int[4] {442, 442, 442, 442},
+                        new int[4] {443, 443, 443, 443},
+                        new int[4] {444, 444, 444, 444},
+                        new int[4] {445, 445, 445, 445},
+                        new int[4] {446, 446, 446, 446},
+                        new int[4] {447, 447, 447, 447},
+                        new int[4] {448, 448, 448, 448},
+                        new int[4] {449, 449, 449, 449},
+                        new int[4] {450, 450, 450, 450},
+                        new int[4] {451, 451, 451, 451},
+                        new int[4] {452, 452, 452, 452},
+                        new int[4] {453, 453, 453, 453},
+                        new int[4] {454, 454, 454, 454},
+                        new int[4] {455, 455, 455, 455},
+                        new int[4] {456, 456, 456, 456},
+                        new int[4] {457, 457, 457, 457},
+                        new int[4] {458, 458, 458, 458},
+                        new int[4] {459, 459, 459, 459},
+                        new int[4] {460, 460, 460, 460},
+                        new int[4] {461, 461, 461, 461},
+                        new int[4] {462, 462, 462, 462},
+                        new int[4] {463, 463, 463, 463},
+                        new int[4] {464, 464, 464, 464},
+                        new int[4] {465, 465, 465, 465},
+                        new int[4] {466, 466, 466, 466},
+                        new int[4] {467, 467, 467, 467},
+                        new int[4] {468, 468, 468, 468},
+                        new int[4] {469, 469, 469, 469},
+                        new int[4] {470, 470, 470, 470},
+                        new int[4] {471, 471, 471, 471},
+                        new int[4] {472, 472, 472, 472},
+                        new int[4] {473, 473, 473, 473},
+                        new int[4] {474, 474, 474, 474},
+                        new int[4] {475, 475, 475, 475},
+                        new int[4] {476, 476, 476, 476},
+                        new int[4] {477, 477, 477, 477},
+                        new int[4] {478, 478, 478, 478},
+                        new int[4] {479, 479, 479, 479},
+                        new int[4] {480, 480, 480, 480},
+                        new int[4] {481, 481, 481, 481},
+                        new int[4] {482, 482, 482, 482},
+                        new int[4] {483, 483, 483, 483},
+                        new int[4] {484, 484, 484, 484},
+                        new int[4] {485, 485, 485, 485},
+                        new int[4] {486, 486, 486, 486},
+                        new int[4] {487, 487, 487, 487},
+                        new int[4] {488, 488, 488, 488},
+                        new int[4] {489, 489, 489, 489},
+                        new int[4] {490, 490, 490, 490},
+                        new int[4] {491, 491, 491, 491},
+                        new int[4] {492, 492, 492, 492},
+                        new int[4] {493, 493, 493, 493},
+                        new int[4] {494, 494, 494, 494},
+                        new int[4] {495, 495, 495, 495},
+                        new int[4] {496, 496, 496, 496},
+                        new int[4] {497, 497, 497, 497},
+                        new int[4] {498, 498, 498, 498},
+                        new int[4] {499, 499, 499, 499},
+                        new int[4] {500, 500, 500, 500},
+                        new int[4] {501, 501, 501, 501},
+                        new int[4] {502, 502, 502, 502},
+                        new int[4] {503, 503, 503, 503},
+                        new int[4] {504, 504, 504, 504},
+                        new int[4] {505, 505, 505, 505},
+                        new int[4] {506, 506, 506, 506},
+                        new int[4] {507, 507, 507, 507},
+                        new int[4] {508, 508, 508, 508},
+                        new int[4] {509, 509, 509, 509},
+                        new int[4] {510, 510, 510, 510},
+                        new int[4] {511, 511, 511, 511},
+                        new int[4] {512, 512, 512, 512},
+                        new int[4] {513, 513, 513, 513},
+                        new int[4] {514, 514, 514, 514},
+                        new int[4] {515, 515, 515, 515},
+                        new int[4] {516, 516, 516, 516},
+                        new int[4] {517, 517, 517, 517},
+                        new int[4] {518, 518, 518, 518},
+                        new int[4] {519, 519, 519, 519},
+                        new int[4] {520, 520, 520, 520},
+                        new int[4] {521, 521, 521, 521},
+                        new int[4] {522, 522, 522, 522},
+                        new int[4] {523, 523, 523, 523},
+                        new int[4] {524, 524, 524, 524},
+                        new int[4] {525, 525, 525, 525},
+                        new int[4] {526, 526, 526, 526},
+                        new int[4] {527, 527, 527, 527},
+                        new int[4] {528, 528, 528, 528},
+                        new int[4] {529, 529, 529, 529},
+                        new int[4] {530, 530, 530, 530},
+                        new int[4] {531, 531, 531, 531},
+                        new int[4] {532, 532, 532, 532},
+                        new int[4] {533, 533, 533, 533},
+                        new int[4] {534, 534, 534, 534},
+                        new int[4] {535, 535, 535, 535},
+                        new int[4] {536, 536, 536, 536},
+                        new int[4] {537, 537, 537, 537},
+                        new int[4] {538, 538, 538, 538},
+                        new int[4] {539, 539, 539, 539},
+                        new int[4] {540, 540, 540, 540},
+                        new int[4] {541, 541, 541, 541},
+                        new int[4] {542, 542, 542, 542},
+                        new int[4] {543, 543, 543, 543},
+                        new int[4] {544, 544, 544, 544},
+                        new int[4] {545, 545, 545, 545},
+                        new int[4] {546, 546, 546, 546},
+                        new int[4] {547, 547, 547, 547},
+                        new int[4] {548, 548, 548, 548},
+                        new int[4] {549, 549, 549, 549},
+                        new int[4] {550, 550, 550, 550},
+                        new int[4] {551, 551, 551, 551},
+                        new int[4] {552, 552, 552, 552},
+                        new int[4] {553, 553, 553, 553},
+                        new int[4] {554, 554, 554, 554},
+                        new int[4] {555, 555, 555, 555},
+                        new int[4] {556, 556, 556, 556},
+                        new int[4] {557, 557, 557, 557},
+                        new int[4] {558, 558, 558, 558},
+                        new int[4] {559, 559, 559, 559},
+                        new int[4] {560, 560, 560, 560},
+                        new int[4] {561, 561, 561, 561},
+                        new int[4] {562, 562, 562, 562},
+                        new int[4] {563, 563, 563, 563},
+                        new int[4] {564, 564, 564, 564},
+                        new int[4] {565, 565, 565, 565},
+                        new int[4] {566, 566, 566, 566},
+                        new int[4] {567, 567, 567, 567},
+                        new int[4] {568, 568, 568, 568},
+                        new int[4] {569, 569, 569, 569},
+                        new int[4] {570, 570, 570, 570},
+                        new int[4] {571, 571, 571, 571},
+                        new int[4] {572, 572, 572, 572},
+                        new int[4] {573, 573, 573, 573},
+                        new int[4] {574, 574, 574, 574},
                         new int[4] {575, 575, 575, 575}
                     },
-                    modifiedNormals = new List<Vector3D>()
-                };
-                _primitives.Add(primitive);
+                modifiedNormals = new List<Vector3D>()
+            };
+            _primitives.Add(primitive);
 
-                var item = new ListBoxItem();
-                {
-                    item.Content = "Torus";
-                }
-                _primitiveListBox.Items.Add(item);
+            var item = new ListBoxItem();
+            {
+                item.Content = "Torus";
             }
+            _primitiveListBox.Items.Add(item);
+        }
         #endregion
 
         #region Event Handlers
-            private void Timer_Tick(object sender, EventArgs e)
-            {
-                Update();
-                Render();
-                Present();
-            }
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            Update();
+            Render();
+            Present();
+        }
 
-            private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-            {
-                _rotationSpeed.X = (float)e.NewValue;
-            }
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _rotationSpeed.X = (float)e.NewValue;
+        }
 
-            private void Slider_ValueChanged_1(object sender, RoutedPropertyChangedEventArgs<double> e)
-            {
-                _rotationSpeed.Y = (float)e.NewValue;
-            }
+        private void Slider_ValueChanged_1(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _rotationSpeed.Y = (float)e.NewValue;
+        }
 
-            private void Slider_ValueChanged_2(object sender, RoutedPropertyChangedEventArgs<double> e)
-            {
-                _rotationSpeed.Z = (float)e.NewValue;
-            }
+        private void Slider_ValueChanged_2(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _rotationSpeed.Z = (float)e.NewValue;
+        }
 
-            private void Slider_ValueChanged_3(object sender, RoutedPropertyChangedEventArgs<double> e)
-            {
-                _scale.X = (float)e.NewValue;
-                _scale.Y = (float)e.NewValue;
-            }
+        private void Slider_ValueChanged_3(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _scale.X = (float)e.NewValue;
+            _scale.Y = (float)e.NewValue;
+        }
 
-            private void CheckBox_Checked(object sender, RoutedEventArgs e)
-            {
-                _isTriangles = true;
-            }
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            _isTriangles = true;
+        }
 
-            private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-            {
-                _isTriangles = false;
-            }
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _isTriangles = false;
+        }
 
-            private void CheckBox1_Checked(object sender, RoutedEventArgs e)
-            {
-                _isRotating = true;
-            }
+        private void CheckBox1_Checked(object sender, RoutedEventArgs e)
+        {
+            _isRotating = true;
+        }
 
-            private void CheckBox1_Unchecked(object sender, RoutedEventArgs e)
-            {
-                _isRotating = false;
-            }
+        private void CheckBox1_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _isRotating = false;
+        }
 
-            private void CheckBox2_Checked(object sender, RoutedEventArgs e)
-            {
-                _isCulling = true;
-            }
+        private void CheckBox2_Checked(object sender, RoutedEventArgs e)
+        {
+            _isCulling = true;
+        }
 
-            private void CheckBox2_Unchecked(object sender, RoutedEventArgs e)
-            {
-                _isCulling = false;
-            }
+        private void CheckBox2_Unchecked(object sender, RoutedEventArgs e)
+        {
+            _isCulling = false;
+        }
 
-            private void Button_Click(object sender, RoutedEventArgs e)
-            {
-                Reset();
-            }
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Reset();
+        }
 
-            private void PrimitiveListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            {
-                var selectedIndex = _primitiveListBox.SelectedIndex;
+        private void PrimitiveListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectedIndex = _primitiveListBox.SelectedIndex;
 
-                if (selectedIndex < 0) { selectedIndex = 0; }
-                if (selectedIndex >= _primitives.Count) { selectedIndex = _primitives.Count - 1; }
-                if (_activePrimitive != null) { _activePrimitive.Clear(); }
+            if (selectedIndex < 0)
+            { selectedIndex = 0; }
+            if (selectedIndex >= _primitives.Count)
+            { selectedIndex = _primitives.Count - 1; }
+            if (_activePrimitive != null)
+            { _activePrimitive.Clear(); }
 
-                _activePrimitive = _primitives[selectedIndex];
-            }
+            _activePrimitive = _primitives[selectedIndex];
+        }
         #endregion
 
         #region Transformation
-            private void ObjectToWorld(Polygon polygon)
+        private void ObjectToWorld(Polygon polygon)
+        {
+            RotateObject(polygon);
+            ScaleObject(polygon);
+            TranslateObject(polygon);
+        }
+
+        private void WorldToCamera(Polygon polygon)
+        {
+        }
+
+        private void CameraToScreen(Polygon polygon)
+        {
+        }
+
+        private void RotateObject(Polygon polygon)
+        {
+            var deg2rad = (float)(Math.PI / 180.0);
+
+            var rotX = _rotation.X * deg2rad;
+            var rotY = _rotation.Y * deg2rad;
+            var rotZ = _rotation.Z * deg2rad;
+
+            var cosX = (float)Math.Cos(rotX);
+            var sinX = (float)Math.Sin(rotX);
+            var mX = new Matrix3x3(
+                Vector3D.UnitX,
+                new Vector3D(0.0f, cosX, -sinX),
+                new Vector3D(0.0f, sinX, cosX)
+            );
+
+            var cosY = (float)Math.Cos(rotY);
+            var sinY = (float)Math.Sin(rotY);
+            var mY = new Matrix3x3(
+                new Vector3D(cosY, 0.0f, sinY),
+                Vector3D.UnitY,
+                new Vector3D(-sinY, 0.0f, cosY)
+            );
+
+            var cosZ = (float)Math.Cos(rotZ);
+            var sinZ = (float)Math.Sin(rotZ);
+            var mZ = new Matrix3x3(
+                new Vector3D(cosZ, -sinZ, 0.0f),
+                new Vector3D(sinZ, cosZ, 0.0f),
+                Vector3D.UnitZ
+            );
+
+            var mR = mX * mY * mZ;
+
+            for (var i = 0; i < polygon.vertices.Count; i++)
             {
-                RotateObject(polygon);
-                ScaleObject(polygon);
-                TranslateObject(polygon);
-            }
+                polygon.modifiedVertices[i] *= mR;
+            };
 
-            private void WorldToCamera(Polygon polygon)
+            for (var i = 0; i < polygon.normals.Count; i++)
             {
+                polygon.modifiedNormals[i] *= mR;
             }
+        }
 
-            private void CameraToScreen(Polygon polygon)
+        private void TranslateObject(Polygon polygon)
+        {
+            for (var i = 0; i < polygon.vertices.Count; i++)
             {
+                polygon.modifiedVertices[i] += _translation;
             }
+        }
 
-            private void RotateObject(Polygon polygon)
+        private void ScaleObject(Polygon polygon)
+        {
+            var m = new Matrix3x3(
+                new Vector3D(_scale.X, 0.0f, 0.0f),
+                new Vector3D(0.0f, _scale.Y, 0.0f),
+                new Vector3D(0.0f, 0.0f, _scale.Z)
+            );
+
+            for (var i = 0; i < polygon.vertices.Count; i++)
             {
-                var deg2rad = (float)(Math.PI / 180.0);
-
-                var rotX = _rotation.X * deg2rad;
-                var rotY = _rotation.Y * deg2rad;
-                var rotZ = _rotation.Z * deg2rad;
-
-                var cosX = (float)Math.Cos(rotX); var sinX = (float)Math.Sin(rotX);
-                var mX = new Matrix3x3(
-                    Vector3D.UnitX,
-                    new Vector3D(0.0f, cosX, -sinX),
-                    new Vector3D(0.0f, sinX, cosX)
-                );
-
-                var cosY = (float)Math.Cos(rotY); var sinY = (float)Math.Sin(rotY);
-                var mY = new Matrix3x3(
-                    new Vector3D(cosY, 0.0f, sinY),
-                    Vector3D.UnitY,
-                    new Vector3D(-sinY, 0.0f, cosY)
-                );
-
-                var cosZ = (float)Math.Cos(rotZ); var sinZ = (float)Math.Sin(rotZ);
-                var mZ = new Matrix3x3(
-                    new Vector3D(cosZ, -sinZ, 0.0f),
-                    new Vector3D(sinZ, cosZ, 0.0f),
-                    Vector3D.UnitZ
-                );
-
-                var mR = mX * mY * mZ;
-
-                for (var i = 0; i < polygon.vertices.Count; i++)
-                {
-                    polygon.modifiedVertices[i] *= mR;
-                };
-
-                for (var i = 0; i < polygon.normals.Count; i++)
-                {
-                    polygon.modifiedNormals[i] *= mR;
-                }
+                polygon.modifiedVertices[i] *= m;
             }
-
-            private void TranslateObject(Polygon polygon)
-            {
-                for (var i = 0; i < polygon.vertices.Count; i++)
-                {
-                    polygon.modifiedVertices[i] += _translation;
-                }
-            }
-
-            private void ScaleObject(Polygon polygon)
-            {
-                var m = new Matrix3x3(
-                    new Vector3D(_scale.X, 0.0f, 0.0f),
-                    new Vector3D(0.0f, _scale.Y, 0.0f),
-                    new Vector3D(0.0f, 0.0f, _scale.Z)
-                );
-
-                for (var i = 0; i < polygon.vertices.Count; i++)
-                {
-                    polygon.modifiedVertices[i] *= m;
-                }
-            }
+        }
         #endregion
 
         #region Update, Render, Present
-            private void Update()
-            {
-                _activePrimitive.Reset();
-                if (_isRotating) { _rotation += _rotationSpeed; }
+        private void Update()
+        {
+            _activePrimitive.Reset();
+            if (_isRotating)
+            { _rotation += _rotationSpeed; }
 
-                ObjectToWorld(_activePrimitive);
-                WorldToCamera(_activePrimitive);
-                CameraToScreen(_activePrimitive);
-            }
+            ObjectToWorld(_activePrimitive);
+            WorldToCamera(_activePrimitive);
+            CameraToScreen(_activePrimitive);
+        }
 
-            private void Render()
-            {
-                ClearScreen(_clearColor);
-                DrawPolygon(_activePrimitive);
-            }
+        private void Render()
+        {
+            ClearScreen(_clearColor);
+            DrawPolygon(_activePrimitive);
+        }
 
-            private void Present()
+        private void Present()
+        {
+            _buffers[_renderBuffer].AddDirtyRect(_bufferRegion);
+            _buffers[_renderBuffer].Unlock();
             {
-                _buffers[_renderBuffer].AddDirtyRect(_bufferRegion);
-                _buffers[_renderBuffer].Unlock();
+                _displayBuffer = _renderBuffer++;
+                _displaySurface.Source = _buffers[_displayBuffer];
+
+                if (_renderBuffer == _buffers.Length)
                 {
-                    _displayBuffer = _renderBuffer++;
-                    _displaySurface.Source = _buffers[_displayBuffer];
-
-                    if (_renderBuffer == _buffers.Length)
-                    {
-                        _renderBuffer = 0;
-                    }
+                    _renderBuffer = 0;
                 }
-                _buffers[_renderBuffer].Lock();
             }
+            _buffers[_renderBuffer].Lock();
+        }
         #endregion
 
         #region Render Logic
-            private unsafe void DrawPixel(float xPos, float yPos, Vector4D color)
-            {
-                var pixelIndex = ((int)yPos * _pixelWidth) + (int)xPos;
+        private unsafe void DrawPixel(float xPos, float yPos, Vector4D color)
+        {
+            var pixelIndex = ((int)yPos * _pixelWidth) + (int)xPos;
 
-                if ((pixelIndex >= 0) && (pixelIndex < _pixelCount))
+            if ((pixelIndex >= 0) && (pixelIndex < _pixelCount))
+            {
+                var pRenderBuffer = (Vector4D*)_buffers[_renderBuffer].BackBuffer;
+                pRenderBuffer[pixelIndex] = color;
+            }
+        }
+
+        private void ClearScreen(Vector4D color)
+        {
+            for (var yPos = 0; yPos < _pixelHeight; yPos++)
+            {
+                for (var xPos = 0; xPos < _pixelWidth; xPos++)
                 {
-                    var pRenderBuffer = (Vector4D*)_buffers[_renderBuffer].BackBuffer;
-                    pRenderBuffer[pixelIndex] = color;
+                    DrawPixel(xPos, yPos, color);
                 }
             }
+        }
 
-            private void ClearScreen(Vector4D color)
+        private void DrawLine(Vector3D p1, Vector3D p2, Vector4D color)
+        {
+            float xMin, xMax, yMin, yMax;
+
+            if (p1.Y > p2.Y)
             {
-                for (var yPos = 0; yPos < _pixelHeight; yPos++)
-                {
-                    for (var xPos = 0; xPos < _pixelWidth; xPos++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                    }
-                }
+                xMin = p2.X;
+                xMax = p1.X;
+
+                yMin = p2.Y;
+                yMax = p1.Y;
+            }
+            else
+            {
+                xMin = p1.X;
+                xMax = p2.X;
+
+                yMin = p1.Y;
+                yMax = p2.Y;
             }
 
-            private void DrawLine(Vector3D p1, Vector3D p2, Vector4D color)
+            var xDelta = (int)(xMax - xMin);
+            var yDelta = (int)(yMax - yMin);
+            var direction = 1;
+            if (xDelta < 0)
+            { xDelta = -xDelta; direction = -1; }
+            var xPos = xMin;
+            var yPos = yMin;
+
+            if (xDelta == 0)
             {
-                float xMin, xMax, yMin, yMax;
-
-                if (p1.Y > p2.Y)
+                for (var index = 0; index <= yDelta; index++)
                 {
-                    xMin = p2.X;
-                    xMax = p1.X;
-
-                    yMin = p2.Y;
-                    yMax = p1.Y;
+                    DrawPixel(xPos, yPos, color);
+                    yPos += 1.0f;
                 }
-                else
+            }
+            else if (yDelta == 0)
+            {
+                for (var index = 0; index <= xDelta; index++)
                 {
-                    xMin = p1.X;
-                    xMax = p2.X;
-
-                    yMin = p1.Y;
-                    yMax = p2.Y;
+                    DrawPixel(xPos, yPos, color);
+                    xPos += direction;
                 }
-
-                var xDelta = (int)(xMax - xMin); var yDelta = (int)(yMax - yMin); var direction = 1;
-                if (xDelta < 0) { xDelta = -xDelta; direction = -1; }
-                var xPos = xMin; var yPos = yMin;
-
-                if (xDelta == 0)
+            }
+            else if (xDelta == yDelta)
+            {
+                for (var index = 0; index <= xDelta; index++)
                 {
-                    for (var index = 0; index <= yDelta; index++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        yPos += 1.0f;
-                    }
+                    DrawPixel(xPos, yPos, color);
+                    xPos += direction;
+                    yPos += 1.0f;
                 }
-                else if (yDelta == 0)
-                {
-                    for (var index = 0; index <= xDelta; index++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        xPos += direction;
-                    }
-                }
-                else if (xDelta == yDelta)
-                {
-                    for (var index = 0; index <= xDelta; index++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        xPos += direction; yPos += 1.0f;
-                    }
-                }
-                else if (xDelta > yDelta)
-                {
-                    var pixelsPerStep = xDelta / yDelta; var initialPixelStep = (pixelsPerStep / 2) + 1; 
-                    var adjustUp = xDelta % yDelta * 2; var adjustDown = yDelta * 2;
-                    var errorTerm = (xDelta % yDelta) - (yDelta * 2);
+            }
+            else if (xDelta > yDelta)
+            {
+                var pixelsPerStep = xDelta / yDelta;
+                var initialPixelStep = (pixelsPerStep / 2) + 1;
+                var adjustUp = xDelta % yDelta * 2;
+                var adjustDown = yDelta * 2;
+                var errorTerm = (xDelta % yDelta) - (yDelta * 2);
 
-                    if ((adjustUp == 0) && ((pixelsPerStep & 1) == 0)) { initialPixelStep -= 1; }
-                    if ((pixelsPerStep & 1) != 0) { errorTerm += yDelta; }
+                if ((adjustUp == 0) && ((pixelsPerStep & 1) == 0))
+                { initialPixelStep -= 1; }
+                if ((pixelsPerStep & 1) != 0)
+                { errorTerm += yDelta; }
 
-                    for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
+                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
+                {
+                    DrawPixel(xPos, yPos, color);
+                    xPos += direction;
+                }
+                yPos += 1.0f;
+
+                for (var index = 0; index < (yDelta - 1); index++)
+                {
+                    var runLength = pixelsPerStep;
+                    errorTerm += adjustUp;
+                    if (errorTerm > 0)
+                    { runLength++; errorTerm -= adjustDown; }
+
+                    for (var pixelsDrawn = 0; pixelsDrawn < runLength; pixelsDrawn++)
                     {
                         DrawPixel(xPos, yPos, color);
                         xPos += direction;
                     }
                     yPos += 1.0f;
-
-                    for (var index = 0; index < (yDelta - 1); index++)
-                    {
-                        var runLength = pixelsPerStep; errorTerm += adjustUp;
-                        if (errorTerm > 0) { runLength++; errorTerm -= adjustDown; }
-
-                        for (var pixelsDrawn = 0; pixelsDrawn < runLength; pixelsDrawn++)
-                        {
-                            DrawPixel(xPos, yPos, color);
-                            xPos += direction;
-                        }
-                        yPos += 1.0f;
-                    }
-
-                    for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        xPos += direction;
-                    }
                 }
-                else
+
+                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
                 {
-                    var pixelsPerStep = yDelta / xDelta; var initialPixelStep = (pixelsPerStep / 2) + 1;
-                    var adjustUp = yDelta % xDelta * 2; var adjustDown = xDelta * 2;
-                    var errorTerm = (yDelta % xDelta) - (xDelta * 2);
+                    DrawPixel(xPos, yPos, color);
+                    xPos += direction;
+                }
+            }
+            else
+            {
+                var pixelsPerStep = yDelta / xDelta;
+                var initialPixelStep = (pixelsPerStep / 2) + 1;
+                var adjustUp = yDelta % xDelta * 2;
+                var adjustDown = xDelta * 2;
+                var errorTerm = (yDelta % xDelta) - (xDelta * 2);
 
-                    if ((adjustUp == 0) && ((pixelsPerStep & 1) == 0)) { initialPixelStep -= 1; }
-                    if ((pixelsPerStep & 1) != 0) { errorTerm += xDelta; }
+                if ((adjustUp == 0) && ((pixelsPerStep & 1) == 0))
+                { initialPixelStep -= 1; }
+                if ((pixelsPerStep & 1) != 0)
+                { errorTerm += xDelta; }
 
-                    for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
+                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
+                {
+                    DrawPixel(xPos, yPos, color);
+                    yPos += 1.0f;
+                }
+                xPos += direction;
+
+                for (var index = 0; index < (xDelta - 1); index++)
+                {
+                    var runLength = pixelsPerStep;
+                    errorTerm += adjustUp;
+                    if (errorTerm > 0)
+                    { runLength++; errorTerm -= adjustDown; }
+
+                    for (var pixelsDrawn = 0; pixelsDrawn < runLength; pixelsDrawn++)
                     {
                         DrawPixel(xPos, yPos, color);
                         yPos += 1.0f;
                     }
                     xPos += direction;
-
-                    for (var index = 0; index < (xDelta - 1); index++)
-                    {
-                        var runLength = pixelsPerStep; errorTerm += adjustUp;
-                        if (errorTerm > 0) { runLength++; errorTerm -= adjustDown; }
-
-                        for (var pixelsDrawn = 0; pixelsDrawn < runLength; pixelsDrawn++)
-                        {
-                            DrawPixel(xPos, yPos, color);
-                            yPos += 1.0f;
-                        }
-                        xPos += direction;
-                    }
-
-                    for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        yPos += 1.0f;
-                    }
                 }
-            }
 
-            private void DrawTriangle(Vector3D p1, Vector3D p2, Vector3D p3, Vector4D color)
-            {
-                DrawLine(p1, p2, color);
-                DrawLine(p2, p3, color);
-                DrawLine(p3, p1, color);
-            }
-
-            private void DrawFace(Vector3D p1, Vector3D p2, Vector3D p3, Vector3D p4, Vector4D color)
-            {
-                DrawLine(p1, p2, color);
-                DrawLine(p2, p3, color);
-                DrawLine(p3, p4, color);
-                DrawLine(p4, p1, color);
-
-                if (_isTriangles) { DrawLine(p2, p4, color); }
-            }
-
-            private void DrawPolygon(Polygon polygon)
-            {
-                for (var i = 0; i < polygon.verticeGroups.Count; i++)
+                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
                 {
-                    switch (polygon.verticeGroups[i].Length)
-                    {
-                        case 1:
-                        {
-                            if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
-                            {
-                                DrawPixel(polygon.modifiedVertices[polygon.verticeGroups[i][0]].X, polygon.modifiedVertices[polygon.verticeGroups[i][0]].Y, Vector4D.UnitW);
-                            }
-                            break;
-                        }
-
-                        case 2:
-                        {
-                            if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
-                            {
-                                DrawLine(polygon.modifiedVertices[polygon.verticeGroups[i][0]], polygon.modifiedVertices[polygon.verticeGroups[i][1]], Vector4D.UnitW);
-                            }
-                            break;
-                        }
-
-                        case 3:
-                        {
-                            if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
-                            {
-                                DrawTriangle(polygon.modifiedVertices[polygon.verticeGroups[i][0]], polygon.modifiedVertices[polygon.verticeGroups[i][1]], polygon.modifiedVertices[polygon.verticeGroups[i][2]], Vector4D.UnitW);
-                            }
-                            break;
-                        }
-
-                        case 4:
-                        {
-                            if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
-                            {
-                                DrawFace(polygon.modifiedVertices[polygon.verticeGroups[i][0]], polygon.modifiedVertices[polygon.verticeGroups[i][1]], polygon.modifiedVertices[polygon.verticeGroups[i][2]], polygon.modifiedVertices[polygon.verticeGroups[i][3]], Vector4D.UnitW);
-                            }
-                            break;
-                        }
-
-                        default:
-                        {
-                            throw new InvalidOperationException();
-                        }
-                    }
+                    DrawPixel(xPos, yPos, color);
+                    yPos += 1.0f;
                 }
             }
+        }
 
-            private bool ShouldCull(Polygon polygon, int index)
+        private void DrawTriangle(Vector3D p1, Vector3D p2, Vector3D p3, Vector4D color)
+        {
+            DrawLine(p1, p2, color);
+            DrawLine(p2, p3, color);
+            DrawLine(p3, p1, color);
+        }
+
+        private void DrawFace(Vector3D p1, Vector3D p2, Vector3D p3, Vector3D p4, Vector4D color)
+        {
+            DrawLine(p1, p2, color);
+            DrawLine(p2, p3, color);
+            DrawLine(p3, p4, color);
+            DrawLine(p4, p1, color);
+
+            if (_isTriangles)
+            { DrawLine(p2, p4, color); }
+        }
+
+        private void DrawPolygon(Polygon polygon)
+        {
+            for (var i = 0; i < polygon.verticeGroups.Count; i++)
             {
-                switch (polygon.normalGroups[index].Length)
+                switch (polygon.verticeGroups[i].Length)
                 {
                     case 1:
                     {
-                        var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]];
-                        normal /= normal.Length;
-                        return ShouldCull(normal);
+                        if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
+                        {
+                            DrawPixel(polygon.modifiedVertices[polygon.verticeGroups[i][0]].X, polygon.modifiedVertices[polygon.verticeGroups[i][0]].Y, Vector4D.UnitW);
+                        }
+                        break;
                     }
 
                     case 2:
                     {
-
-                        var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]] + polygon.modifiedNormals[polygon.normalGroups[index][1]];
-                        normal /= normal.Length;
-                        return ShouldCull(normal);
+                        if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
+                        {
+                            DrawLine(polygon.modifiedVertices[polygon.verticeGroups[i][0]], polygon.modifiedVertices[polygon.verticeGroups[i][1]], Vector4D.UnitW);
+                        }
+                        break;
                     }
 
                     case 3:
                     {
-                        var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]] + polygon.modifiedNormals[polygon.normalGroups[index][1]] + polygon.modifiedNormals[polygon.normalGroups[index][2]];
-                        normal /= normal.Length;
-                        return ShouldCull(normal);
+                        if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
+                        {
+                            DrawTriangle(polygon.modifiedVertices[polygon.verticeGroups[i][0]], polygon.modifiedVertices[polygon.verticeGroups[i][1]], polygon.modifiedVertices[polygon.verticeGroups[i][2]], Vector4D.UnitW);
+                        }
+                        break;
                     }
 
                     case 4:
                     {
-                        var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]] + polygon.modifiedNormals[polygon.normalGroups[index][1]] + polygon.modifiedNormals[polygon.normalGroups[index][2]] + polygon.modifiedNormals[polygon.normalGroups[index][3]];
-                        normal /= normal.Length;
-                        return ShouldCull(normal);
+                        if ((_isCulling == false) || (ShouldCull(polygon, i) == false))
+                        {
+                            DrawFace(polygon.modifiedVertices[polygon.verticeGroups[i][0]], polygon.modifiedVertices[polygon.verticeGroups[i][1]], polygon.modifiedVertices[polygon.verticeGroups[i][2]], polygon.modifiedVertices[polygon.verticeGroups[i][3]], Vector4D.UnitW);
+                        }
+                        break;
                     }
 
                     default:
@@ -5032,11 +5013,52 @@ namespace DemoApplication
                     }
                 }
             }
+        }
 
-            private bool ShouldCull(Vector3D normal)
+        private bool ShouldCull(Polygon polygon, int index)
+        {
+            switch (polygon.normalGroups[index].Length)
             {
-                return Vector3D.DotProduct(normal, Vector3D.UnitZ) >= 0;
+                case 1:
+                {
+                    var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]];
+                    normal /= normal.Length;
+                    return ShouldCull(normal);
+                }
+
+                case 2:
+                {
+
+                    var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]] + polygon.modifiedNormals[polygon.normalGroups[index][1]];
+                    normal /= normal.Length;
+                    return ShouldCull(normal);
+                }
+
+                case 3:
+                {
+                    var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]] + polygon.modifiedNormals[polygon.normalGroups[index][1]] + polygon.modifiedNormals[polygon.normalGroups[index][2]];
+                    normal /= normal.Length;
+                    return ShouldCull(normal);
+                }
+
+                case 4:
+                {
+                    var normal = polygon.modifiedNormals[polygon.normalGroups[index][0]] + polygon.modifiedNormals[polygon.normalGroups[index][1]] + polygon.modifiedNormals[polygon.normalGroups[index][2]] + polygon.modifiedNormals[polygon.normalGroups[index][3]];
+                    normal /= normal.Length;
+                    return ShouldCull(normal);
+                }
+
+                default:
+                {
+                    throw new InvalidOperationException();
+                }
             }
+        }
+
+        private bool ShouldCull(Vector3D normal)
+        {
+            return Vector3D.DotProduct(normal, Vector3D.UnitZ) >= 0;
+        }
         #endregion
     }
 }

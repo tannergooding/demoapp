@@ -19,8 +19,8 @@ namespace Mathematics
         #endregion
 
         #region Fields
-            private Vector2D _x;
-            private Vector2D _y;
+        private Vector2D _x;
+        private Vector2D _y;
         #endregion
 
         #region Constructors
@@ -30,10 +30,10 @@ namespace Mathematics
         /// <param name="x">The initial value for the x-component of the matrix.</param>
         /// <param name="y">The initial value for the y-component of the matrix.</param>
         public Matrix2x2(Vector2D x, Vector2D y)
-            {
-                _x = x;
-                _y = y;
-            }
+        {
+            _x = x;
+            _y = y;
+        }
         #endregion
 
         #region Operators
@@ -44,10 +44,10 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> and <paramref name="right"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(Matrix2x2 left, Matrix2x2 right)
-            {
-                return (left._x == right._x) &&
-                       (left._y == right._y);
-            }
+        {
+            return (left._x == right._x) &&
+                   (left._y == right._y);
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Matrix2x2"/> instances to determine equality.</para>
@@ -56,9 +56,9 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> and <paramref name="right"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(Matrix2x2 left, Matrix2x2 right)
-            {
-                return !(left == right);
-            }
+        {
+            return !(left == right);
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Matrix2x2"/> instances to determine sort order.</para>
@@ -67,9 +67,9 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is less than <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator <(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left.Determinant < right.Determinant;
-            }
+        {
+            return left.Determinant < right.Determinant;
+        }
 
 
         /// <summary>
@@ -79,9 +79,9 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is less than or equal to <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator <=(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left.Determinant <= right.Determinant;
-            }
+        {
+            return left.Determinant <= right.Determinant;
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Matrix2x2"/> instances to determine sort order.</para>
@@ -90,9 +90,9 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is greater than <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator >(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left.Determinant > right.Determinant;
-            }
+        {
+            return left.Determinant > right.Determinant;
+        }
 
         /// <summary>
         ///     <para>Performs a comparison between two <see cref="Matrix2x2"/> instances to determine sort order.</para>
@@ -101,9 +101,9 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> is greater than or equal to <paramref name="right"/>; otherwise, <c>false</c>.</returns>
         public static bool operator >=(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left.Determinant >= right.Determinant;
-            }
+        {
+            return left.Determinant >= right.Determinant;
+        }
 
         /// <summary>
         ///     <para>Negates a <see cref="Matrix2x2"/> instance to determine its additive inverse.</para>
@@ -111,9 +111,9 @@ namespace Mathematics
         /// <param name="right">The matrix to negate.</param>
         /// <returns>The additive inverse of <paramref name="right"/>.</returns>
         public static Matrix2x2 operator -(Matrix2x2 right)
-            {
-                return right * (-1.0f);
-            }
+        {
+            return right * (-1.0f);
+        }
 
         /// <summary>
         ///     <para>Adds two <see cref="Matrix2x2"/> instances to determine their sum.</para>
@@ -122,10 +122,10 @@ namespace Mathematics
         /// <param name="right">The matrix to add to <paramref name="left"/>.</param>
         /// <returns>The sum of <paramref name="right"/> added to <paramref name="left"/>.</returns>
         public static Matrix2x2 operator +(Matrix2x2 left, Matrix2x2 right)
-            {
-                return new Matrix2x2(left._x + right._x,
-                                     left._y + right._y);
-            }
+        {
+            return new Matrix2x2(left._x + right._x,
+                                 left._y + right._y);
+        }
 
         /// <summary>
         ///     <para>Subtracts two <see cref="Matrix2x2"/> instances to determine their difference.</para>
@@ -134,9 +134,9 @@ namespace Mathematics
         /// <param name="right">The matrix to subtract from <paramref name="left"/>.</param>
         /// <returns>The difference of <paramref name="right"/> subtracted from <paramref name="right"/>.</returns>
         public static Matrix2x2 operator -(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left + (-right);
-            }
+        {
+            return left + (-right);
+        }
 
         /// <summary>
         ///     <para>Multiplies two <see cref="Matrix2x2"/> instances to determine their product.</para>
@@ -145,15 +145,15 @@ namespace Mathematics
         /// <param name="right">The matrix to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Matrix2x2 operator *(Matrix2x2 left, Matrix2x2 right)
-            {
-                var x = new Vector2D((left.X.X * right.X.X) + (left.X.Y * right.Y.X),
-                                          (left.X.X * right.X.Y) + (left.X.Y * right.Y.Y));
+        {
+            var x = new Vector2D((left.X.X * right.X.X) + (left.X.Y * right.Y.X),
+                                      (left.X.X * right.X.Y) + (left.X.Y * right.Y.Y));
 
-                var y = new Vector2D((left.Y.X * right.X.X) + (left.Y.Y * right.Y.X),
-                                          (left.Y.X * right.X.Y) + (left.Y.Y * right.Y.Y));
+            var y = new Vector2D((left.Y.X * right.X.X) + (left.Y.Y * right.Y.X),
+                                      (left.Y.X * right.X.Y) + (left.Y.Y * right.Y.Y));
 
-                return new Matrix2x2(x, y);
-            }
+            return new Matrix2x2(x, y);
+        }
 
         /// <summary>
         ///     <para>Multiples a <see cref="Matrix2x2"/> and <see cref="float"/> instance to determine their product.</para>
@@ -162,10 +162,10 @@ namespace Mathematics
         /// <param name="right">The scalar to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Matrix2x2 operator *(Matrix2x2 left, float right)
-            {
-                return new Matrix2x2(left._x * right,
-                                     left._y * right);
-            }
+        {
+            return new Matrix2x2(left._x * right,
+                                 left._y * right);
+        }
 
         /// <summary>
         ///     <para>Divides a <see cref="Matrix2x2"/> and <see cref="float"/> instance to determine their quotient.</para>
@@ -174,9 +174,9 @@ namespace Mathematics
         /// <param name="right">The scalar to divide <paramref name="left"/> by.</param>
         /// <returns>The quotient of <paramref name="left"/> divided by <paramref name="right"/>.</returns>
         public static Matrix2x2 operator /(Matrix2x2 left, float right)
-            {
-                return left * (1.0f / right);
-            }
+        {
+            return left * (1.0f / right);
+        }
         #endregion
 
         #region Friendly Operators
@@ -187,9 +187,9 @@ namespace Mathematics
         /// <param name="right">The matrix to compare to <paramref name="left"/>.</param>
         /// <returns><c>true</c> if <paramref name="left"/> and <paramref name="right"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool Equals(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left == right;
-            }
+        {
+            return left == right;
+        }
 
         /// <summary>
         ///     <para>Compares two <see cref="Matrix2x2"/> instances to determine sort order.</para>
@@ -214,9 +214,9 @@ namespace Mathematics
         ///     </list>
         /// </returns>
         public static int Compare(Matrix2x2 left, Matrix2x2 right)
-            {
-                return (int)(left.Determinant - right.Determinant);
-            }
+        {
+            return (int)(left.Determinant - right.Determinant);
+        }
 
         /// <summary>
         ///     <para>Negates a <see cref="Matrix2x2"/> instance to determine its additive inverse.</para>
@@ -224,9 +224,9 @@ namespace Mathematics
         /// <param name="right">The matrix to negate.</param>
         /// <returns>The additive inverse of <paramref name="right"/>.</returns>
         public static Matrix2x2 Negate(Matrix2x2 right)
-            {
-                return -right;
-            }
+        {
+            return -right;
+        }
 
         /// <summary>
         ///     <para>Adds two <see cref="Matrix2x2"/> instances to determine their sum.</para>
@@ -235,9 +235,9 @@ namespace Mathematics
         /// <param name="right">The matrix to add to <paramref name="left"/>.</param>
         /// <returns>The sum of <paramref name="right"/> added to <paramref name="left"/>.</returns>
         public static Matrix2x2 Add(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left + right;
-            }
+        {
+            return left + right;
+        }
 
         /// <summary>
         ///     <para>Subtracts two <see cref="Matrix2x2"/> instances to determine their difference.</para>
@@ -246,9 +246,9 @@ namespace Mathematics
         /// <param name="right">The matrix to subtract from <paramref name="left"/>.</param>
         /// <returns>The difference of <paramref name="right"/> subtracted from <paramref name="right"/>.</returns>
         public static Matrix2x2 Subtract(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left - right;
-            }
+        {
+            return left - right;
+        }
 
         /// <summary>
         ///     <para>Multiplies two <see cref="Matrix2x2"/> instances to determine their product.</para>
@@ -257,9 +257,9 @@ namespace Mathematics
         /// <param name="right">The matrix to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Matrix2x2 Multiply(Matrix2x2 left, Matrix2x2 right)
-            {
-                return left * right;
-            }
+        {
+            return left * right;
+        }
 
         /// <summary>
         ///     <para>Multiples a <see cref="Matrix2x2"/> and <see cref="float"/> instance to determine their product.</para>
@@ -268,9 +268,9 @@ namespace Mathematics
         /// <param name="right">The scalar to multiply <paramref name="left"/> by.</param>
         /// <returns>The product of <paramref name="left"/> multiplied by <paramref name="right"/>.</returns>
         public static Matrix2x2 Multiply(Matrix2x2 left, float right)
-            {
-                return left * right;
-            }
+        {
+            return left * right;
+        }
 
         /// <summary>
         ///     <para>Divides a <see cref="Matrix2x2"/> and <see cref="float"/> instance to determine their quotient.</para>
@@ -279,9 +279,9 @@ namespace Mathematics
         /// <param name="right">The scalar to divide <paramref name="left"/> by.</param>
         /// <returns>The quotient of <paramref name="left"/> divided by <paramref name="right"/>.</returns>
         public static Matrix2x2 Divide(Matrix2x2 left, float right)
-            {
-                return left / right;
-            }
+        {
+            return left / right;
+        }
 
         /// <summary>
         ///     <para>Determines the transpose of a <see cref="Matrix2x2"/> instance.</para>
@@ -289,12 +289,12 @@ namespace Mathematics
         /// <param name="right">The matrix to transpose.</param>
         /// <returns>The transpose of <paramref name="right"/>.</returns>
         public static Matrix2x2 Transpose(Matrix2x2 right)
-            {
-                var x = new Vector2D(right._x.X, right._y.X);
-                var y = new Vector2D(right._x.Y, right._y.Y);
-                
-                return new Matrix2x2(x, y);
-            }
+        {
+            var x = new Vector2D(right._x.X, right._y.X);
+            var y = new Vector2D(right._x.Y, right._y.Y);
+
+            return new Matrix2x2(x, y);
+        }
         #endregion
 
         #region Methods
@@ -321,15 +321,15 @@ namespace Mathematics
         /// </returns>
         /// <exception cref="ArgumentException"><paramref name="obj"/> is not an instance of <see cref="Matrix2x2"/>.</exception>
         public int CompareTo(object obj)
+        {
+            if ((obj is Matrix2x2) == false)
             {
-                if ((obj is Matrix2x2) == false)
-                {
-                    throw new ArgumentException("obj is not an instance of Mathematics.Matrix2x2", "obj");
-                }
-                Contract.EndContractBlock();
-
-                return CompareTo((Matrix2x2)obj);
+                throw new ArgumentException("obj is not an instance of Mathematics.Matrix2x2", "obj");
             }
+            Contract.EndContractBlock();
+
+            return CompareTo((Matrix2x2)obj);
+        }
 
         /// <summary>
         ///     <para>Compares a <see cref="Matrix2x2"/> to the current instance to determine sort order.</para>
@@ -353,9 +353,9 @@ namespace Mathematics
         ///     </list>
         /// </returns>
         public int CompareTo(Matrix2x2 other)
-            {
-                return Compare(this, other);
-            }
+        {
+            return Compare(this, other);
+        }
 
         /// <summary>
         ///     <para>Compares a <see cref="object"/> to the current instance to determine equality.</para>
@@ -363,10 +363,10 @@ namespace Mathematics
         /// <param name="obj">The object to compare to the current instance.</param>
         /// <returns><c>true</c> if <paramref name="obj"/> is a <see cref="Matrix2x2"/> and is equal to the current instance; otherwise, <c>false</c>.</returns>
         public override bool Equals(object obj)
-            {
-                return (obj is Matrix2x2) &&
-                       Equals((Matrix2x2)obj);
-            }
+        {
+            return (obj is Matrix2x2) &&
+                   Equals((Matrix2x2)obj);
+        }
 
         /// <summary>
         ///     <para>Compares a <see cref="Matrix2x2"/> to the current instance to determine equality.</para>
@@ -374,108 +374,108 @@ namespace Mathematics
         /// <param name="other">The matrix to compare to the current instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to the current instance; otherwise, <c>false</c>.</returns>
         public bool Equals(Matrix2x2 other)
-            {
-                return Equals(this, other);
-            }
-        
-            /// <summary>
-            ///     <para>Generates a hash code for the value of the current instance.</para>
-            /// </summary>
-            /// <returns>A hash code for the value of the current instance.</returns>
-            public override int GetHashCode()
-            {
-                return Determinant.GetHashCode();
-            }
+        {
+            return Equals(this, other);
+        }
+
+        /// <summary>
+        ///     <para>Generates a hash code for the value of the current instance.</para>
+        /// </summary>
+        /// <returns>A hash code for the value of the current instance.</returns>
+        public override int GetHashCode()
+        {
+            return Determinant.GetHashCode();
+        }
 
         /// <summary>
         ///     <para>Converts the current instance into a string that represents its value.</para>
         /// </summary>
         /// <returns>A <see cref="string"/> that represents the value of the current instance.</returns>
         public override string ToString()
-            {
-                return string.Format(CultureInfo.CurrentCulture.NumberFormat, "[{0} {1}]", _x, _y);
-            }
+        {
+            return string.Format(CultureInfo.CurrentCulture.NumberFormat, "[{0} {1}]", _x, _y);
+        }
         #endregion
 
         #region Properties
-            /// <summary>
-            ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
-            /// </summary>
-            /// <param name="index">The index of the component to get or set.</param>
-            public unsafe Vector2D this[int index]
+        /// <summary>
+        ///     <para>Gets or sets the value of the component at the specified index for the current instance.</para>
+        /// </summary>
+        /// <param name="index">The index of the component to get or set.</param>
+        public unsafe Vector2D this[int index]
+        {
+            get
             {
-                get
+                if ((index < 0) || (index > 1))
                 {
-                    if ((index < 0) || (index > 1))
-                    {
-                        throw new IndexOutOfRangeException();
-                    }
-                    Contract.EndContractBlock();
-
-                    fixed (Matrix2x2* pVector = &this)
-                    {
-                        return ((Vector2D*)pVector)[index];
-                    }
+                    throw new IndexOutOfRangeException();
                 }
+                Contract.EndContractBlock();
 
-                set
+                fixed (Matrix2x2* pVector = &this)
                 {
-                    if ((index < 0) || (index > 1))
-                    {
-                        throw new IndexOutOfRangeException();
-                    }
-                    Contract.EndContractBlock();
-
-                    fixed (Matrix2x2* pVector = &this)
-                    {
-                        ((Vector2D*)pVector)[index] = value;
-                    }
+                    return ((Vector2D*)pVector)[index];
                 }
             }
 
-            /// <summary>
-            ///     <para>Gets or sets the value of the x-component for the current instance.</para>
-            /// </summary>
-            public Vector2D X
+            set
             {
-                get
+                if ((index < 0) || (index > 1))
                 {
-                    return _x;
+                    throw new IndexOutOfRangeException();
                 }
+                Contract.EndContractBlock();
 
-                set
+                fixed (Matrix2x2* pVector = &this)
                 {
-                    _x = value;
+                    ((Vector2D*)pVector)[index] = value;
                 }
             }
+        }
 
-            /// <summary>
-            ///     <para>Gets or sets the value of the y-component for the current instance.</para>
-            /// </summary>
-            public Vector2D Y
+        /// <summary>
+        ///     <para>Gets or sets the value of the x-component for the current instance.</para>
+        /// </summary>
+        public Vector2D X
+        {
+            get
             {
-                get
-                {
-                    return _y;
-                }
-
-                set
-                {
-                    _y = value;
-                }
+                return _x;
             }
 
-            /// <summary>
-            ///     <para>Gets the determinant of the current instance.</para>
-            /// </summary>
-            public float Determinant
+            set
             {
-                get
-                {
-                    return (X.X * Y.Y) -
-                           (X.Y * Y.X);
-                }
+                _x = value;
             }
+        }
+
+        /// <summary>
+        ///     <para>Gets or sets the value of the y-component for the current instance.</para>
+        /// </summary>
+        public Vector2D Y
+        {
+            get
+            {
+                return _y;
+            }
+
+            set
+            {
+                _y = value;
+            }
+        }
+
+        /// <summary>
+        ///     <para>Gets the determinant of the current instance.</para>
+        /// </summary>
+        public float Determinant
+        {
+            get
+            {
+                return (X.X * Y.Y) -
+                       (X.Y * Y.X);
+            }
+        }
         #endregion
     }
 }
