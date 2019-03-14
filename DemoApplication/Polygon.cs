@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 
 namespace DemoApplication
@@ -17,16 +16,16 @@ namespace DemoApplication
 
         public void Reset()
         {
-            this.Clear();
+            Clear();
 
-            this.modifiedVertices.AddRange(this.vertices);
-            this.modifiedNormals.AddRange(this.normals);
+            modifiedVertices.AddRange(vertices);
+            modifiedNormals.AddRange(normals);
         }
 
         public void Clear()
         {
-            this.modifiedVertices.Clear();
-            this.modifiedNormals.Clear();
+            modifiedVertices.Clear();
+            modifiedNormals.Clear();
         }
     }
 }

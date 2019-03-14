@@ -1,30 +1,30 @@
-﻿<Window x:Class="DemoApplication.MainWindow"
+<Window x:Class="DemoApplication.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow" Width="987" Height="535" ResizeMode="NoResize">
     <Grid>
-        <ListBox Margin="10,10,735,410" x:Name="primitiveListBox" SelectionChanged="primitiveListBox_SelectionChanged" />
+        <ListBox Margin="10,10,735,410" x:Name="_primitiveListBox" SelectionChanged="PrimitiveListBox_SelectionChanged" />
 
         <GroupBox Margin="10,101,735,255" Content="Rotation" BorderThickness="1" BorderBrush="Black"/>
         <Label Margin="10,122,735,344" Content="X: " />
-        <Slider Margin="36,122,744,344" ValueChanged="Slider_ValueChanged" Minimum="-5" Maximum="+5" x:Name="rotationXSlider" />
+        <Slider Margin="36,122,744,344" ValueChanged="Slider_ValueChanged" Minimum="-5" Maximum="+5" x:Name="_rotationXSlider" />
 
         <Label Margin="10,167,735,299" Content="Y: " />
-        <Slider Margin="36,167,744,299" ValueChanged="Slider_ValueChanged_1" Minimum="-5" Maximum="+5" x:Name="rotationYSlider" />
+        <Slider Margin="36,167,744,299" ValueChanged="Slider_ValueChanged_1" Minimum="-5" Maximum="+5" x:Name="_rotationYSlider" />
 
         <Label Margin="10,212,735,255" Content="Z: " />
-        <Slider Margin="36,212,744,255" ValueChanged="Slider_ValueChanged_2" Minimum="-5" Maximum="+5" x:Name="rotationZSlider" />
+        <Slider Margin="36,212,744,255" ValueChanged="Slider_ValueChanged_2" Minimum="-5" Maximum="+5" x:Name="_rotationZSlider" />
 
         <GroupBox Margin="10,256,735,186" Content="View" BorderThickness="1" BorderBrush="Black"/>
         <Label Margin="10,281,735,186" Content="Zoom: " />
-        <Slider Margin="57,281,744,186" ValueChanged="Slider_ValueChanged_3" Minimum="0" Maximum="200" x:Name="zoomSlider" />
+        <Slider Margin="57,281,744,186" ValueChanged="Slider_ValueChanged_3" Minimum="0" Maximum="200" x:Name="_zoomSlider" />
 
         <GroupBox Margin="10,325,735,55" Content="Options" BorderThickness="1" BorderBrush="Black"/>
-        <CheckBox Margin="15,356,735,120" Content="Render Triangles" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" x:Name="renderTriangleCheckBox" />
-        <CheckBox Margin="15,386,735,90" Content="Rotate Model" Checked="CheckBox1_Checked" Unchecked="CheckBox1_Unchecked" x:Name="rotateModelCheckBox" IsChecked="True" />
-        <CheckBox Margin="15,421,735,55" Content="Cull Faces" Checked="CheckBox2_Checked" Unchecked="CheckBox2_Unchecked" x:Name="cullFacesCheckBox" IsChecked="True" />
+        <CheckBox Margin="15,356,735,120" Content="Render Triangles" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" x:Name="_renderTriangleCheckBox" />
+        <CheckBox Margin="15,386,735,90" Content="Rotate Model" Checked="CheckBox1_Checked" Unchecked="CheckBox1_Unchecked" x:Name="_rotateModelCheckBox" IsChecked="True" />
+        <CheckBox Margin="15,421,735,55" Content="Cull Faces" Checked="CheckBox2_Checked" Unchecked="CheckBox2_Unchecked" x:Name="_cullFacesCheckBox" IsChecked="True" />
 
-        <Button Margin="10,456,735,10" Content="Reset" Click="Button_Click" x:Name="resetButton" />
-        <Image Width="720" Height="480" Margin="251,16,10,10" x:Name="displaySurface" />
+        <Button Margin="10,456,735,10" Content="Reset" Click="Button_Click" x:Name="_resetButton" />
+        <Image Width="720" Height="480" Margin="251,16,10,10" x:Name="_displaySurface" />
     </Grid>
 </Window>
