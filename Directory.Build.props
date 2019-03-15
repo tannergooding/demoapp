@@ -69,11 +69,13 @@
   <!-- Package versions for package references across all projects -->
   <PropertyGroup>
     <MicrosoftNetCompilersToolsetPackageVersion>3.1.0-beta1-19164-01</MicrosoftNetCompilersToolsetPackageVersion>
+    <SystemRuntimeCompilerServicesUnsafePackageVersion>4.6.0-preview3.19128.7</SystemRuntimeCompilerServicesUnsafePackageVersion>
   </PropertyGroup>
 
   <!-- Package references which are consumed by all projects -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="$(MicrosoftNetCompilersToolsetPackageVersion)" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafePackageVersion)" />
   </ItemGroup>
 
 </Project>

@@ -19,7 +19,7 @@
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
                         <Label Content="X (0): " x:Name="_rotationXLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnRotationXChanged" Minimum="-5" Maximum="+5" x:Name="_rotationXSlider" Grid.Column="1" />
+                        <Slider ValueChanged="OnRotationXChanged" Minimum="-25" Maximum="+25" x:Name="_rotationXSlider" Grid.Column="1" />
                     </Grid>
 
                     <Grid>
@@ -28,7 +28,7 @@
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
                         <Label Content="Y (0): " x:Name="_rotationYLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnRotationYChanged" Minimum="-5" Maximum="+5" x:Name="_rotationYSlider" Grid.Column="1" />
+                        <Slider ValueChanged="OnRotationYChanged" Minimum="-25" Maximum="+25" x:Name="_rotationYSlider" Grid.Column="1" />
                     </Grid>
 
                     <Grid>
@@ -37,7 +37,7 @@
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
                         <Label Content="Z (0): " x:Name="_rotationZLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnRotationZChanged" Minimum="-5" Maximum="+5" x:Name="_rotationZSlider" Grid.Column="1" />
+                        <Slider ValueChanged="OnRotationZChanged" Minimum="-25" Maximum="+25" x:Name="_rotationZSlider" Grid.Column="1" />
                     </Grid>
                 </StackPanel>
             </GroupBox>

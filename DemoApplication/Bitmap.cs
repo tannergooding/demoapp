@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Windows;
@@ -12,10 +13,15 @@ namespace DemoApplication
     public readonly struct Bitmap
     {
         #region Constants
+        private const int BitsPerPixel = 32;
+        private const int BytesPerPixel = BitsPerPixel / 8;
+
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
 
-        private static readonly PixelFormat PixelFormat = PixelFormats.Rgba128Float;
+        private static readonly PixelFormat PixelFormat = PixelFormats.Bgra32;
+
+        private const uint ColorBlack = 0xFF000000;
         #endregion
 
         #region Fields
@@ -66,21 +72,33 @@ namespace DemoApplication
         #endregion
 
         #region Methods
-        public unsafe void Clear(Vector4 color, bool useHWIntrinsics)
+        public unsafe void Clear(uint color, bool useHWIntrinsics)
         {
             if (useHWIntrinsics)
             {
                 if (Sse2.IsSupported)
                 {
-                    var vColor = Sse.LoadVector128((float*)(&color));
-                    var pBackBuffer = (Vector128<float>*)(_buffer.BackBuffer);
+                    var pixelsPerWrite = Unsafe.SizeOf<Vector128<uint>>() / BytesPerPixel;
+                    var pBackBuffer = (uint*)(_buffer.BackBuffer);
                     var pixelCount = _pixelCount;
+                    var remainder = pixelCount % pixelsPerWrite;
+                    var lastBlockIndex = pixelCount - remainder;
+                    var vColor = Vector128.Create(color);
 
-                    for (int index = 0; index < pixelCount; index++)
-                    { 
-                        Sse.Store((float*)(pBackBuffer + index), vColor);
+                    int index = 0;
+
+                    while (index < lastBlockIndex)
+                    {
+                        Debug.Assert((index >= 0) && (index < pixelCount));
+                        Sse2.Store(pBackBuffer + index, vColor);
+                        index += pixelsPerWrite;
                     }
 
+                    while (index < pixelCount)
+                    {
+                        pBackBuffer[index] = color;
+                        index++;
+                    }
                     return;
                 }
             }
@@ -94,7 +112,7 @@ namespace DemoApplication
             }
         }
 
-        public void DrawLine(Vector3 p1, Vector3 p2, Vector4 color)
+        public void DrawLine(Vector3 p1, Vector3 p2, uint color)
         {
             float xMin, xMax, yMin, yMax;
 
@@ -232,18 +250,18 @@ namespace DemoApplication
             }
         }
 
-        public unsafe void DrawPixel(float xPos, float yPos, Vector4 color)
+        public unsafe void DrawPixel(float xPos, float yPos, uint color)
         {
             var pixelIndex = ((int)yPos * _buffer.PixelWidth) + (int)xPos;
 
             if ((pixelIndex >= 0) && (pixelIndex < _pixelCount))
             {
-                var pRenderBuffer = (Vector4*)_buffer.BackBuffer;
+                var pRenderBuffer = (uint*)_buffer.BackBuffer;
                 pRenderBuffer[pixelIndex] = color;
             }
         }
 
-        public void DrawModel(Model model, bool isTriangles, bool isCulling)
+        public void DrawModel(Model model, uint color, bool isTriangles, bool isCulling)
         {
             for (var i = 0; i < model.verticeGroups.Count; i++)
             {
@@ -253,7 +271,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawPixel(model.modifiedVertices[model.verticeGroups[i][0]].X, model.modifiedVertices[model.verticeGroups[i][0]].Y, Vector4.UnitW);
+                            DrawPixel(model.modifiedVertices[model.verticeGroups[i][0]].X, model.modifiedVertices[model.verticeGroups[i][0]].Y, color);
                         }
                         break;
                     }
@@ -262,7 +280,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawLine(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], Vector4.UnitW);
+                            DrawLine(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], color);
                         }
                         break;
                     }
@@ -271,7 +289,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawTriangle(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], model.modifiedVertices[model.verticeGroups[i][2]], Vector4.UnitW);
+                            DrawTriangle(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], model.modifiedVertices[model.verticeGroups[i][2]], color);
                         }
                         break;
                     }
@@ -280,7 +298,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawQuad(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], model.modifiedVertices[model.verticeGroups[i][2]], model.modifiedVertices[model.verticeGroups[i][3]], Vector4.UnitW, isTriangles);
+                            DrawQuad(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], model.modifiedVertices[model.verticeGroups[i][2]], model.modifiedVertices[model.verticeGroups[i][3]], color, isTriangles);
                         }
                         break;
                     }
@@ -293,7 +311,7 @@ namespace DemoApplication
             }
         }
 
-        public void DrawQuad(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Vector4 color, bool isTriangles)
+        public void DrawQuad(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, uint color, bool isTriangles)
         {
             DrawLine(p1, p2, color);
             DrawLine(p2, p3, color);
@@ -306,7 +324,7 @@ namespace DemoApplication
             }
         }
 
-        public void DrawTriangle(Vector3 p1, Vector3 p2, Vector3 p3, Vector4 color)
+        public void DrawTriangle(Vector3 p1, Vector3 p2, Vector3 p3, uint color)
         {
             DrawLine(p1, p2, color);
             DrawLine(p2, p3, color);

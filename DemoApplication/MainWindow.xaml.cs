@@ -14,10 +14,8 @@ namespace DemoApplication
     {
         #region Constants
         private const int BufferCount = 2;
-        private const float RotationMultiplier = 5;
         private const float TicksPerSecond = TimeSpan.TicksPerSecond;
 
-        private static readonly Vector4 BackgroundColor = new Vector4(0.392156899f, 0.584313750f, 0.929411829f, 1.0f);
         private static readonly TimeSpan OneSecond = TimeSpan.FromSeconds(1.0);
         private static readonly float TickFrequency = TicksPerSecond / Stopwatch.Frequency;
         #endregion
@@ -42,6 +40,9 @@ namespace DemoApplication
         private Vector3 _translation = Vector3.Zero;
 
         private PerspectiveCamera _camera = new PerspectiveCamera();
+
+        private uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
+        private uint _foregroundColor = 0xFF000000; // Black
 
         private bool _isTriangles = false;
         private bool _isRotating = true;
@@ -104,19 +105,19 @@ namespace DemoApplication
 
         private void OnRotationXChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            _rotationSpeed.X = (float)e.NewValue * RotationMultiplier;
+            _rotationSpeed.X = (float)e.NewValue;
             _rotationXLabel.Content = $"X ({_rotationSpeed.X:F2})";
         }
 
         private void OnRotationYChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            _rotationSpeed.Y = (float)e.NewValue * RotationMultiplier;
+            _rotationSpeed.Y = (float)e.NewValue;
             _rotationYLabel.Content = $"Y ({_rotationSpeed.Y:F2})";
         }
 
         private void OnRotationZChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            _rotationSpeed.Z = (float)e.NewValue * RotationMultiplier;
+            _rotationSpeed.Z = (float)e.NewValue;
             _rotationZLabel.Content = $"Z ({_rotationSpeed.Z:F2})";
         }
 
@@ -4713,11 +4714,11 @@ namespace DemoApplication
             var renderBuffer = _buffers[_renderBufferIndex];
 
             renderBuffer.Lock();
-            renderBuffer.Clear(BackgroundColor, _useHWIntrinsics);
+            renderBuffer.Clear(_backgroundColor, _useHWIntrinsics);
 
             if (_activePrimitive != null)
             {
-                renderBuffer.DrawModel(_activePrimitive, _isTriangles, _isCulling);
+                renderBuffer.DrawModel(_activePrimitive, _foregroundColor, _isTriangles, _isCulling);
             }
             renderBuffer.Invalidate();
         }
