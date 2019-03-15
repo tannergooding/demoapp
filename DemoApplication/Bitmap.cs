@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -94,223 +95,131 @@ namespace DemoApplication
             }
         }
 
-        public void DrawLine(Vector3 p1, Vector3 p2, uint color)
+        // This is based on "Bresenham’s Line  Generation Algorithm with Built-in Clipping - Yevgeny P. Kuzmin"
+        public void DrawLine(Vector3 point1, Vector3 point2, uint color)
         {
-            float xMin, xMax, yMin, yMax;
-
-            if (p1.Y > p2.Y)
+            if (PixelCount == 0)
             {
-                xMin = p2.X;
-                xMax = p1.X;
+                return;
+            }
 
-                yMin = p2.Y;
-                yMax = p1.Y;
+            // Draw from top to bottom to reduce the cases that need handled and to ensure
+            // a deterministic line is drawn for the same endpoints. We also prefer drawing
+            // from left to right, in the scenario where y1 = y2.
+
+            var (x1, y1) = ((int)point1.X, (int)point1.Y);
+            var (x2, y2) = ((int)point2.X, (int)point2.Y);
+
+            if ((y1 >= y2) && ((y1 != y2) || (x1 >= x2)))
+            {
+                x2 = Interlocked.Exchange(ref x1, x2);
+                y2 = Interlocked.Exchange(ref y1, y2);
+            }
+
+            if (x1 == x2)
+            {
+                if (y1 == y2)
+                {
+                    DrawPixel(x1, y1, color);
+                }
+                else
+                {
+                    DrawVerticalLine(x1, y1, y2, color);
+                }
+            }
+            else if (y1 == y2)
+            {
+                DrawHorizontalLine(x1, y1, x2, color);
+            }
+            else if (x1 < x2)
+            {
+                DrawDiagonalLineLeftToRight(x1, y1, x2, y2, color);
             }
             else
             {
-                xMin = p1.X;
-                xMax = p2.X;
-
-                yMin = p1.Y;
-                yMax = p2.Y;
-            }
-
-            var xDelta = (int)(xMax - xMin);
-            var yDelta = (int)(yMax - yMin);
-            var direction = 1;
-            if (xDelta < 0)
-            { xDelta = -xDelta; direction = -1; }
-            var xPos = xMin;
-            var yPos = yMin;
-
-            if (xDelta == 0)
-            {
-                for (var index = 0; index <= yDelta; index++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    yPos += 1.0f;
-                }
-            }
-            else if (yDelta == 0)
-            {
-                for (var index = 0; index <= xDelta; index++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    xPos += direction;
-                }
-            }
-            else if (xDelta == yDelta)
-            {
-                for (var index = 0; index <= xDelta; index++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    xPos += direction;
-                    yPos += 1.0f;
-                }
-            }
-            else if (xDelta > yDelta)
-            {
-                var pixelsPerStep = xDelta / yDelta;
-                var initialPixelStep = (pixelsPerStep / 2) + 1;
-                var adjustUp = xDelta % yDelta * 2;
-                var adjustDown = yDelta * 2;
-                var errorTerm = (xDelta % yDelta) - (yDelta * 2);
-
-                if ((adjustUp == 0) && ((pixelsPerStep & 1) == 0))
-                { initialPixelStep -= 1; }
-                if ((pixelsPerStep & 1) != 0)
-                { errorTerm += yDelta; }
-
-                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    xPos += direction;
-                }
-                yPos += 1.0f;
-
-                for (var index = 0; index < (yDelta - 1); index++)
-                {
-                    var runLength = pixelsPerStep;
-                    errorTerm += adjustUp;
-                    if (errorTerm > 0)
-                    { runLength++; errorTerm -= adjustDown; }
-
-                    for (var pixelsDrawn = 0; pixelsDrawn < runLength; pixelsDrawn++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        xPos += direction;
-                    }
-                    yPos += 1.0f;
-                }
-
-                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    xPos += direction;
-                }
-            }
-            else
-            {
-                var pixelsPerStep = yDelta / xDelta;
-                var initialPixelStep = (pixelsPerStep / 2) + 1;
-                var adjustUp = yDelta % xDelta * 2;
-                var adjustDown = xDelta * 2;
-                var errorTerm = (yDelta % xDelta) - (xDelta * 2);
-
-                if ((adjustUp == 0) && ((pixelsPerStep & 1) == 0))
-                { initialPixelStep -= 1; }
-                if ((pixelsPerStep & 1) != 0)
-                { errorTerm += xDelta; }
-
-                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    yPos += 1.0f;
-                }
-                xPos += direction;
-
-                for (var index = 0; index < (xDelta - 1); index++)
-                {
-                    var runLength = pixelsPerStep;
-                    errorTerm += adjustUp;
-                    if (errorTerm > 0)
-                    { runLength++; errorTerm -= adjustDown; }
-
-                    for (var pixelsDrawn = 0; pixelsDrawn < runLength; pixelsDrawn++)
-                    {
-                        DrawPixel(xPos, yPos, color);
-                        yPos += 1.0f;
-                    }
-                    xPos += direction;
-                }
-
-                for (var pixelsDrawn = 0; pixelsDrawn < initialPixelStep; pixelsDrawn++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                    yPos += 1.0f;
-                }
+                DrawDiagonalLineRightToLeft(x1, y1, x2, y2, color);
             }
         }
 
-        public unsafe void DrawPixel(float xPos, float yPos, uint color)
+        public void DrawPixel(int x, int y, uint color)
         {
-            var pixelIndex = ((int)yPos * Buffer.PixelWidth) + (int)xPos;
+            var (width, height) = (PixelWidth, PixelHeight);
 
-            if ((pixelIndex >= 0) && (pixelIndex < PixelCount))
+            if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
             {
-                var pRenderBuffer = (uint*)Buffer.BackBuffer;
-                pRenderBuffer[pixelIndex] = color;
+                return;
             }
+
+            var index = (y * width) + x;
+            DrawPixelUnsafe(index, color);
         }
 
         public void DrawModel(Model model, uint color, bool isTriangles, bool isCulling)
         {
             for (var i = 0; i < model.VerticeGroups.Count; i++)
             {
+                if (isCulling && ShouldCull(model, i))
+                {
+                    continue;
+                }
+
                 switch (model.VerticeGroups[i].Length)
                 {
                     case 1:
                     {
-                        if ((isCulling == false) || (ShouldCull(model, i) == false))
-                        {
-                            DrawPixel(model.ModifiedVertices[model.VerticeGroups[i][0]].X, model.ModifiedVertices[model.VerticeGroups[i][0]].Y, color);
-                        }
+                        DrawPixel((int)model.ModifiedVertices[model.VerticeGroups[i][0]].X, (int)model.ModifiedVertices[model.VerticeGroups[i][0]].Y, color);
                         break;
                     }
 
                     case 2:
                     {
-                        if ((isCulling == false) || (ShouldCull(model, i) == false))
-                        {
-                            DrawLine(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], color);
-                        }
+                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], color);
                         break;
                     }
 
                     case 3:
                     {
-                        if ((isCulling == false) || (ShouldCull(model, i) == false))
-                        {
-                            DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color);
-                        }
+                        DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color);
                         break;
                     }
 
                     case 4:
                     {
-                        if ((isCulling == false) || (ShouldCull(model, i) == false))
-                        {
-                            DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isTriangles);
-                        }
+                        DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isTriangles);
                         break;
                     }
 
                     default:
                     {
-                        throw new InvalidOperationException();
+                        for (var n = 0; n < (model.VerticeGroups[i].Length - 2); n++)
+                        {
+                            DrawLine(model.ModifiedVertices[model.VerticeGroups[i][n]], model.ModifiedVertices[model.VerticeGroups[i][n + 1]], color);
+                        }
+                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][model.VerticeGroups[i].Length - 1]], model.ModifiedVertices[model.VerticeGroups[i][0]], color);
+                        break;
                     }
                 }
             }
         }
 
-        public void DrawQuad(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, uint color, bool isTriangles)
+        public void DrawQuad(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 point4, uint color, bool isTriangles)
         {
-            DrawLine(p1, p2, color);
-            DrawLine(p2, p3, color);
-            DrawLine(p3, p4, color);
-            DrawLine(p4, p1, color);
+            DrawLine(point1, point2, color);
+            DrawLine(point2, point3, color);
+            DrawLine(point3, point4, color);
+            DrawLine(point4, point1, color);
 
             if (isTriangles)
             {
-                DrawLine(p2, p4, color);
+                DrawLine(point1, point3, color);
             }
         }
 
-        public void DrawTriangle(Vector3 p1, Vector3 p2, Vector3 p3, uint color)
+        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color)
         {
-            DrawLine(p1, p2, color);
-            DrawLine(p2, p3, color);
-            DrawLine(p3, p1, color);
+            DrawLine(point1, point2, color);
+            DrawLine(point2, point3, color);
+            DrawLine(point3, point1, color);
         }
 
         public void Lock()
@@ -329,44 +238,300 @@ namespace DemoApplication
             Buffer.Unlock();
         }
 
-        private bool ShouldCull(Model model, int index)
+        private void DrawDiagonalLineInternal(ref int d1, ref int d2, int sx1, int sy1, int sx2, int sy2, int dsx, int dsy, int wx1, int wy1, int wx2, int wy2, int stx, int sty, ref int xd, ref int yd, uint color)
         {
-            switch (model.NormalGroups[index].Length)
+            // Some general assertions that the paper maintains
+            Debug.Assert((wx1 <= wx2) && (wy1 <= wy2));
+            Debug.Assert((sx1 <= sx2) && (sy1 <= sy2));
+            Debug.Assert(dsy <= dsx);
+
+            var setExit = false;
+
+            var (dx2, dy2) = (2 * dsx, 2 * dsy);
+            xd = sx1;
+            yd = sy1;
+            var (e, term) = ((2 * dsy) - dsx, sx2);
+
+            if (sy1 < wy1)                          // Horizontal Entry
             {
-                case 1:
+                var tmp = (dx2 * (wy1 - sy1)) - dsx;
+                xd += tmp / dy2;
+                var rem = tmp % dy2;
+
+                if (xd > wx2)
                 {
-                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]];
-                    normal /= normal.Length;
-                    return ShouldCull(normal);
+                    return;
                 }
-
-                case 2:
+                else if ((xd + 1) >= wx1)
                 {
+                    yd = wy1;
+                    e -= rem + dsx;
 
-                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]] + model.ModifiedNormals[model.NormalGroups[index][1]];
-                    normal /= normal.Length;
-                    return ShouldCull(normal);
-                }
+                    if (rem > 0)
+                    {
+                        xd++;
+                        e += dy2;
+                    }
 
-                case 3:
-                {
-                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]] + model.ModifiedNormals[model.NormalGroups[index][1]] + model.ModifiedNormals[model.NormalGroups[index][2]];
-                    normal /= normal.Length;
-                    return ShouldCull(normal);
-                }
-
-                case 4:
-                {
-                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]] + model.ModifiedNormals[model.NormalGroups[index][1]] + model.ModifiedNormals[model.NormalGroups[index][2]] + model.ModifiedNormals[model.NormalGroups[index][3]];
-                    normal /= normal.Length;
-                    return ShouldCull(normal);
-                }
-
-                default:
-                {
-                    throw new InvalidOperationException();
+                    setExit = true;
                 }
             }
+
+            if ((!setExit) && (sx1 < wx1))          // Vertical Entry
+            {
+                var tmp = dy2 * (wx1 - sx1);
+                yd += tmp / dx2;
+                var rem = tmp % dx2;
+
+                if ((yd > wy2) || ((yd == wy2) && (rem >= dsx)))
+                {
+                    return;
+                }
+                else
+                {
+                    xd = wx1;
+                    e += rem;
+
+                    if (rem >= dsx)
+                    {
+                        yd++;
+                        e -= dx2;
+                    }
+                }
+            }
+
+            if (sy2 > wy2)                          // Exit
+            {
+                var tmp = dx2 * (wy2 - sy1) + dsx;
+                term = sx1 + (tmp / dy2);
+                var rem = tmp % dy2;
+
+                if (rem == 0)
+                {
+                    term--;
+                }
+            }
+
+            if (term > wx2)
+            {
+                term = wx2;
+            }
+
+            term++;
+
+            if (sty == -1)
+            {
+                yd = -yd;                           // Reverse Transformation
+            }
+
+            if (stx == -1)
+            {
+                xd = -xd;                           // Reverse Transformation
+                term = -term;
+            }
+
+            dx2 -= dy2;
+
+            while (xd != term)                      // Bresenham's Line Drawing
+            {
+                var index = (d2 * PixelWidth) + d1;
+                DrawPixelUnsafe(index, color);
+
+                if (e >= 0)
+                {
+                    xd += stx;
+                    yd += sty;
+                    e -= dx2;
+                }
+                else
+                {
+                    xd += stx;
+                    e += dy2;
+                }
+            }
+        }
+
+        private void DrawDiagonalLineLeftToRight(int x1, int y1, int x2, int y2, uint color)
+        {
+            // We only support drawing top to bottom and left to right; We also expect
+            // the horizontal and vertical cases to have already been handled
+            Debug.Assert((x1 < x2) && (y1 < y2));
+
+            var (width, height) = (PixelWidth, PixelHeight);
+
+            if (x2 < 0 || x1 >= width || y2 < 0 || y1 >= height)
+            {
+                return;
+            }
+
+            var (sx1, sy1) = (x1, y1);
+            var (sx2, sy2) = (x2, y2);
+
+            var (stx, sty) = (1, 1);
+
+            var (wx1, wy1) = (0, 0);
+            var (wx2, wy2) = (width - 1, height - 1);
+
+            var (dsx, dsy) = (sx2 - sx1, sy2 - sy1);
+
+            var (xd, yd) = (0, 0);
+
+            if (dsx >= dsy)         // Primarily Horizontal Line
+            {
+                DrawDiagonalLineInternal(ref xd, ref yd, sx1, sy1, sx2, sy2, dsx, dsy, wx1, wy1, wx2, wy2, stx, sty, ref xd, ref yd, color);
+            }
+            else                    // Primarily Vertical Line
+            {
+                DrawDiagonalLineInternal(ref yd, ref xd, sy1, sx1, sy2, sx2, dsy, dsx, wy1, wx1, wy2, wx2, sty, stx, ref xd, ref yd, color);
+            }
+        }
+
+        private void DrawDiagonalLineRightToLeft(int x1, int y1, int x2, int y2, uint color)
+        {
+            // We only support drawing top to bottom and left to right; We also expect
+            // the horizontal and vertical cases to have already been handled
+            Debug.Assert((x1 > x2) && (y1 < y2));
+
+            var (width, height) = (PixelWidth, PixelHeight);
+
+            if ((x1 < 0) || (x2 >= width) || (y2 < 0) || (y1 >= height))
+            {
+                return;
+            }
+
+            var (sx1, sy1) = (-x1, y1);
+            var (sx2, sy2) = (-x2, y2);
+
+            var (stx, sty) = (-1, 1);
+
+            var (wx1, wy1) = (-(width - 1), 0);
+            var (wx2, wy2) = (0, height - 1);
+
+            var (dsx, dsy) = (sx2 - sx1, sy2 - sy1);
+
+            var (xd, yd) = (0, 0);
+
+            if (dsx >= dsy)         // Primarily Horizontal Line
+            {
+                DrawDiagonalLineInternal(ref xd, ref yd, sx1, sy1, sx2, sy2, dsx, dsy, wx1, wy1, wx2, wy2, stx, sty, ref xd, ref yd, color);
+            }
+            else                    // Primarily Vertical Line
+            {
+                DrawDiagonalLineInternal(ref yd, ref xd, sy1, sx1, sy2, sx2, dsy, dsx, wy1, wx1, wy2, wx2, sty, stx, ref xd, ref yd, color);
+            }
+        }
+
+        private void DrawHorizontalLine(int x1, int y, int x2, uint color)
+        {
+            // We only support drawing left to right and expect the pixel case to have been handled
+            Debug.Assert(x1 < x2);
+
+            var (width, height) = (PixelWidth, PixelHeight);
+
+            if ((y < 0) || (y >= height) || (x2 < 0) || (x1 >= width))
+            {
+                return;
+            }
+
+            var startX = Math.Max(x1, 0);
+            var endX = Math.Min(x2, width - 1);
+
+            var delta = endX - startX;
+            Debug.Assert(delta >= 0);
+
+            var index = (y * width) + startX;
+
+            for (var i = 0; i < delta; i++, index++)
+            {
+                DrawPixelUnsafe(index, color);
+            }
+        }
+
+        private unsafe void DrawPixelUnsafe(int index, uint color)
+        {
+            Debug.Assert((index >= 0) && (index < PixelCount));
+            var pBackBuffer = (uint*)Buffer.BackBuffer;
+            pBackBuffer[index] = color;
+        }
+
+        private void DrawVerticalLine(int x, int y1, int y2, uint color)
+        {
+            // We only support drawing top to bottom and expect the pixel case to have been handled
+            Debug.Assert(y1 < y2);
+
+            var (width, height) = (PixelWidth, PixelHeight);
+
+            if ((x < 0) || (x >= width) || (y2 < 0) || (y1 >= height))
+            {
+                return;
+            }
+
+            var startY = Math.Max(y1, 0);
+            var endY = Math.Min(y2, height - 1);
+
+            var delta = endY - startY;
+            Debug.Assert(delta >= 0);
+
+            var index = (startY * width) + x;
+
+            for (var i = 0; i < delta; i++, index += width)
+            {
+                DrawPixelUnsafe(index, color);
+            }
+        }
+
+        private bool ShouldCull(Model model, int index)
+        {
+            var normal = model.ModifiedNormals[model.NormalGroups[index][model.NormalGroups[index].Length - 1]];
+
+            if (index != 1)
+            {
+                switch (model.NormalGroups[index].Length)
+                {
+                    case 2:
+                    {
+                        normal += model.ModifiedNormals[model.NormalGroups[index][0]];
+                        break;
+                    }
+
+                    case 3:
+                    {
+                        normal += model.ModifiedNormals[model.NormalGroups[index][1]];
+                        break;
+                    }
+
+                    default:
+                    {
+                        normal += model.ModifiedNormals[model.NormalGroups[index][2]];
+                        break;
+                    }
+                }
+            }
+        
+            if (index != 2)
+            {
+                switch (model.NormalGroups[index].Length)
+                {
+                    case 3:
+                    {
+                        normal += model.ModifiedNormals[model.NormalGroups[index][0]];
+                        break;
+                    }
+
+                    default:
+                    {
+                        normal += model.ModifiedNormals[model.NormalGroups[index][1]];
+                        break;
+                    }
+                }
+            }
+
+            if (index != 3)
+            {
+                normal = normal + model.ModifiedNormals[model.NormalGroups[index][0]];
+            }
+
+            return ShouldCull(normal.Normalize());
         }
 
         private bool ShouldCull(Vector3 normal)

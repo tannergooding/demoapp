@@ -241,6 +241,7 @@ namespace DemoApplication
             LoadFile("Suzanne");
             LoadFile("Teapot");
             LoadFile("Torus");
+            LoadFile("Test");
         }
 
         private void ObjectToWorld(Model model)

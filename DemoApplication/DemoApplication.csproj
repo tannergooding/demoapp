@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Mathematics\Mathematics.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="models\test\" />
+  </ItemGroup>
+
 </Project>

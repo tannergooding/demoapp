@@ -49,7 +49,7 @@
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
                     <Label Content="Zoom (0): " x:Name="_zoomLabel" Grid.Column="0" />
-                    <Slider ValueChanged="OnZoomChanged" Minimum="0" Maximum="200" x:Name="_zoomSlider" Grid.Column="1" />
+                    <Slider ValueChanged="OnZoomChanged" Minimum="0" Maximum="1000" x:Name="_zoomSlider" Grid.Column="1" />
                 </Grid>
             </GroupBox>
 
