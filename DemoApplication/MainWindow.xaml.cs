@@ -12,10 +12,14 @@ namespace DemoApplication
     {
         #region Constants
         private const int BufferCount = 2;
+        private const float DefaultRotationXSpeed = -5.0f;
+        private const float DefaultRotationYSpeed = 0.0f;
+        private const float DefaultRotationZSpeed = 5.0f;
+        private const float DefaultZoomLevel = 100.0f;
         private const float TicksPerSecond = TimeSpan.TicksPerSecond;
 
         private static readonly Vector3 DefaultRotation = new Vector3(90.0f, 0.0f, 0.0f);
-        private static readonly Vector3 DefaultScale = new Vector3(100.0f, 100.0f, 1.0f);
+        private static readonly Vector3 DefaultScale = new Vector3(DefaultZoomLevel, DefaultZoomLevel, 1.0f);
         private static readonly TimeSpan OneSecond = TimeSpan.FromSeconds(1.0);
         private static readonly float TickFrequency = TicksPerSecond / Stopwatch.Frequency;
         #endregion
@@ -306,11 +310,11 @@ namespace DemoApplication
 
         private void Reset()
         {
-            _rotationXSlider.Value = 0.0;
-            _rotationYSlider.Value = 0.0;
-            _rotationZSlider.Value = 0.0;
+            _rotationXSlider.Value = DefaultRotationXSpeed;
+            _rotationYSlider.Value = DefaultRotationYSpeed;
+            _rotationZSlider.Value = DefaultRotationZSpeed;
 
-            _zoomSlider.Value = 100.0;
+            _zoomSlider.Value = DefaultZoomLevel;
 
             _renderTriangleCheckBox.IsChecked = false;
             _rotateModelCheckBox.IsChecked = true;
