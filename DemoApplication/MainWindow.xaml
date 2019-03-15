@@ -9,7 +9,7 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Orientation="Vertical" Grid.Column="0">
-            <ListBox x:Name="_primitiveListBox" SelectionChanged="PrimitiveListBox_SelectionChanged" />
+            <ListBox x:Name="_sceneListBox" SelectionChanged="SceneListBox_SelectionChanged" />
 
             <GroupBox Header="Rotation" BorderThickness="1" BorderBrush="Black">
                 <StackPanel Orientation="Vertical">

@@ -245,15 +245,15 @@ namespace DemoApplication
 
         public void DrawModel(Model model, uint color, bool isTriangles, bool isCulling)
         {
-            for (var i = 0; i < model.verticeGroups.Count; i++)
+            for (var i = 0; i < model.VerticeGroups.Count; i++)
             {
-                switch (model.verticeGroups[i].Length)
+                switch (model.VerticeGroups[i].Length)
                 {
                     case 1:
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawPixel(model.modifiedVertices[model.verticeGroups[i][0]].X, model.modifiedVertices[model.verticeGroups[i][0]].Y, color);
+                            DrawPixel(model.ModifiedVertices[model.VerticeGroups[i][0]].X, model.ModifiedVertices[model.VerticeGroups[i][0]].Y, color);
                         }
                         break;
                     }
@@ -262,7 +262,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawLine(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], color);
+                            DrawLine(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], color);
                         }
                         break;
                     }
@@ -271,7 +271,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawTriangle(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], model.modifiedVertices[model.verticeGroups[i][2]], color);
+                            DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color);
                         }
                         break;
                     }
@@ -280,7 +280,7 @@ namespace DemoApplication
                     {
                         if ((isCulling == false) || (ShouldCull(model, i) == false))
                         {
-                            DrawQuad(model.modifiedVertices[model.verticeGroups[i][0]], model.modifiedVertices[model.verticeGroups[i][1]], model.modifiedVertices[model.verticeGroups[i][2]], model.modifiedVertices[model.verticeGroups[i][3]], color, isTriangles);
+                            DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isTriangles);
                         }
                         break;
                     }
@@ -331,11 +331,11 @@ namespace DemoApplication
 
         private bool ShouldCull(Model model, int index)
         {
-            switch (model.normalGroups[index].Length)
+            switch (model.NormalGroups[index].Length)
             {
                 case 1:
                 {
-                    var normal = model.modifiedNormals[model.normalGroups[index][0]];
+                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]];
                     normal /= normal.Length;
                     return ShouldCull(normal);
                 }
@@ -343,21 +343,21 @@ namespace DemoApplication
                 case 2:
                 {
 
-                    var normal = model.modifiedNormals[model.normalGroups[index][0]] + model.modifiedNormals[model.normalGroups[index][1]];
+                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]] + model.ModifiedNormals[model.NormalGroups[index][1]];
                     normal /= normal.Length;
                     return ShouldCull(normal);
                 }
 
                 case 3:
                 {
-                    var normal = model.modifiedNormals[model.normalGroups[index][0]] + model.modifiedNormals[model.normalGroups[index][1]] + model.modifiedNormals[model.normalGroups[index][2]];
+                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]] + model.ModifiedNormals[model.NormalGroups[index][1]] + model.ModifiedNormals[model.NormalGroups[index][2]];
                     normal /= normal.Length;
                     return ShouldCull(normal);
                 }
 
                 case 4:
                 {
-                    var normal = model.modifiedNormals[model.normalGroups[index][0]] + model.modifiedNormals[model.normalGroups[index][1]] + model.modifiedNormals[model.normalGroups[index][2]] + model.modifiedNormals[model.normalGroups[index][3]];
+                    var normal = model.ModifiedNormals[model.NormalGroups[index][0]] + model.ModifiedNormals[model.NormalGroups[index][1]] + model.ModifiedNormals[model.NormalGroups[index][2]] + model.ModifiedNormals[model.NormalGroups[index][3]];
                     normal /= normal.Length;
                     return ShouldCull(normal);
                 }

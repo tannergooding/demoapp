@@ -1,5 +1,3 @@
-using System;
-
 namespace Mathematics
 {
     public readonly struct OrthogonalTransform
