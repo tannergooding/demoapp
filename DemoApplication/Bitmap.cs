@@ -24,7 +24,6 @@ namespace DemoApplication
         public Bitmap(int width, int height)
         {
             _buffer = new WriteableBitmap(width, height, DpiX, DpiY, PixelFormat, palette: null);
-            _buffer.Lock();
             _pixelCount = (width * height);
         }
         #endregion

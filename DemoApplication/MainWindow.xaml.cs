@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Mathematics;
 
@@ -22,7 +23,6 @@ namespace DemoApplication
         #endregion
 
         #region Fields
-        private readonly DispatcherTimer _dispatchTimer = new DispatcherTimer(DispatcherPriority.ApplicationIdle, Application.Current.Dispatcher);
         private readonly Bitmap[] _buffers = new Bitmap[BufferCount];
 
         private int _renderBufferIndex = 0;
@@ -4684,15 +4684,11 @@ namespace DemoApplication
             {
                 _renderBufferIndex = 0;
             }
+
             var displayBuffer = _buffers[displayBufferIndex];
-
-            displayBuffer.Invalidate();
             displayBuffer.Unlock();
-            {
-                _displaySurface.Source = displayBuffer.Source;
-            }
-            displayBuffer.Lock();
 
+            _displaySurface.Source = displayBuffer.Source;
             _fps++;
             _totalFrames++;
         }
@@ -4706,12 +4702,15 @@ namespace DemoApplication
         private void RenderBuffer()
         {
             var renderBuffer = _buffers[_renderBufferIndex];
+
+            renderBuffer.Lock();
             renderBuffer.Clear(BackgroundColor);
 
             if (_activePrimitive != null)
             {
                 renderBuffer.DrawModel(_activePrimitive, _isTriangles, _isCulling);
             }
+            renderBuffer.Invalidate();
         }
 
         private void RenderInfo()
@@ -4788,8 +4787,7 @@ namespace DemoApplication
 
             _previousTimestamp = GetTimestamp();
 
-            _dispatchTimer.Tick += OnApplicationIdle;
-            _dispatchTimer.Start();
+            Dispatcher.Hooks.DispatcherInactive += OnApplicationIdle;
         }
 
         private void TranslateObject(Model polygon)
