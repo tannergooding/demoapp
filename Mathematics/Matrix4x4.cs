@@ -477,9 +477,9 @@ namespace Mathematics
             var wx = rotation.X * rotation.W;
 
             return new Matrix4x4(
-                new Vector4((1.0f - 2.0f * (yy + zz)), (2.0f * (xy + wz)), (2.0f * (xz - wy)), 0.0f),
-                new Vector4((2.0f * (xy - wz)), (1.0f - 2.0f * (zz + xx)), (2.0f * (yz + wx)), 0.0f),
-                new Vector4((2.0f * (xz + wy)), (2.0f * (yz - wx)), (1.0f - 2.0f * (yy + xx)), 0.0f),
+                new Vector4(1.0f - (2.0f * (yy + zz)), 2.0f * (xy + wz), 2.0f * (xz - wy), 0.0f),
+                new Vector4(2.0f * (xy - wz), 1.0f - (2.0f * (zz + xx)), 2.0f * (yz + wx), 0.0f),
+                new Vector4(2.0f * (xz + wy), 2.0f * (yz - wx), 1.0f - (2.0f * (yy + xx)), 0.0f),
                 Vector4.UnitW
             );
         }
@@ -609,7 +609,7 @@ namespace Mathematics
             var a13 = +((e * jp_ln) - (f * ip_lm) + (h * in_jm));
             var a14 = -((e * jo_kn) - (f * io_km) + (g * in_jm));
 
-            var det = a * a11 + b * a12 + c * a13 + d * a14;
+            var det = (a * a11) + (b * a12) + (c * a13) + (d * a14);
 
             if (MathF.Abs(det) < float.Epsilon)
             {
@@ -625,16 +625,16 @@ namespace Mathematics
                     var invDet = 1.0f / det;
 
 
-                    var (xx, yx, zx, wx) = ((a11 * invDet),
-                                            (a12 * invDet),
-                                            (a13 * invDet),
-                                            (a14 * invDet));
+                    var (xx, yx, zx, wx) = (a11 * invDet,
+                                            a12 * invDet,
+                                            a13 * invDet,
+                                            a14 * invDet);
 
 
-                    var (xy, yy, zy, wy) = ((-((b * kp_lo) - (c * jp_ln) + (d * jo_kn)) * invDet),
-                                            (+((a * kp_lo) - (c * ip_lm) + (d * io_km)) * invDet),
-                                            (-((a * jp_ln) - (b * ip_lm) + (d * in_jm)) * invDet),
-                                            (+((a * jo_kn) - (b * io_km) + (c * in_jm)) * invDet));
+                    var (xy, yy, zy, wy) = (-((b * kp_lo) - (c * jp_ln) + (d * jo_kn)) * invDet,
+                                            +((a * kp_lo) - (c * ip_lm) + (d * io_km)) * invDet,
+                                            -((a * jp_ln) - (b * ip_lm) + (d * in_jm)) * invDet,
+                                            +((a * jo_kn) - (b * io_km) + (c * in_jm)) * invDet);
 
 
                     var gp_ho = (g * p) - (h * o);
@@ -645,10 +645,10 @@ namespace Mathematics
                     var en_fm = (e * n) - (f * m);
 
 
-                    var (xz, yz, zz, wz) = ((+((b * gp_ho) - (c * fp_hn) + (d * fo_gn)) * invDet),
-                                            (-((a * gp_ho) - (c * ep_hm) + (d * eo_gm)) * invDet),
-                                            (+((a * fp_hn) - (b * ep_hm) + (d * en_fm)) * invDet),
-                                            (-((a * fo_gn) - (b * eo_gm) + (c * en_fm)) * invDet));
+                    var (xz, yz, zz, wz) = (+((b * gp_ho) - (c * fp_hn) + (d * fo_gn)) * invDet,
+                                            -((a * gp_ho) - (c * ep_hm) + (d * eo_gm)) * invDet,
+                                            +((a * fp_hn) - (b * ep_hm) + (d * en_fm)) * invDet,
+                                            -((a * fo_gn) - (b * eo_gm) + (c * en_fm)) * invDet);
 
 
 
@@ -660,10 +660,10 @@ namespace Mathematics
                     var ej_fi = (e * j) - (f * i);
 
 
-                    var (xw, yw, zw, ww) = ((-((b * gl_hk) - (c * fl_hj) + (d * fk_gj)) * invDet),
-                                            (+((a * gl_hk) - (c * el_hi) + (d * ek_gi)) * invDet),
-                                            (-((a * fl_hj) - (b * el_hi) + (d * ej_fi)) * invDet),
-                                            (+((a * fk_gj) - (b * ek_gi) + (c * ej_fi)) * invDet));
+                    var (xw, yw, zw, ww) = (-((b * gl_hk) - (c * fl_hj) + (d * fk_gj)) * invDet,
+                                            +((a * gl_hk) - (c * el_hi) + (d * ek_gi)) * invDet,
+                                            -((a * fl_hj) - (b * el_hi) + (d * ej_fi)) * invDet,
+                                            +((a * fk_gj) - (b * ek_gi) + (c * ej_fi)) * invDet);
 
                     return new Matrix4x4(
                         new Vector4(xx, xy, xz, xw),

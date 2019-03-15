@@ -20,37 +20,27 @@ namespace DemoApplication
         private const double DpiY = 96.0;
 
         private static readonly PixelFormat PixelFormat = PixelFormats.Bgra32;
-
-        private const uint ColorBlack = 0xFF000000;
         #endregion
 
         #region Fields
-        private readonly WriteableBitmap _buffer;
-        private readonly int _pixelCount;
+        public readonly WriteableBitmap Buffer;
+        public readonly int PixelCount;
         #endregion
 
         #region Constructors
         public Bitmap(int width, int height)
         {
-            _buffer = new WriteableBitmap(width, height, DpiX, DpiY, PixelFormat, palette: null);
-            _pixelCount = (width * height);
+            Buffer = new WriteableBitmap(width, height, DpiX, DpiY, PixelFormat, palette: null);
+            PixelCount = width * height;
         }
         #endregion
 
         #region Properties
-        public int PixelCount
-        {
-            get
-            {
-                return _pixelCount;
-            }
-        }
-
         public int PixelHeight
         {
             get
             {
-                return _buffer.PixelHeight;
+                return Buffer.PixelHeight;
             }
         }
 
@@ -58,15 +48,7 @@ namespace DemoApplication
         {
             get
             {
-                return _buffer.PixelWidth;
-            }
-        }
-
-        public ImageSource Source
-        {
-            get
-            {
-                return _buffer;
+                return Buffer.PixelWidth;
             }
         }
         #endregion
@@ -79,13 +61,13 @@ namespace DemoApplication
                 if (Sse2.IsSupported)
                 {
                     var pixelsPerWrite = Unsafe.SizeOf<Vector128<uint>>() / BytesPerPixel;
-                    var pBackBuffer = (uint*)(_buffer.BackBuffer);
-                    var pixelCount = _pixelCount;
+                    var pBackBuffer = (uint*)Buffer.BackBuffer;
+                    var pixelCount = PixelCount;
                     var remainder = pixelCount % pixelsPerWrite;
                     var lastBlockIndex = pixelCount - remainder;
                     var vColor = Vector128.Create(color);
 
-                    int index = 0;
+                    var index = 0;
 
                     while (index < lastBlockIndex)
                     {
@@ -103,9 +85,9 @@ namespace DemoApplication
                 }
             }
 
-            for (var yPos = 0; yPos < _buffer.PixelHeight; yPos++)
+            for (var yPos = 0; yPos < Buffer.PixelHeight; yPos++)
             {
-                for (var xPos = 0; xPos < _buffer.PixelWidth; xPos++)
+                for (var xPos = 0; xPos < Buffer.PixelWidth; xPos++)
                 {
                     DrawPixel(xPos, yPos, color);
                 }
@@ -252,11 +234,11 @@ namespace DemoApplication
 
         public unsafe void DrawPixel(float xPos, float yPos, uint color)
         {
-            var pixelIndex = ((int)yPos * _buffer.PixelWidth) + (int)xPos;
+            var pixelIndex = ((int)yPos * Buffer.PixelWidth) + (int)xPos;
 
-            if ((pixelIndex >= 0) && (pixelIndex < _pixelCount))
+            if ((pixelIndex >= 0) && (pixelIndex < PixelCount))
             {
-                var pRenderBuffer = (uint*)_buffer.BackBuffer;
+                var pRenderBuffer = (uint*)Buffer.BackBuffer;
                 pRenderBuffer[pixelIndex] = color;
             }
         }
@@ -333,18 +315,18 @@ namespace DemoApplication
 
         public void Lock()
         {
-            _buffer.Lock();
+            Buffer.Lock();
         }
 
         public void Invalidate()
         {
-            var bufferRegion = new Int32Rect(0, 0, _buffer.PixelWidth, _buffer.PixelHeight);
-            _buffer.AddDirtyRect(bufferRegion);
+            var bufferRegion = new Int32Rect(0, 0, Buffer.PixelWidth, Buffer.PixelHeight);
+            Buffer.AddDirtyRect(bufferRegion);
         }
 
         public void Unlock()
         {
-            _buffer.Unlock();
+            Buffer.Unlock();
         }
 
         private bool ShouldCull(Model model, int index)

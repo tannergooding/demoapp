@@ -426,9 +426,9 @@ namespace Mathematics
             var wx = rotation.X * rotation.W;
 
             return new Matrix3x3(
-                new Vector3((1.0f - 2.0f * (yy + zz)), (2.0f * (xy + wz)), (2.0f * (xz - wy))),
-                new Vector3((2.0f * (xy - wz)), (1.0f - 2.0f * (zz + xx)), (2.0f * (yz + wx))),
-                new Vector3((2.0f * (xz + wy)), (2.0f * (yz - wx)), (1.0f - 2.0f * (yy + xx)))
+                new Vector3(1.0f - (2.0f * (yy + zz)), 2.0f * (xy + wz), 2.0f * (xz - wy)),
+                new Vector3(2.0f * (xy - wz), 1.0f - (2.0f * (zz + xx)), 2.0f * (yz + wx)),
+                new Vector3(2.0f * (xz + wy), 2.0f * (yz - wx), 1.0f - (2.0f * (yy + xx)))
             );
         }
 

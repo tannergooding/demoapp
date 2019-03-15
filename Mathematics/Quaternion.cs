@@ -87,10 +87,10 @@ namespace Mathematics
             var cr = MathF.Cos(halfRoll);
 
             return new Quaternion(
-                ((cy * sp) * cr) + ((sy * cp) * sr),
-                ((sy * cp) * cr) - ((cy * sp) * sr),
-                ((cy * cp) * sr) - ((sy * sp) * cr),
-                ((cy * cp) * cr) + ((sy * sp) * sr)
+                (cy * sp * cr) + (sy * cp * sr),
+                (sy * cp * cr) - (cy * sp * sr),
+                (cy * cp * sr) - (sy * sp * cr),
+                (cy * cp * cr) + (sy * sp * sr)
             );
         }
 

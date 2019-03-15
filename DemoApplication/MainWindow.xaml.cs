@@ -4698,7 +4698,7 @@ namespace DemoApplication
             var displayBuffer = _buffers[displayBufferIndex];
             displayBuffer.Unlock();
 
-            _displaySurface.Source = displayBuffer.Source;
+            _displaySurface.Source = displayBuffer.Buffer;
             _fps++;
             _totalFrames++;
         }
@@ -4877,12 +4877,12 @@ namespace DemoApplication
 
         private void WorldToCamera(Model polygon)
         {
-            for (int i = 0; i < polygon.vertices.Count; i++)
+            for (var i = 0; i < polygon.vertices.Count; i++)
             {
                 polygon.modifiedVertices[i] = polygon.modifiedVertices[i].Transform(_camera.ViewProjection);
             }
 
-            for (int i = 0; i < polygon.normals.Count; i++)
+            for (var i = 0; i < polygon.normals.Count; i++)
             {
                 polygon.modifiedNormals[i] = polygon.modifiedNormals[i].Transform(_camera.ViewProjection);
             }

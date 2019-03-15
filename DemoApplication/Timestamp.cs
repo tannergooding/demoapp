@@ -4,29 +4,21 @@ namespace DemoApplication
 {
     public readonly struct Timestamp
     {
-        private readonly long _ticks;
+        public readonly long Ticks;
 
         public Timestamp(long ticks)
         {
-            _ticks = ticks;
-        }
-
-        public long Ticks
-        {
-            get
-            {
-                return _ticks;
-            }
+            Ticks = ticks;
         }
 
         public static TimeSpan operator +(Timestamp left, Timestamp right)
         {
-            return new TimeSpan(left._ticks + right._ticks);
+            return new TimeSpan(left.Ticks + right.Ticks);
         }
 
         public static TimeSpan operator -(Timestamp left, Timestamp right)
         {
-            return new TimeSpan(left._ticks - right._ticks);
+            return new TimeSpan(left.Ticks - right.Ticks);
         }
     }
 }

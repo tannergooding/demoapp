@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Mathematics;
 
 namespace DemoApplication
@@ -207,7 +205,7 @@ namespace DemoApplication
 
         public void SetEyeAtUp(Vector3 eye, Vector3 at, Vector3 up)
         {
-            SetLookDirection((at - eye), up);
+            SetLookDirection(at - eye, up);
             Position = eye;
         }
 
