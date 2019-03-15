@@ -46,6 +46,7 @@ namespace DemoApplication
         private bool _isTriangles = false;
         private bool _isRotating = true;
         private bool _isCulling = true;
+        private bool _useHWIntrinsics = false;
 
         private readonly List<Model> _primitives = new List<Model>();
         private Model _activePrimitive = null;
@@ -126,10 +127,12 @@ namespace DemoApplication
 
         private void OnUseHWIntrinsicsChecked(object sender, RoutedEventArgs e)
         {
+            _useHWIntrinsics = true;
         }
 
         private void OnUseHWIntrinsicsUnchecked(object sender, RoutedEventArgs e)
         {
+            _useHWIntrinsics = false;
         }
 
         private void OnZoomChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -144,11 +147,17 @@ namespace DemoApplication
             var selectedIndex = _primitiveListBox.SelectedIndex;
 
             if (selectedIndex < 0)
-            { selectedIndex = 0; }
+            {
+                selectedIndex = 0;
+            }
             if (selectedIndex >= _primitives.Count)
-            { selectedIndex = _primitives.Count - 1; }
+            {
+                selectedIndex = _primitives.Count - 1;
+            }
             if (_activePrimitive != null)
-            { _activePrimitive.Clear(); }
+            {
+                _activePrimitive.Clear();
+            }
 
             _activePrimitive = _primitives[selectedIndex];
         }
@@ -4704,7 +4713,7 @@ namespace DemoApplication
             var renderBuffer = _buffers[_renderBufferIndex];
 
             renderBuffer.Lock();
-            renderBuffer.Clear(BackgroundColor);
+            renderBuffer.Clear(BackgroundColor, _useHWIntrinsics);
 
             if (_activePrimitive != null)
             {

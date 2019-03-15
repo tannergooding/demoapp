@@ -1,4 +1,7 @@
 using System;
+using System.Diagnostics;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -63,8 +66,25 @@ namespace DemoApplication
         #endregion
 
         #region Methods
-        public void Clear(Vector4 color)
+        public unsafe void Clear(Vector4 color, bool useHWIntrinsics)
         {
+            if (useHWIntrinsics)
+            {
+                if (Sse2.IsSupported)
+                {
+                    var vColor = Sse.LoadVector128((float*)(&color));
+                    var pBackBuffer = (Vector128<float>*)(_buffer.BackBuffer);
+                    var pixelCount = _pixelCount;
+
+                    for (int index = 0; index < pixelCount; index++)
+                    { 
+                        Sse.Store((float*)(pBackBuffer + index), vColor);
+                    }
+
+                    return;
+                }
+            }
+
             for (var yPos = 0; yPos < _buffer.PixelHeight; yPos++)
             {
                 for (var xPos = 0; xPos < _buffer.PixelWidth; xPos++)
