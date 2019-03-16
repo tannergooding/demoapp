@@ -48,9 +48,8 @@ namespace DemoApplication
         private uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
         private uint _foregroundColor = 0xFF000000; // Black
 
-        private bool _isTriangles = false;
         private bool _isRotating = true;
-        private bool _isCulling = true;
+        private bool _isWireframe = true;
         private bool _useHWIntrinsics = false;
 
         private readonly List<Model> _scenes = new List<Model>();
@@ -77,24 +76,14 @@ namespace DemoApplication
             _previousTimestamp = timestamp;
         }
 
-        private void OnCullFacesChecked(object sender, RoutedEventArgs e)
+        private void OnWireframeChecked(object sender, RoutedEventArgs e)
         {
-            _isCulling = true;
+            _isWireframe = true;
         }
 
-        private void OnCullFacesUnchecked(object sender, RoutedEventArgs e)
+        private void OnWireframeUnchecked(object sender, RoutedEventArgs e)
         {
-            _isCulling = false;
-        }
-
-        private void OnRenderTrianglesChecked(object sender, RoutedEventArgs e)
-        {
-            _isTriangles = true;
-        }
-
-        private void OnRenderTrianglesUnchecked(object sender, RoutedEventArgs e)
-        {
-            _isTriangles = false;
+            _isWireframe = false;
         }
 
         private void OnRotateModelChecked(object sender, RoutedEventArgs e)
@@ -287,7 +276,7 @@ namespace DemoApplication
 
             if (_activeScene != null)
             {
-                renderBuffer.DrawModel(_activeScene, _foregroundColor, _isTriangles, _isCulling);
+                renderBuffer.DrawModel(_activeScene, _foregroundColor, _isWireframe);
             }
             renderBuffer.Invalidate();
         }
@@ -316,9 +305,8 @@ namespace DemoApplication
 
             _zoomSlider.Value = DefaultZoomLevel;
 
-            _renderTriangleCheckBox.IsChecked = false;
             _rotateModelCheckBox.IsChecked = true;
-            _cullFacesCheckBox.IsChecked = true;
+            _wireframeCheckBox.IsChecked = true;
 
             _rotation = DefaultRotation;
             _scale = DefaultScale;

@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -112,8 +111,8 @@ namespace DemoApplication
 
             if ((y1 >= y2) && ((y1 != y2) || (x1 >= x2)))
             {
-                x2 = Interlocked.Exchange(ref x1, x2);
-                y2 = Interlocked.Exchange(ref y1, y2);
+                x2 = Exchange(ref x1, x2);
+                y2 = Exchange(ref y1, y2);
             }
 
             if (x1 == x2)
@@ -150,11 +149,11 @@ namespace DemoApplication
             DrawPixelUnsafe(index, color);
         }
 
-        public void DrawModel(Model model, uint color, bool isTriangles, bool isCulling)
+        public void DrawModel(Model model, uint color, bool isWireframe)
         {
             for (var i = 0; i < model.VerticeGroups.Count; i++)
             {
-                if (isCulling && ShouldCull(model, i))
+                if (!isWireframe && ShouldCull(model, i))
                 {
                     continue;
                 }
@@ -175,13 +174,13 @@ namespace DemoApplication
 
                     case 3:
                     {
-                        DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color);
+                        DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color, isWireframe);
                         break;
                     }
 
                     case 4:
                     {
-                        DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isTriangles);
+                        DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isWireframe);
                         break;
                     }
 
@@ -198,20 +197,15 @@ namespace DemoApplication
             }
         }
 
-        public void DrawQuad(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 point4, uint color, bool isTriangles)
+        public void DrawQuad(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 point4, uint color, bool isWireframe)
         {
             DrawLine(point1, point2, color);
             DrawLine(point2, point3, color);
             DrawLine(point3, point4, color);
             DrawLine(point4, point1, color);
-
-            if (isTriangles)
-            {
-                DrawLine(point1, point3, color);
-            }
         }
 
-        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color)
+        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color, bool isWireframe)
         {
             DrawLine(point1, point2, color);
             DrawLine(point2, point3, color);
@@ -542,7 +536,7 @@ namespace DemoApplication
 
             if (index != 3)
             {
-                normal = normal + model.ModifiedNormals[model.NormalGroups[index][0]];
+                normal += model.ModifiedNormals[model.NormalGroups[index][0]];
             }
 
             return ShouldCull(normal.Normalize());

@@ -55,9 +55,8 @@
 
             <GroupBox Header="Options" BorderThickness="1" BorderBrush="Black">
                 <StackPanel>
-                    <CheckBox Content="Render Triangles" Checked="OnRenderTrianglesChecked" Unchecked="OnRenderTrianglesUnchecked" x:Name="_renderTriangleCheckBox" />
                     <CheckBox Content="Rotate Model" Checked="OnRotateModelChecked" Unchecked="OnRotateModelUnchecked" x:Name="_rotateModelCheckBox" IsChecked="True" />
-                    <CheckBox Content="Cull Faces" Checked="OnCullFacesChecked" Unchecked="OnCullFacesUnchecked" x:Name="_cullFacesCheckBox" IsChecked="True" />
+                    <CheckBox Content="Wireframe" Checked="OnWireframeChecked" Unchecked="OnWireframeUnchecked" x:Name="_wireframeCheckBox" IsChecked="True" />
                     <CheckBox Content="Use HWIntrinsics" Checked="OnUseHWIntrinsicsChecked" Unchecked="OnUseHWIntrinsicsUnchecked" x:Name="_useHWIntrinsicsCheckBox" />
                 </StackPanel>
             </GroupBox>
