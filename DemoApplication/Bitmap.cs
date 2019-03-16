@@ -131,13 +131,9 @@ namespace DemoApplication
             {
                 DrawHorizontalLine(x1, y1, x2, color);
             }
-            else if (x1 < x2)
+            else 
             {
-                DrawDiagonalLineLeftToRight(x1, y1, x2, y2, color);
-            }
-            else
-            {
-                DrawDiagonalLineRightToLeft(x1, y1, x2, y2, color);
+                DrawDiagonalLine(x1, y1, x2, y2, color);
             }
         }
 
@@ -238,21 +234,109 @@ namespace DemoApplication
             Buffer.Unlock();
         }
 
-        private void DrawDiagonalLineInternal(ref int d1, ref int d2, int sx1, int sy1, int sx2, int sy2, int dsx, int dsy, int wx1, int wy1, int wx2, int wy2, int stx, int sty, ref int xd, ref int yd, uint color)
+        private static T Exchange<T>(ref T location, T value)
         {
+            var temp = location;
+            location = value;
+            return temp;
+        }
+
+        private void DrawDiagonalLine(int sx1, int sy1, int sx2, int sy2, uint color)
+        {
+            // We only support drawing top to bottom and left to right; We also expect
+            // the horizontal and vertical cases to have already been handled
+
+            Debug.Assert(sx1 != sx2);
+            Debug.Assert(sy1 < sy2);
+
+            var (width, height) = (PixelWidth, PixelHeight);
+
+            // Window
+            var wx1 = 0;
+            var wy1 = 0;
+            var wx2 = width - 1;
+            var wy2 = height - 1;
+
+            var stx = 1;
+            var sty = 1;
+
+            if (sx1 < sx2)
+            {
+                if ((sx1 > wx2) || (sx2 < wx1))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                if ((sx2 > wx2) || (sx2 < wx1))
+                {
+                    return;
+                }
+
+                sx1 = -sx1;
+                sx2 = -sx2;
+
+                wx1 = -wx1;
+                wx2 = -wx2;
+
+                wx2 = Exchange(ref wx1, wx2);
+
+                stx = -stx;
+            }
+
+            if ((sy1 > wy2) || (sy2 < wy1))
+            {
+                return;
+            }
+
+            var dsx = sx2 - sx1;
+            var dsy = sy2 - sy1;
+
+            var xd = 0;
+            var yd = 0;
+
+            ref var d1 = ref xd;
+            ref var d2 = ref yd;
+
+            if (dsx < dsy)
+            {
+                // We start out assuming a primarily horizontal line, but
+                // switch variables around as needed here if we end up being
+                // primarily vertical instead.
+
+                sy1 = Exchange(ref sx1, sy1);
+                sy2 = Exchange(ref sx2, sy2);
+
+                wy1 = Exchange(ref wx1, wy1);
+                wy2 = Exchange(ref wx2, wy2);
+
+                sty = Exchange(ref stx, sty);
+                dsy = Exchange(ref dsx, dsy);
+
+                d1 = ref yd;
+                d2 = ref xd;
+            }
+
             // Some general assertions that the paper maintains
             Debug.Assert((wx1 <= wx2) && (wy1 <= wy2));
             Debug.Assert((sx1 <= sx2) && (sy1 <= sy2));
             Debug.Assert(dsy <= dsx);
 
-            var setExit = false;
+            var foundWindowExit = false;
 
-            var (dx2, dy2) = (2 * dsx, 2 * dsy);
+            // Setup for Bresenham's Algorithm
+
+            var dx2 = 2 * dsx;
+            var dy2 = 2 * dsy;
+
             xd = sx1;
             yd = sy1;
-            var (e, term) = ((2 * dsy) - dsx, sx2);
 
-            if (sy1 < wy1)                          // Horizontal Entry
+            var e = (2 * dsy) - dsx;
+            var term = sx2;
+
+            if (sy1 < wy1)                              // Horizontal Entry
             {
                 var tmp = (dx2 * (wy1 - sy1)) - dsx;
                 xd += tmp / dy2;
@@ -273,11 +357,11 @@ namespace DemoApplication
                         e += dy2;
                     }
 
-                    setExit = true;
+                    foundWindowExit = true;
                 }
             }
 
-            if ((!setExit) && (sx1 < wx1))          // Vertical Entry
+            if ((!foundWindowExit) && (sx1 < wx1))      // Vertical Entry
             {
                 var tmp = dy2 * (wx1 - sx1);
                 yd += tmp / dx2;
@@ -300,7 +384,7 @@ namespace DemoApplication
                 }
             }
 
-            if (sy2 > wy2)                          // Exit
+            if (sy2 > wy2)                              // Window Exit
             {
                 var tmp = dx2 * (wy2 - sy1) + dsx;
                 term = sx1 + (tmp / dy2);
@@ -348,76 +432,6 @@ namespace DemoApplication
                     xd += stx;
                     e += dy2;
                 }
-            }
-        }
-
-        private void DrawDiagonalLineLeftToRight(int x1, int y1, int x2, int y2, uint color)
-        {
-            // We only support drawing top to bottom and left to right; We also expect
-            // the horizontal and vertical cases to have already been handled
-            Debug.Assert((x1 < x2) && (y1 < y2));
-
-            var (width, height) = (PixelWidth, PixelHeight);
-
-            if (x2 < 0 || x1 >= width || y2 < 0 || y1 >= height)
-            {
-                return;
-            }
-
-            var (sx1, sy1) = (x1, y1);
-            var (sx2, sy2) = (x2, y2);
-
-            var (stx, sty) = (1, 1);
-
-            var (wx1, wy1) = (0, 0);
-            var (wx2, wy2) = (width - 1, height - 1);
-
-            var (dsx, dsy) = (sx2 - sx1, sy2 - sy1);
-
-            var (xd, yd) = (0, 0);
-
-            if (dsx >= dsy)         // Primarily Horizontal Line
-            {
-                DrawDiagonalLineInternal(ref xd, ref yd, sx1, sy1, sx2, sy2, dsx, dsy, wx1, wy1, wx2, wy2, stx, sty, ref xd, ref yd, color);
-            }
-            else                    // Primarily Vertical Line
-            {
-                DrawDiagonalLineInternal(ref yd, ref xd, sy1, sx1, sy2, sx2, dsy, dsx, wy1, wx1, wy2, wx2, sty, stx, ref xd, ref yd, color);
-            }
-        }
-
-        private void DrawDiagonalLineRightToLeft(int x1, int y1, int x2, int y2, uint color)
-        {
-            // We only support drawing top to bottom and left to right; We also expect
-            // the horizontal and vertical cases to have already been handled
-            Debug.Assert((x1 > x2) && (y1 < y2));
-
-            var (width, height) = (PixelWidth, PixelHeight);
-
-            if ((x1 < 0) || (x2 >= width) || (y2 < 0) || (y1 >= height))
-            {
-                return;
-            }
-
-            var (sx1, sy1) = (-x1, y1);
-            var (sx2, sy2) = (-x2, y2);
-
-            var (stx, sty) = (-1, 1);
-
-            var (wx1, wy1) = (-(width - 1), 0);
-            var (wx2, wy2) = (0, height - 1);
-
-            var (dsx, dsy) = (sx2 - sx1, sy2 - sy1);
-
-            var (xd, yd) = (0, 0);
-
-            if (dsx >= dsy)         // Primarily Horizontal Line
-            {
-                DrawDiagonalLineInternal(ref xd, ref yd, sx1, sy1, sx2, sy2, dsx, dsy, wx1, wy1, wx2, wy2, stx, sty, ref xd, ref yd, color);
-            }
-            else                    // Primarily Vertical Line
-            {
-                DrawDiagonalLineInternal(ref yd, ref xd, sy1, sx1, sy2, sx2, dsy, dsx, wy1, wx1, wy2, wx2, sty, stx, ref xd, ref yd, color);
             }
         }
 
