@@ -19,18 +19,21 @@ namespace DemoApplication
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
 
-        private static readonly PixelFormat PixelFormat = PixelFormats.Bgra32;
+        private static readonly PixelFormat RenderBufferPixelFormat = PixelFormats.Bgra32;
+        private static readonly PixelFormat DepthBufferPixelFormat = PixelFormats.Gray32Float;
         #endregion
 
         #region Fields
-        public readonly WriteableBitmap Buffer;
+        public readonly WriteableBitmap RenderBuffer;
+        public readonly WriteableBitmap DepthBuffer;
         public readonly int PixelCount;
         #endregion
 
         #region Constructors
         public Bitmap(int width, int height)
         {
-            Buffer = new WriteableBitmap(width, height, DpiX, DpiY, PixelFormat, palette: null);
+            RenderBuffer = new WriteableBitmap(width, height, DpiX, DpiY, RenderBufferPixelFormat, palette: null);
+            DepthBuffer = new WriteableBitmap(width, height, DpiX, DpiY, DepthBufferPixelFormat, palette: null);
             PixelCount = width * height;
         }
         #endregion
@@ -40,7 +43,7 @@ namespace DemoApplication
         {
             get
             {
-                return Buffer.PixelHeight;
+                return RenderBuffer.PixelHeight;
             }
         }
 
@@ -48,54 +51,58 @@ namespace DemoApplication
         {
             get
             {
-                return Buffer.PixelWidth;
+                return RenderBuffer.PixelWidth;
             }
         }
         #endregion
 
         #region Methods
-        public unsafe void Clear(uint color, bool useHWIntrinsics)
+        public unsafe void Clear(uint color, float depth, bool useHWIntrinsics)
         {
+            var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
+            var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
+
             if (useHWIntrinsics)
             {
                 if (Sse2.IsSupported)
                 {
                     var pixelsPerWrite = Unsafe.SizeOf<Vector128<uint>>() / BytesPerPixel;
-                    var pBackBuffer = (uint*)Buffer.BackBuffer;
                     var pixelCount = PixelCount;
                     var remainder = pixelCount % pixelsPerWrite;
                     var lastBlockIndex = pixelCount - remainder;
+
                     var vColor = Vector128.Create(color);
+                    var vDepth = Vector128.Create(depth);
 
                     var index = 0;
 
                     while (index < lastBlockIndex)
                     {
                         Debug.Assert((index >= 0) && (index < pixelCount));
-                        Sse2.Store(pBackBuffer + index, vColor);
+                        Sse2.Store(pRenderBuffer + index, vColor);
+                        Sse.Store(pDepthBuffer + index, vDepth);
                         index += pixelsPerWrite;
                     }
 
                     while (index < pixelCount)
                     {
-                        pBackBuffer[index] = color;
+                        pRenderBuffer[index] = color;
+                        pDepthBuffer[index] = depth;
                         index++;
                     }
                     return;
                 }
             }
 
-            for (var yPos = 0; yPos < Buffer.PixelHeight; yPos++)
+            for (var index = 0; index < PixelCount; index++)
             {
-                for (var xPos = 0; xPos < Buffer.PixelWidth; xPos++)
-                {
-                    DrawPixel(xPos, yPos, color);
-                }
+                pRenderBuffer[index] = color;
+                pDepthBuffer[index] = depth;
             }
         }
 
         // This is based on "Bresenham’s Line  Generation Algorithm with Built-in Clipping - Yevgeny P. Kuzmin"
-        public void DrawLine(Vector3 point1, Vector3 point2, uint color)
+        public void DrawLine(Vector3 point1, Vector3 point2, uint color, bool useHWIntrinsics)
         {
             if (PixelCount == 0)
             {
@@ -106,50 +113,51 @@ namespace DemoApplication
             // a deterministic line is drawn for the same endpoints. We also prefer drawing
             // from left to right, in the scenario where y1 = y2.
 
-            var (x1, y1) = ((int)point1.X, (int)point1.Y);
-            var (x2, y2) = ((int)point2.X, (int)point2.Y);
+            var (sx1, sy1, sz1) = ((int)point1.X, (int)point1.Y, point1.Z);
+            var (sx2, sy2, sz2) = ((int)point2.X, (int)point2.Y, point2.Z);
 
-            if ((y1 >= y2) && ((y1 != y2) || (x1 >= x2)))
+            if ((sy1 >= sy2) && ((sy1 != sy2) || (sx1 >= sx2)))
             {
-                x2 = Exchange(ref x1, x2);
-                y2 = Exchange(ref y1, y2);
+                sx2 = Exchange(ref sx1, sx2);
+                sy2 = Exchange(ref sy1, sy2);
+                sz2 = Exchange(ref sz1, sz2);
             }
 
-            if (x1 == x2)
+            if (sx1 == sx2)
             {
-                if (y1 == y2)
+                if (sy1 == sy2)
                 {
-                    DrawPixel(x1, y1, color);
+                    DrawPixel(sx1, sy1, color, depth: Math.Max(sz1, sz2));
                 }
                 else
                 {
-                    DrawVerticalLine(x1, y1, y2, color);
+                    DrawVerticalLine(sx1, sy1, sz1, sy2, sz2, color);
                 }
             }
-            else if (y1 == y2)
+            else if (sy1 == sy2)
             {
-                DrawHorizontalLine(x1, y1, x2, color);
+                DrawHorizontalLine(sx1, sy1, sz1, sx2, sz2, color, useHWIntrinsics);
             }
             else 
             {
-                DrawDiagonalLine(x1, y1, x2, y2, color);
+                DrawDiagonalLine(sx1, sy1, sz1, sx2, sy2, sz2, color, useHWIntrinsics);
             }
         }
 
-        public void DrawPixel(int x, int y, uint color)
+        public unsafe void DrawPixel(int sx, int sy, uint color, float depth)
         {
             var (width, height) = (PixelWidth, PixelHeight);
 
-            if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
+            if (((uint)sx >= width) || ((uint)sy >= height))
             {
                 return;
             }
 
-            var index = (y * width) + x;
-            DrawPixelUnsafe(index, color);
+            var index = (sy * width) + sx;
+            DrawPixelUnsafe(index, color, depth);
         }
 
-        public void DrawModel(Model model, uint color, bool isWireframe)
+        public void DrawModel(Model model, uint color, bool isWireframe, bool useHWIntrinsics)
         {
             for (var i = 0; i < model.VerticeGroups.Count; i++)
             {
@@ -162,25 +170,26 @@ namespace DemoApplication
                 {
                     case 1:
                     {
-                        DrawPixel((int)model.ModifiedVertices[model.VerticeGroups[i][0]].X, (int)model.ModifiedVertices[model.VerticeGroups[i][0]].Y, color);
+                        var point = model.ModifiedVertices[model.VerticeGroups[i][0]];
+                        DrawPixel((int)point.X, (int)point.Y, color, point.Z);
                         break;
                     }
 
                     case 2:
                     {
-                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], color);
+                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], color, useHWIntrinsics);
                         break;
                     }
 
                     case 3:
                     {
-                        DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color, isWireframe);
+                        DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color, isWireframe, useHWIntrinsics);
                         break;
                     }
 
                     case 4:
                     {
-                        DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isWireframe);
+                        DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isWireframe, useHWIntrinsics);
                         break;
                     }
 
@@ -188,44 +197,47 @@ namespace DemoApplication
                     {
                         for (var n = 0; n < (model.VerticeGroups[i].Length - 2); n++)
                         {
-                            DrawLine(model.ModifiedVertices[model.VerticeGroups[i][n]], model.ModifiedVertices[model.VerticeGroups[i][n + 1]], color);
+                            DrawLine(model.ModifiedVertices[model.VerticeGroups[i][n]], model.ModifiedVertices[model.VerticeGroups[i][n + 1]], color, useHWIntrinsics);
                         }
-                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][model.VerticeGroups[i].Length - 1]], model.ModifiedVertices[model.VerticeGroups[i][0]], color);
+                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][model.VerticeGroups[i].Length - 1]], model.ModifiedVertices[model.VerticeGroups[i][0]], color, useHWIntrinsics);
                         break;
                     }
                 }
             }
         }
 
-        public void DrawQuad(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 point4, uint color, bool isWireframe)
+        public void DrawQuad(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 point4, uint color, bool isWireframe, bool useHWIntrinsics)
         {
-            DrawLine(point1, point2, color);
-            DrawLine(point2, point3, color);
-            DrawLine(point3, point4, color);
-            DrawLine(point4, point1, color);
+            DrawLine(point1, point2, color, useHWIntrinsics);
+            DrawLine(point2, point3, color, useHWIntrinsics);
+            DrawLine(point3, point4, color, useHWIntrinsics);
+            DrawLine(point4, point1, color, useHWIntrinsics);
         }
 
-        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color, bool isWireframe)
+        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color, bool isWireframe, bool useHWIntrinsics)
         {
-            DrawLine(point1, point2, color);
-            DrawLine(point2, point3, color);
-            DrawLine(point3, point1, color);
+            DrawLine(point1, point2, color, useHWIntrinsics);
+            DrawLine(point2, point3, color, useHWIntrinsics);
+            DrawLine(point3, point1, color, useHWIntrinsics);
         }
 
         public void Lock()
         {
-            Buffer.Lock();
+            RenderBuffer.Lock();
+            DepthBuffer.Lock();
         }
 
         public void Invalidate()
         {
-            var bufferRegion = new Int32Rect(0, 0, Buffer.PixelWidth, Buffer.PixelHeight);
-            Buffer.AddDirtyRect(bufferRegion);
+            var bufferRegion = new Int32Rect(0, 0, RenderBuffer.PixelWidth, RenderBuffer.PixelHeight);
+            RenderBuffer.AddDirtyRect(bufferRegion);
+            DepthBuffer.AddDirtyRect(bufferRegion);
         }
 
         public void Unlock()
         {
-            Buffer.Unlock();
+            RenderBuffer.Unlock();
+            DepthBuffer.Unlock();
         }
 
         private static T Exchange<T>(ref T location, T value)
@@ -235,7 +247,7 @@ namespace DemoApplication
             return temp;
         }
 
-        private void DrawDiagonalLine(int sx1, int sy1, int sx2, int sy2, uint color)
+        private void DrawDiagonalLine(int sx1, int sy1, float sz1, int sx2, int sy2, float sz2, uint color, bool useHWIntrinsics)
         {
             // We only support drawing top to bottom and left to right; We also expect
             // the horizontal and vertical cases to have already been handled
@@ -412,8 +424,11 @@ namespace DemoApplication
 
             while (xd != term)                      // Bresenham's Line Drawing
             {
+                // TODO: UseHWIntrinsics
+                // TODO: Depth
+
                 var index = (d2 * PixelWidth) + d1;
-                DrawPixelUnsafe(index, color);
+                DrawPixelUnsafe(index, color, 1.0f);
 
                 if (e >= 0)
                 {
@@ -429,62 +444,79 @@ namespace DemoApplication
             }
         }
 
-        private void DrawHorizontalLine(int x1, int y, int x2, uint color)
+        private void DrawHorizontalLine(int sx1, int sy, float sz1, int sx2, float sz2, uint color, bool useHWIntrinsics)
         {
             // We only support drawing left to right and expect the pixel case to have been handled
-            Debug.Assert(x1 < x2);
+            Debug.Assert(sx1 < sx2);
 
             var (width, height) = (PixelWidth, PixelHeight);
 
-            if ((y < 0) || (y >= height) || (x2 < 0) || (x1 >= width))
+            if (((uint)sy >= height) || (sx2 < 0) || (sx1 >= width))
             {
                 return;
             }
 
-            var startX = Math.Max(x1, 0);
-            var endX = Math.Min(x2, width - 1);
+            var startX = Math.Max(sx1, 0);
+            var endX = Math.Min(sx2, width - 1);
 
             var delta = endX - startX;
             Debug.Assert(delta >= 0);
 
-            var index = (y * width) + startX;
+            var index = (sy * width) + startX;
+            var lastIndex = index + delta;
 
-            for (var i = 0; i < delta; i++, index++)
+            // TODO: UseHWIntrinsics
+
+            while (index < lastIndex)
             {
-                DrawPixelUnsafe(index, color);
+                // TODO: Depth
+                DrawPixelUnsafe(index, color, 1.0f);
+                index++;
             }
         }
 
-        private unsafe void DrawPixelUnsafe(int index, uint color)
+        private unsafe void DrawPixelUnsafe(int index, uint color, float depth)
         {
             Debug.Assert((index >= 0) && (index < PixelCount));
-            var pBackBuffer = (uint*)Buffer.BackBuffer;
-            pBackBuffer[index] = color;
+
+            var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
+
+            if (pDepthBuffer[index] > depth)
+            {
+                return;
+            }
+            pDepthBuffer[index] = depth;
+
+            var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
+            pRenderBuffer[index] = color;
         }
 
-        private void DrawVerticalLine(int x, int y1, int y2, uint color)
+        private void DrawVerticalLine(int sx, int sy1, float sz1, int sy2, float sz2, uint color)
         {
             // We only support drawing top to bottom and expect the pixel case to have been handled
-            Debug.Assert(y1 < y2);
+            Debug.Assert(sy1 < sy2);
 
             var (width, height) = (PixelWidth, PixelHeight);
 
-            if ((x < 0) || (x >= width) || (y2 < 0) || (y1 >= height))
+            if (((uint)sx >= width) || (sy2 < 0) || (sy1 >= height))
             {
                 return;
             }
 
-            var startY = Math.Max(y1, 0);
-            var endY = Math.Min(y2, height - 1);
+            var startY = Math.Max(sy1, 0);
+            var endY = Math.Min(sy2, height - 1);
 
             var delta = endY - startY;
             Debug.Assert(delta >= 0);
 
-            var index = (startY * width) + x;
+            var index = (startY * width) + sx;
+            var lastIndex = index + (delta * width);
 
-            for (var i = 0; i < delta; i++, index += width)
+            while (index < lastIndex)
             {
-                DrawPixelUnsafe(index, color);
+                // TODO: Depth
+                DrawPixelUnsafe(index, color, 1.0f);
+                index += width;
             }
         }
 

@@ -46,11 +46,13 @@ namespace DemoApplication
         private PerspectiveCamera _camera = new PerspectiveCamera();
 
         private uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
+        private float _clearDepth = 0.0f;
         private uint _foregroundColor = 0xFF000000; // Black
 
         private bool _isRotating = true;
         private bool _isWireframe = true;
         private bool _useHWIntrinsics = false;
+        private bool _displayDepthBuffer = false;
 
         private readonly List<Model> _scenes = new List<Model>();
         private Model _activeScene = null;
@@ -76,14 +78,14 @@ namespace DemoApplication
             _previousTimestamp = timestamp;
         }
 
-        private void OnWireframeChecked(object sender, RoutedEventArgs e)
+        private void OnDisplayDepthBufferChecked(object sender, RoutedEventArgs e)
         {
-            _isWireframe = true;
+            _displayDepthBuffer = true;
         }
 
-        private void OnWireframeUnchecked(object sender, RoutedEventArgs e)
+        private void OnDisplayDepthBufferUnchecked(object sender, RoutedEventArgs e)
         {
-            _isWireframe = false;
+            _displayDepthBuffer = false;
         }
 
         private void OnRotateModelChecked(object sender, RoutedEventArgs e)
@@ -127,6 +129,16 @@ namespace DemoApplication
         private void OnUseHWIntrinsicsUnchecked(object sender, RoutedEventArgs e)
         {
             _useHWIntrinsics = false;
+        }
+
+        private void OnWireframeChecked(object sender, RoutedEventArgs e)
+        {
+            _isWireframe = true;
+        }
+
+        private void OnWireframeUnchecked(object sender, RoutedEventArgs e)
+        {
+            _isWireframe = false;
         }
 
         private void OnZoomChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -256,7 +268,7 @@ namespace DemoApplication
             var displayBuffer = _buffers[displayBufferIndex];
             displayBuffer.Unlock();
 
-            _displaySurface.Source = displayBuffer.Buffer;
+            _displaySurface.Source = _displayDepthBuffer ? displayBuffer.DepthBuffer : displayBuffer.RenderBuffer;
             _fps++;
             _totalFrames++;
         }
@@ -272,11 +284,11 @@ namespace DemoApplication
             var renderBuffer = _buffers[_renderBufferIndex];
 
             renderBuffer.Lock();
-            renderBuffer.Clear(_backgroundColor, _useHWIntrinsics);
+            renderBuffer.Clear(_backgroundColor, _clearDepth, _useHWIntrinsics);
 
             if (_activeScene != null)
             {
-                renderBuffer.DrawModel(_activeScene, _foregroundColor, _isWireframe);
+                renderBuffer.DrawModel(_activeScene, _foregroundColor, _isWireframe, _useHWIntrinsics);
             }
             renderBuffer.Invalidate();
         }
@@ -305,7 +317,9 @@ namespace DemoApplication
 
             _zoomSlider.Value = DefaultZoomLevel;
 
-            _rotateModelCheckBox.IsChecked = true;
+            _displayDepthBufferCheckBox.IsChecked = false;
+            _rotateModelCheckBox.IsChecked = false;
+            _useHWIntrinsicsCheckBox.IsChecked = false;
             _wireframeCheckBox.IsChecked = true;
 
             _rotation = DefaultRotation;
@@ -350,6 +364,8 @@ namespace DemoApplication
         {
             LoadScenes();
             Reset();
+
+            _rotateModelCheckBox.IsChecked = true;
 
             _camera.SetEyeAtUp(Vector3.Zero, Vector3.Zero, Vector3.UnitY);
             _camera.SetClip(1.0f, 10000.0f);

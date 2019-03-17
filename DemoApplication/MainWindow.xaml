@@ -55,9 +55,10 @@
 
             <GroupBox Header="Options" BorderThickness="1" BorderBrush="Black">
                 <StackPanel>
+                    <CheckBox Content="Display Depth Buffer" Checked="OnDisplayDepthBufferChecked" Unchecked="OnDisplayDepthBufferUnchecked" x:Name="_displayDepthBufferCheckBox" />
                     <CheckBox Content="Rotate Model" Checked="OnRotateModelChecked" Unchecked="OnRotateModelUnchecked" x:Name="_rotateModelCheckBox" IsChecked="True" />
-                    <CheckBox Content="Wireframe" Checked="OnWireframeChecked" Unchecked="OnWireframeUnchecked" x:Name="_wireframeCheckBox" IsChecked="True" />
                     <CheckBox Content="Use HWIntrinsics" Checked="OnUseHWIntrinsicsChecked" Unchecked="OnUseHWIntrinsicsUnchecked" x:Name="_useHWIntrinsicsCheckBox" />
+                    <CheckBox Content="Wireframe" Checked="OnWireframeChecked" Unchecked="OnWireframeUnchecked" x:Name="_wireframeCheckBox" IsChecked="True" />
                 </StackPanel>
             </GroupBox>
 
