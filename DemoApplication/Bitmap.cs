@@ -8,13 +8,17 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Mathematics;
 
+using nuint = System.UInt64;
+
 namespace DemoApplication
 {
     public readonly struct Bitmap
     {
         #region Constants
-        private const int BitsPerPixel = 32;
-        private const int BytesPerPixel = BitsPerPixel / 8;
+        private const nuint BitsPerPixel = 32;
+        private const nuint BytesPerBlock = 16;
+        private const nuint BytesPerPixel = BitsPerPixel / 8;
+        private const nuint PixelsPerBlock = BytesPerBlock / BytesPerPixel;
 
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
@@ -62,42 +66,23 @@ namespace DemoApplication
             var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
             var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
 
-            if (useHWIntrinsics)
+            var length = (nuint)PixelCount;
+
+            if (useHWIntrinsics && (length >= PixelsPerBlock))
             {
-                if (Sse2.IsSupported)
-                {
-                    var pixelsPerWrite = Unsafe.SizeOf<Vector128<uint>>() / BytesPerPixel;
-                    var pixelCount = PixelCount;
-                    var remainder = pixelCount % pixelsPerWrite;
-                    var lastBlockIndex = pixelCount - remainder;
+                var vColor = Vector128.Create(color);
+                AlignedStoreNonTemporal128(pRenderBuffer, length, vColor);
 
-                    var vColor = Vector128.Create(color);
-                    var vDepth = Vector128.Create(depth);
-
-                    var index = 0;
-
-                    while (index < lastBlockIndex)
-                    {
-                        Debug.Assert((index >= 0) && (index < pixelCount));
-                        Sse2.Store(pRenderBuffer + index, vColor);
-                        Sse.Store(pDepthBuffer + index, vDepth);
-                        index += pixelsPerWrite;
-                    }
-
-                    while (index < pixelCount)
-                    {
-                        pRenderBuffer[index] = color;
-                        pDepthBuffer[index] = depth;
-                        index++;
-                    }
-                    return;
-                }
+                var vDepth = Vector128.Create(depth);
+                AlignedStoreNonTemporal128(pDepthBuffer, length, vDepth);
             }
-
-            for (var index = 0; index < PixelCount; index++)
+            else
             {
-                pRenderBuffer[index] = color;
-                pDepthBuffer[index] = depth;
+                for (nuint index = 0; index < length; index++)
+                {
+                    pRenderBuffer[index] = color;
+                    pDepthBuffer[index] = depth;
+                }
             }
         }
 
@@ -237,6 +222,51 @@ namespace DemoApplication
         {
             RenderBuffer.Unlock();
             DepthBuffer.Unlock();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        private static unsafe void AlignedStoreNonTemporal128<T>(T* pDst, nuint length, Vector128<T> value)
+            where T : unmanaged
+        {
+            Debug.Assert(Sse2.IsSupported);
+            Debug.Assert(length >= PixelsPerBlock);
+
+            var address = (nuint)pDst;
+            var misalignment = address % BytesPerBlock;
+
+            Debug.Assert((misalignment % PixelsPerBlock) == 0);
+
+            if (misalignment != 0)
+            {
+                Sse2.Store((byte*)pDst, value.AsByte());
+                misalignment = PixelsPerBlock - (misalignment / PixelsPerBlock);
+
+                Debug.Assert(misalignment > 0);
+                Debug.Assert(misalignment < PixelsPerBlock);
+
+                pDst += misalignment;
+                length -= misalignment;
+            }
+
+            Debug.Assert(((nuint)pDst % PixelsPerBlock) == 0);
+            var remainder = length;
+
+            if (length >= PixelsPerBlock)
+            {
+                remainder %= PixelsPerBlock;
+
+                for (var pEnd = pDst + (length - remainder); pDst < pEnd; pDst += PixelsPerBlock)
+                {
+                    Sse2.StoreAlignedNonTemporal((byte*)pDst, value.AsByte());
+                }
+            }
+
+            if (remainder != 0)
+            {
+                misalignment = PixelsPerBlock - remainder;
+                pDst -= misalignment;
+                Sse2.Store((byte*)pDst, value.AsByte());
+            }
         }
 
         private static T Exchange<T>(ref T location, T value)
@@ -443,7 +473,7 @@ namespace DemoApplication
             }
         }
 
-        private void DrawHorizontalLine(int sx1, int sy, float sz1, int sx2, float sz2, uint color, bool useHWIntrinsics)
+        private unsafe void DrawHorizontalLine(int sx1, int sy, float sz1, int sx2, float sz2, uint color, bool useHWIntrinsics)
         {
             // We only support drawing left to right and expect the pixel case to have been handled
             Debug.Assert(sx1 < sx2);
@@ -458,19 +488,31 @@ namespace DemoApplication
             var startX = Math.Max(sx1, 0);
             var endX = Math.Min(sx2, width - 1);
 
-            var delta = endX - startX;
-            Debug.Assert(delta >= 0);
-
             var index = (sy * width) + startX;
-            var lastIndex = index + delta;
+            var length = endX - startX;
+            Debug.Assert(length >= 0);
 
-            // TODO: UseHWIntrinsics
+            // TODO: Depth
 
-            while (index < lastIndex)
+            if (useHWIntrinsics && ((nuint)length >= PixelsPerBlock))
             {
-                // TODO: Depth
-                DrawPixelUnsafe(index, color, 1.0f);
-                index++;
+                var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
+                var vColor = Vector128.Create(color);
+                AlignedStoreNonTemporal128(pRenderBuffer + index, (nuint)length, vColor);
+
+                var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
+                var vDepth = Vector128.Create(1.0f);
+                AlignedStoreNonTemporal128(pDepthBuffer + index, (nuint)length, vDepth);
+            }
+            else
+            {
+                var lastIndex = index + length;
+
+                while (index < lastIndex)
+                {
+                    DrawPixelUnsafe(index, color, 1.0f);
+                    index++;
+                }
             }
         }
 
