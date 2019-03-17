@@ -9,16 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="**/*.txt" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="**/*.x" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="**/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Mathematics\Mathematics.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="models\test\" />
   </ItemGroup>
 
 </Project>

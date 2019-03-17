@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -150,16 +152,8 @@ namespace DemoApplication
 
         private void SceneListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var selectedIndex = _sceneListBox.SelectedIndex;
+            var selectedIndex = Math.Clamp(_sceneListBox.SelectedIndex, 0, _scenes.Count - 1);
 
-            if (selectedIndex < 0)
-            {
-                selectedIndex = 0;
-            }
-            if (selectedIndex >= _scenes.Count)
-            {
-                selectedIndex = _scenes.Count - 1;
-            }
             if (_activeScene != null)
             {
                 _activeScene.Clear();
@@ -181,72 +175,39 @@ namespace DemoApplication
         {
         }
 
-        private void LoadCube()
+        private void LoadFile(string path)
         {
-            var cube = new Model(verticeCount: 8, verticeGroupCount: 6, normalCount: 6, normalGroupCount: 6);
-
-            cube.Vertices.Add(new Vector3(-1.000000f, -1.000000f, -1.000000f));
-            cube.Vertices.Add(new Vector3(-1.000000f,  1.000000f, -1.000000f));
-            cube.Vertices.Add(new Vector3( 1.000000f,  1.000000f, -1.000000f));
-            cube.Vertices.Add(new Vector3( 1.000000f, -1.000000f, -1.000000f));
-            cube.Vertices.Add(new Vector3(-1.000000f, -1.000000f,  1.000000f));
-            cube.Vertices.Add(new Vector3(-1.000000f,  1.000000f,  1.000000f));
-            cube.Vertices.Add(new Vector3( 1.000000f,  1.000000f,  1.000000f));
-            cube.Vertices.Add(new Vector3( 1.000000f, -1.000000f,  1.000000f));
-
-            cube.VerticeGroups.Add(new int[4] { 0, 1, 5, 4 });
-            cube.VerticeGroups.Add(new int[4] { 1, 2, 6, 5 });
-            cube.VerticeGroups.Add(new int[4] { 2, 3, 7, 6 });
-            cube.VerticeGroups.Add(new int[4] { 3, 0, 4, 7 });
-            cube.VerticeGroups.Add(new int[4] { 3, 2, 1, 0 });
-            cube.VerticeGroups.Add(new int[4] { 4, 5, 6, 7 });
-
-            cube.Normals.Add(new Vector3(-1.000000f,  0.000000f,  0.000000f));
-            cube.Normals.Add(new Vector3( 0.000000f,  1.000000f, -0.000000f));
-            cube.Normals.Add(new Vector3( 1.000000f,  0.000000f, -0.000000f));
-            cube.Normals.Add(new Vector3( 0.000000f, -1.000000f,  0.000000f));
-            cube.Normals.Add(new Vector3(-0.000000f,  0.000000f, -1.000000f));
-            cube.Normals.Add(new Vector3(-0.000000f,  0.000000f,  1.000000f));
-
-            cube.NormalGroups.Add(new int[4] { 0, 0, 0, 0 });
-            cube.NormalGroups.Add(new int[4] { 1, 1, 1, 1 });
-            cube.NormalGroups.Add(new int[4] { 2, 2, 2, 2 });
-            cube.NormalGroups.Add(new int[4] { 3, 3, 3, 3 });
-            cube.NormalGroups.Add(new int[4] { 4, 4, 4, 4 });
-            cube.NormalGroups.Add(new int[4] { 5, 5, 5, 5 });
-
-            _scenes.Add(cube);
-
             var item = new ListBoxItem();
             {
-                item.Content = "Cube";
+                item.Content = Path.GetFileNameWithoutExtension(path);
+                item.IsEnabled = false;
             }
             _sceneListBox.Items.Add(item);
-        }
 
-        private void LoadFile(string name)
-        {
-            var model = Model.ParseXFile(name.ToLower());
-            _scenes.Add(model);
+            var index = _scenes.Count;
+            _scenes.Add(null);
 
-            var item = new ListBoxItem();
-            {
-                item.Content = name;
-            }
-            _sceneListBox.Items.Add(item);
+            Task.Run(() => {
+                _scenes[index] = Model.ParseJsonFile(path);
+                Dispatcher.Invoke(() => item.IsEnabled = true);
+            });
         }
 
         private void LoadScenes()
         {
-            LoadCube();
-            LoadFile("Cone");
-            LoadFile("Cylinder");
-            LoadFile("Icosphere");
-            LoadFile("Sphere");
-            LoadFile("Suzanne");
-            LoadFile("Teapot");
-            LoadFile("Torus");
-            LoadFile("Test");
+            var item = new ListBoxItem();
+            {
+                item.Content = "None";
+            }
+            _sceneListBox.Items.Add(item);
+            _scenes.Add(null);
+
+            var directoryPath = Path.Combine(Environment.CurrentDirectory, "models");
+
+            foreach (var modelFile in Directory.EnumerateFiles(directoryPath, "*.json"))
+            {
+                LoadFile(modelFile);
+            }
         }
 
         private void ObjectToWorld(Model model)
@@ -303,7 +264,7 @@ namespace DemoApplication
             _minFps = Math.Min(_minFps, _fps);
             _maxFps = Math.Max(_maxFps, _fps);
 
-            Title = $"FPS: {_fps}; Min FPS: {_minFps}; Max FPS: {_maxFps}; Avg FPS: {_totalFrames / (_totalUptime.Ticks / TicksPerSecond):F2}; Resolution: {(int)_displaySurface.Width}x{(int)_displaySurface.Height}";
+            Title = $"FPS: {_fps}; Min FPS: {_minFps}; Max FPS: {_maxFps}; Avg FPS: {_totalFrames / (_totalUptime.Ticks / TicksPerSecond):F2}; Resolution: {(int)_displaySurface.Width}x{(int)_displaySurface.Height}; Vertices: {((_activeScene is null) ? 0 : _activeScene.ModifiedVertices.Count)}";
 
             _lastHeaderUpdate -= OneSecond;
             _fps = 0;
@@ -324,8 +285,6 @@ namespace DemoApplication
 
             _rotation = DefaultRotation;
             _scale = DefaultScale;
-
-            _sceneListBox.SelectedIndex = 0;
         }
 
         private void RotateObject(Model polygon)

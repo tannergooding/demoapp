@@ -1,6 +1,8 @@
-using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
 using Mathematics;
 
 namespace DemoApplication
@@ -17,64 +19,55 @@ namespace DemoApplication
 
         public readonly List<Vector3> ModifiedNormals;
 
-        public static Model ParseXFile(string name)
+        public static Model ParseJsonFile(string path)
         {
-            var basePath = Path.Combine(Environment.CurrentDirectory, "models", name);
+            using var fileStream = new StreamReader(path);
 
-            var verticeReader = new StreamReader(Path.Combine(basePath, "vertices.txt"));
-            var verticeGroupReader = new StreamReader(Path.Combine(basePath, "verticeGroups.txt"));
-            var normalReader = new StreamReader(Path.Combine(basePath, "normals.txt"));
-            var normalGroupReader = new StreamReader(Path.Combine(basePath, "normalGroups.txt"));
+            var modelDocument = JsonDocument.Parse(fileStream.BaseStream);
+            var modelRoot = modelDocument.RootElement;
 
-            var verticeCount = int.Parse(verticeReader.ReadLine());
-            var verticeGroupCount = int.Parse(verticeGroupReader.ReadLine());
-            var normalCount = int.Parse(normalReader.ReadLine());
-            var normalGroupCount = int.Parse(normalGroupReader.ReadLine());
+            var vertices = modelRoot.GetProperty("vertices");
+            var verticeCount = vertices.GetArrayLength();
+
+            var verticeGroups = modelRoot.GetProperty("verticeGroups");
+            var verticeGroupCount = verticeGroups.GetArrayLength();
+
+            var normals = modelRoot.GetProperty("normals");
+            var normalCount = normals.GetArrayLength();
+
+            var normalGroups = modelRoot.GetProperty("normalGroups");
+            var normalGroupCount = normalGroups.GetArrayLength();
 
             var model = new Model(verticeCount, verticeGroupCount, normalCount, normalGroupCount);
 
             for (var i = 0; i < verticeCount; i++)
             {
-                var parts = verticeReader.ReadLine().Split(';');
-                model.Vertices.Add(new Vector3(float.Parse(parts[0]), float.Parse(parts[1]), float.Parse(parts[2])));
-            }
+                var verticeData = vertices[i];
+                Debug.Assert(verticeData.GetArrayLength() == 3);
 
-            var group = new List<int>(4);
+                var vertice = new Vector3(verticeData[0].GetSingle(), verticeData[1].GetSingle(), verticeData[2].GetSingle());
+                model.Vertices.Add(vertice);
+            }
 
             for (var i = 0; i < verticeGroupCount; i++)
             {
-                var parts = verticeGroupReader.ReadLine().Split(';');
-                var groupCount = int.Parse(parts[0]);
-                var subParts = parts[1].Split(',');
-
-                for (var n = 0; n < groupCount; n++)
-                {
-                    group.Add(int.Parse(subParts[n]));
-                }
-
-                model.VerticeGroups.Add(group.ToArray());
-                group.Clear();
+                var verticeGroup = verticeGroups[i].EnumerateArray().Select(element => element.GetInt32()).ToArray();
+                model.VerticeGroups.Add(verticeGroup);
             }
 
             for (var i = 0; i < normalCount; i++)
             {
-                var parts = normalReader.ReadLine().Split(';');
-                model.Normals.Add(new Vector3(float.Parse(parts[0]), float.Parse(parts[1]), float.Parse(parts[2])));
+                var normalData = normals[i];
+                Debug.Assert(normalData.GetArrayLength() == 3);
+
+                var normal = new Vector3(normalData[0].GetSingle(), normalData[1].GetSingle(), normalData[2].GetSingle());
+                model.Normals.Add(normal);
             }
 
             for (var i = 0; i < normalGroupCount; i++)
             {
-                var parts = normalGroupReader.ReadLine().Split(';');
-                var groupCount = int.Parse(parts[0]);
-                var subParts = parts[1].Split(',');
-
-                for (var n = 0; n < groupCount; n++)
-                {
-                    group.Add(int.Parse(subParts[n]));
-                }
-
-                model.NormalGroups.Add(group.ToArray());
-                group.Clear();
+                var normalGroup = normalGroups[i].EnumerateArray().Select(element => element.GetInt32()).ToArray();
+                model.NormalGroups.Add(normalGroup);
             }
 
             return model;
