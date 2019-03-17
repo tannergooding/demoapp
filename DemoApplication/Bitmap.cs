@@ -148,7 +148,7 @@ namespace DemoApplication
         {
             var (width, height) = (PixelWidth, PixelHeight);
 
-            if (((uint)sx >= width) || ((uint)sy >= height))
+            if ((unchecked((uint)sx) >= width) || (unchecked((uint)sy) >= height))
             {
                 return;
             }
@@ -166,52 +166,51 @@ namespace DemoApplication
                     continue;
                 }
 
-                switch (model.VerticeGroups[i].Length)
+                var vertices = model.ModifiedVertices;
+                var verticeGroup = model.VerticeGroups[i];
+                var verticeCount = verticeGroup.Length;
+
+                switch (verticeCount)
                 {
                     case 1:
                     {
-                        var point = model.ModifiedVertices[model.VerticeGroups[i][0]];
+                        var point = vertices[verticeGroup[0]];
                         DrawPixel((int)point.X, (int)point.Y, color, point.Z);
                         break;
                     }
 
                     case 2:
                     {
-                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], color, useHWIntrinsics);
+                        DrawLine(vertices[verticeGroup[0]], vertices[verticeGroup[1]], color, useHWIntrinsics);
                         break;
                     }
 
                     case 3:
                     {
-                        DrawTriangle(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], color, isWireframe, useHWIntrinsics);
-                        break;
-                    }
-
-                    case 4:
-                    {
-                        DrawQuad(model.ModifiedVertices[model.VerticeGroups[i][0]], model.ModifiedVertices[model.VerticeGroups[i][1]], model.ModifiedVertices[model.VerticeGroups[i][2]], model.ModifiedVertices[model.VerticeGroups[i][3]], color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], color, isWireframe, useHWIntrinsics);
                         break;
                     }
 
                     default:
                     {
-                        for (var n = 0; n < (model.VerticeGroups[i].Length - 2); n++)
+                        var center = Vector3.Zero;
+
+                        for (var n = 0; n < verticeCount; n++)
                         {
-                            DrawLine(model.ModifiedVertices[model.VerticeGroups[i][n]], model.ModifiedVertices[model.VerticeGroups[i][n + 1]], color, useHWIntrinsics);
+                            center += vertices[verticeGroup[n]];
                         }
-                        DrawLine(model.ModifiedVertices[model.VerticeGroups[i][model.VerticeGroups[i].Length - 1]], model.ModifiedVertices[model.VerticeGroups[i][0]], color, useHWIntrinsics);
+                        center /= verticeGroup.Length;
+
+                        for (var n = 0; n < (verticeCount - 1); n++)
+                        {
+                            DrawTriangle(vertices[verticeGroup[n]], vertices[verticeGroup[n + 1]], center, color, isWireframe, useHWIntrinsics);
+                        }
+                        DrawTriangle(vertices[verticeGroup[verticeCount - 1]], vertices[verticeGroup[0]], center, color, isWireframe, useHWIntrinsics);
+
                         break;
                     }
                 }
             }
-        }
-
-        public void DrawQuad(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 point4, uint color, bool isWireframe, bool useHWIntrinsics)
-        {
-            DrawLine(point1, point2, color, useHWIntrinsics);
-            DrawLine(point2, point3, color, useHWIntrinsics);
-            DrawLine(point3, point4, color, useHWIntrinsics);
-            DrawLine(point4, point1, color, useHWIntrinsics);
         }
 
         public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color, bool isWireframe, bool useHWIntrinsics)
@@ -451,7 +450,7 @@ namespace DemoApplication
 
             var (width, height) = (PixelWidth, PixelHeight);
 
-            if (((uint)sy >= height) || (sx2 < 0) || (sx1 >= width))
+            if ((unchecked((uint)sy) >= height) || (sx2 < 0) || (sx1 >= width))
             {
                 return;
             }
@@ -498,7 +497,7 @@ namespace DemoApplication
 
             var (width, height) = (PixelWidth, PixelHeight);
 
-            if (((uint)sx >= width) || (sy2 < 0) || (sy1 >= height))
+            if ((unchecked((uint)sx) >= width) || (sy2 < 0) || (sy1 >= height))
             {
                 return;
             }
