@@ -23,8 +23,10 @@ namespace DemoApplication
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
 
-        private static readonly PixelFormat RenderBufferPixelFormat = PixelFormats.Bgra32;
         private static readonly PixelFormat DepthBufferPixelFormat = PixelFormats.Gray32Float;
+        private static readonly PixelFormat RenderBufferPixelFormat = PixelFormats.Bgra32;
+
+        private static readonly Vector128<float> VectorOne = Vector128.Create(1.0f);
         #endregion
 
         #region Fields
@@ -347,6 +349,12 @@ namespace DemoApplication
             return min + ((max - min) * Math.Clamp(gradient, 0.0f, 1.0f));
         }
 
+        private static Vector128<float> Lerp(Vector128<float> min, Vector128<float> max, Vector128<float> gradient)
+        {
+            var clampedGradient = Sse.Min(Sse.Max(gradient, Vector128<float>.Zero), VectorOne);
+            return Sse.Add(min, Sse.Multiply(Sse.Subtract(max, min), clampedGradient));
+        }
+
         private void DrawDiagonalLine2D(int sx1, int sy1, int sx2, int sy2, uint color)
         {
             // We only support drawing top to bottom and left to right; We also expect
@@ -618,8 +626,44 @@ namespace DemoApplication
             Debug.Assert(length >= 0);
 
             var delta = (float)(startX - endX);
-
             var lastIndex = startIndex + length;
+
+            if (useHWIntrinsics && ((nuint)length >= PixelsPerBlock))
+            {
+                var pRenderBuffer = (uint*)RenderBuffer.BackBuffer + startIndex;
+                var pDepthBuffer = (float*)DepthBuffer.BackBuffer + startIndex;
+
+                var vz1 = Vector128.Create(z1);
+                var vz2 = Vector128.Create(z2);
+
+                var vColor = Vector128.Create(color);
+                length = Math.DivRem(length, (int)PixelsPerBlock, out var remainder);
+
+                var vIndex = Vector128.Create(0.0f, 1.0f, 2.0f, 3.0f);
+                var vDelta = Vector128.Create(delta);
+
+                for (var i = 0; i < length; i++)
+                {
+                    var vg3 = Sse.Divide(vIndex, vDelta);
+                    var vDepth = Lerp(vz1, vz2, vg3);
+
+                    var eColor = Sse2.LoadVector128(pRenderBuffer);
+                    var eDepth = Sse.LoadVector128(pDepthBuffer);
+
+                    var mask = Sse.CompareGreaterThanOrEqual(eDepth, vDepth);
+                    vColor = Sse41.BlendVariable(vColor, eColor, mask.AsUInt32());
+                    vDepth = Sse41.BlendVariable(vDepth, eDepth, mask);
+
+                    Sse2.Store(pRenderBuffer, vColor);
+                    Sse.Store(pDepthBuffer, vDepth);
+
+                    vIndex = Sse.Add(vIndex, VectorOne);
+                    pRenderBuffer += PixelsPerBlock;
+                    pDepthBuffer += PixelsPerBlock;
+                }
+
+                startIndex = lastIndex - remainder;
+            }
 
             for (var index = startIndex; index < lastIndex; index++)
             {
