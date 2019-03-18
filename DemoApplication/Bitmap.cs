@@ -87,7 +87,7 @@ namespace DemoApplication
         }
 
         // This is based on "Bresenham’s Line  Generation Algorithm with Built-in Clipping - Yevgeny P. Kuzmin"
-        public void DrawLine(Vector3 point1, Vector3 point2, uint color, bool useHWIntrinsics)
+        public void DrawLine2D(Vector3 point1, Vector3 point2, uint color, bool useHWIntrinsics)
         {
             if (PixelCount == 0)
             {
@@ -98,40 +98,41 @@ namespace DemoApplication
             // a deterministic line is drawn for the same endpoints. We also prefer drawing
             // from left to right, in the scenario where y1 = y2.
 
-            var (sx1, sy1, sz1) = ((int)point1.X, (int)point1.Y, point1.Z);
-            var (sx2, sy2, sz2) = ((int)point2.X, (int)point2.Y, point2.Z);
+            var (sx1, sy1) = ((int)point1.X, (int)point1.Y);
+            var (sx2, sy2) = ((int)point2.X, (int)point2.Y);
 
             if ((sy1 >= sy2) && ((sy1 != sy2) || (sx1 >= sx2)))
             {
                 sx2 = Exchange(ref sx1, sx2);
                 sy2 = Exchange(ref sy1, sy2);
-                sz2 = Exchange(ref sz1, sz2);
             }
 
             if (sx1 == sx2)
             {
                 if (sy1 == sy2)
                 {
-                    DrawPixel(sx1, sy1, color, depth: Math.Max(sz1, sz2));
+                    var point = new Vector3(point1.X, point1.Y, Math.Max(point1.Z, point2.Z));
+                    DrawPixel(point, color);
                 }
                 else
                 {
-                    DrawVerticalLine(sx1, sy1, sz1, sy2, sz2, color);
+                    DrawVerticalLine2D(sx1, sy1, sy2, color);
                 }
             }
             else if (sy1 == sy2)
             {
-                DrawHorizontalLine(sx1, sy1, sz1, sx2, sz2, color, useHWIntrinsics);
+                DrawHorizontalLine2D(sx1, sy1, sx2, color, useHWIntrinsics);
             }
             else 
             {
-                DrawDiagonalLine(sx1, sy1, sz1, sx2, sy2, sz2, color, useHWIntrinsics);
+                DrawDiagonalLine2D(sx1, sy1, sx2, sy2, color);
             }
         }
 
-        public unsafe void DrawPixel(int sx, int sy, uint color, float depth)
+        public unsafe void DrawPixel(Vector3 point, uint color)
         {
             var (width, height) = (PixelWidth, PixelHeight);
+            var (sx, sy) = ((int)point.X, (int)point.Y);
 
             if ((unchecked((uint)sx) >= width) || (unchecked((uint)sy) >= height))
             {
@@ -139,16 +140,24 @@ namespace DemoApplication
             }
 
             var index = (sy * width) + sx;
-            DrawPixelUnsafe(index, color, depth);
+            DrawPixelUnsafe(index, color, point.Z);
         }
 
         public void DrawModel(Model model, uint color, bool isWireframe, bool useHWIntrinsics)
         {
-            for (var i = 0; i < model.VerticeGroups.Count; i++)
+            var verticeGroupCount = model.VerticeGroups.Count;
+
+            for (var i = 0; i < verticeGroupCount; i++)
             {
-                if (!isWireframe && ShouldCull(model, i))
+                if (!isWireframe)
                 {
-                    continue;
+                    if (ShouldCull(model, i))
+                    {
+                        continue;
+                    }
+
+                    var grey = (uint)((0.25f + ((i % verticeGroupCount) * 0.75f / verticeGroupCount)) * byte.MaxValue);
+                    color = 0xFF000000 | (grey << 16) | (grey << 8) | grey;
                 }
 
                 var vertices = model.ModifiedVertices;
@@ -159,14 +168,14 @@ namespace DemoApplication
                 {
                     case 1:
                     {
-                        var point = vertices[verticeGroup[0]];
-                        DrawPixel((int)point.X, (int)point.Y, color, point.Z);
+                        DrawPixel(vertices[verticeGroup[0]], color);
                         break;
                     }
 
                     case 2:
                     {
-                        DrawLine(vertices[verticeGroup[0]], vertices[verticeGroup[1]], color, useHWIntrinsics);
+                        // TODO: Support 3D lines
+                        DrawLine2D(vertices[verticeGroup[0]], vertices[verticeGroup[1]], color, useHWIntrinsics);
                         break;
                     }
 
@@ -200,9 +209,66 @@ namespace DemoApplication
 
         public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color, bool isWireframe, bool useHWIntrinsics)
         {
-            DrawLine(point1, point2, color, useHWIntrinsics);
-            DrawLine(point2, point3, color, useHWIntrinsics);
-            DrawLine(point3, point1, color, useHWIntrinsics);
+            if (isWireframe)
+            {
+                DrawLine2D(point1, point2, color, useHWIntrinsics);
+                DrawLine2D(point2, point3, color, useHWIntrinsics);
+                DrawLine2D(point3, point1, color, useHWIntrinsics);
+
+                return;
+            }
+
+            ref var pt1 = ref point1;
+            ref var pt2 = ref point2;
+            ref var pt3 = ref point3;
+
+            var sy1 = (int)point1.Y;
+            var sy2 = (int)point2.Y;
+            var sy3 = (int)point3.Y;
+
+            if (sy1 > sy2)
+            {
+                sy2 = Exchange(ref sy1, sy2);
+
+                ref var temp = ref pt1;
+                pt1 = ref pt2;
+                pt2 = ref temp;
+            }
+
+            Debug.Assert(sy1 <= sy2);
+
+            if (sy2 > sy3)
+            {
+                sy3 = Exchange(ref sy2, sy3);
+
+                ref var temp = ref pt2;
+                pt2 = ref pt3;
+                pt3 = ref temp;
+            }
+
+            Debug.Assert(sy1 <= sy3);
+            Debug.Assert(sy2 <= sy3);
+
+            if (sy1 > sy2)
+            {
+                sy2 = Exchange(ref sy1, sy2);
+
+                ref var temp = ref pt1;
+                pt1 = ref pt2;
+                pt2 = ref temp;
+            }
+
+            Debug.Assert(sy1 <= sy2);
+            Debug.Assert(sy2 <= sy3);
+
+            if ((((pt2.X - pt1.X) * (pt3.Y - pt1.Y)) - ((pt3.X - pt1.X) * (pt2.Y - pt1.Y))) > 0)
+            {
+                DrawRightTriangle(pt1, pt2, pt3, color, useHWIntrinsics);
+            }
+            else
+            {
+                DrawLeftTriangle(pt1, pt2, pt3, color, useHWIntrinsics);
+            }
         }
 
         public void Lock()
@@ -276,7 +342,12 @@ namespace DemoApplication
             return temp;
         }
 
-        private void DrawDiagonalLine(int sx1, int sy1, float sz1, int sx2, int sy2, float sz2, uint color, bool useHWIntrinsics)
+        private static float Lerp(float min, float max, float gradient)
+        {
+            return min + ((max - min) * Math.Clamp(gradient, 0.0f, 1.0f));
+        }
+
+        private void DrawDiagonalLine2D(int sx1, int sy1, int sx2, int sy2, uint color)
         {
             // We only support drawing top to bottom and left to right; We also expect
             // the horizontal and vertical cases to have already been handled
@@ -453,11 +524,8 @@ namespace DemoApplication
 
             while (xd != term)                      // Bresenham's Line Drawing
             {
-                // TODO: UseHWIntrinsics
-                // TODO: Depth
-
                 var index = (d2 * PixelWidth) + d1;
-                DrawPixelUnsafe(index, color, 1.0f);
+                DrawPixelUnsafe(index, color, depth: 1.0f);
 
                 if (e >= 0)
                 {
@@ -473,7 +541,7 @@ namespace DemoApplication
             }
         }
 
-        private unsafe void DrawHorizontalLine(int sx1, int sy, float sz1, int sx2, float sz2, uint color, bool useHWIntrinsics)
+        private unsafe void DrawHorizontalLine2D(int sx1, int sy, int sx2, uint color, bool useHWIntrinsics)
         {
             // We only support drawing left to right and expect the pixel case to have been handled
             Debug.Assert(sx1 < sx2);
@@ -492,14 +560,12 @@ namespace DemoApplication
             var length = endX - startX;
             Debug.Assert(length >= 0);
 
-            // TODO: Depth
-
             if (useHWIntrinsics && ((nuint)length >= PixelsPerBlock))
             {
                 var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
                 var vColor = Vector128.Create(color);
                 AlignedStoreNonTemporal128(pRenderBuffer + index, (nuint)length, vColor);
-
+            
                 var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
                 var vDepth = Vector128.Create(1.0f);
                 AlignedStoreNonTemporal128(pDepthBuffer + index, (nuint)length, vDepth);
@@ -510,9 +576,53 @@ namespace DemoApplication
 
                 while (index < lastIndex)
                 {
-                    DrawPixelUnsafe(index, color, 1.0f);
+                    DrawPixelUnsafe(index, color, depth: 1.0f);
                     index++;
                 }
+            }
+        }
+
+        private unsafe void DrawHorizontalLine3D(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, uint color, bool useHWIntrinsics)
+        {
+            var sg1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1.0f;
+            var sx1 = Lerp(pa.X, pb.X, sg1);
+            var sz1 = Lerp(pa.Z, pb.Z, sg1);
+
+            var sg2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1.0f;
+            var sx2 = Lerp(pc.X, pd.X, sg2);
+            var sz2 = Lerp(pc.Z, pd.Z, sg2);
+
+            var start = (int)sx1;
+            var end = (int)sx2;
+            var delta = (float)(start - end);
+
+            for (var x = start; x < end; x++)
+            {
+                var sg3 = (x - start) / delta;
+                var z = Lerp(sz1, sz2, sg3);
+
+                var point = new Vector3(x, y, z);
+                DrawPixel(point, color);
+            }
+        }
+
+        private void DrawLeftTriangle(Vector3 pt1, Vector3 pt2, Vector3 pt3, uint color, bool useHWIntrinsics)
+        {
+            var sy1 = (int)pt1.Y;
+            var sy2 = (int)pt2.Y;
+            var sy3 = (int)pt3.Y;
+
+            Debug.Assert(sy1 <= sy2);
+            Debug.Assert(sy2 <= sy3);
+
+            for (var sy = sy1; sy < sy2; sy++)
+            {
+                DrawHorizontalLine3D(sy, pt1, pt2, pt1, pt3, color, useHWIntrinsics);
+            }
+
+            for (var sy = sy2; sy <= sy3; sy++)
+            {
+                DrawHorizontalLine3D(sy, pt2, pt3, pt1, pt3, color, useHWIntrinsics);
             }
         }
 
@@ -522,7 +632,7 @@ namespace DemoApplication
 
             var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
 
-            if (pDepthBuffer[index] > depth)
+            if (pDepthBuffer[index] >= depth)
             {
                 return;
             }
@@ -532,7 +642,27 @@ namespace DemoApplication
             pRenderBuffer[index] = color;
         }
 
-        private void DrawVerticalLine(int sx, int sy1, float sz1, int sy2, float sz2, uint color)
+        private void DrawRightTriangle(Vector3 pt1, Vector3 pt2, Vector3 pt3, uint color, bool useHWIntrinsics)
+        {
+            var sy1 = (int)pt1.Y;
+            var sy2 = (int)pt2.Y;
+            var sy3 = (int)pt3.Y;
+
+            Debug.Assert(sy1 <= sy2);
+            Debug.Assert(sy2 <= sy3);
+
+            for (var sy = sy1; sy < sy2; sy++)
+            {
+                DrawHorizontalLine3D(sy, pt1, pt3, pt1, pt2, color, useHWIntrinsics);
+            }
+
+            for (var sy = sy2; sy <= sy3; sy++)
+            {
+                DrawHorizontalLine3D(sy, pt1, pt3, pt2, pt3, color, useHWIntrinsics);
+            }
+        }
+
+        private void DrawVerticalLine2D(int sx, int sy1, int sy2, uint color)
         {
             // We only support drawing top to bottom and expect the pixel case to have been handled
             Debug.Assert(sy1 < sy2);
@@ -555,69 +685,31 @@ namespace DemoApplication
 
             while (index < lastIndex)
             {
-                // TODO: Depth
-                DrawPixelUnsafe(index, color, 1.0f);
+                DrawPixelUnsafe(index, color, depth: 1.0f);
                 index += width;
             }
         }
 
         private bool ShouldCull(Model model, int index)
         {
-            var normal = model.ModifiedNormals[model.NormalGroups[index][model.NormalGroups[index].Length - 1]];
+            var normals = model.ModifiedNormals;
+            var normalGroup = model.NormalGroups[index];
+            var normalCount = normalGroup.Length;
 
-            if (index != 1)
+            var center = Vector3.Zero;
+
+            for (var n = 0; n < normalCount; n++)
             {
-                switch (model.NormalGroups[index].Length)
-                {
-                    case 2:
-                    {
-                        normal += model.ModifiedNormals[model.NormalGroups[index][0]];
-                        break;
-                    }
-
-                    case 3:
-                    {
-                        normal += model.ModifiedNormals[model.NormalGroups[index][1]];
-                        break;
-                    }
-
-                    default:
-                    {
-                        normal += model.ModifiedNormals[model.NormalGroups[index][2]];
-                        break;
-                    }
-                }
+                center += normals[normalGroup[n]];
             }
-        
-            if (index != 2)
-            {
-                switch (model.NormalGroups[index].Length)
-                {
-                    case 3:
-                    {
-                        normal += model.ModifiedNormals[model.NormalGroups[index][0]];
-                        break;
-                    }
+            center /= normalGroup.Length;
 
-                    default:
-                    {
-                        normal += model.ModifiedNormals[model.NormalGroups[index][1]];
-                        break;
-                    }
-                }
-            }
-
-            if (index != 3)
-            {
-                normal += model.ModifiedNormals[model.NormalGroups[index][0]];
-            }
-
-            return ShouldCull(normal.Normalize());
+            return ShouldCull(center.Normalize());
         }
 
         private bool ShouldCull(Vector3 normal)
         {
-            return Vector3.DotProduct(normal, Vector3.UnitZ) >= 0;
+            return Vector3.DotProduct(normal, Vector3.UnitZ) <= 0;
         }
         #endregion
     }

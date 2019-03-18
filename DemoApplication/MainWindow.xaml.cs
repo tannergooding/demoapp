@@ -48,7 +48,7 @@ namespace DemoApplication
         private PerspectiveCamera _camera = new PerspectiveCamera();
 
         private uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
-        private float _clearDepth = 0.0f;
+        private float _clearDepth = float.MinValue;
         private uint _foregroundColor = 0xFF000000; // Black
 
         private bool _isRotating = true;
