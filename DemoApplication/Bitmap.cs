@@ -582,27 +582,50 @@ namespace DemoApplication
             }
         }
 
-        private unsafe void DrawHorizontalLine3D(int y, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, uint color, bool useHWIntrinsics)
+        private unsafe void DrawHorizontalLine3D(int sy, Vector3 pa, Vector3 pb, Vector3 pc, Vector3 pd, uint color, bool useHWIntrinsics)
         {
-            var sg1 = pa.Y != pb.Y ? (y - pa.Y) / (pb.Y - pa.Y) : 1.0f;
-            var sx1 = Lerp(pa.X, pb.X, sg1);
-            var sz1 = Lerp(pa.Z, pb.Z, sg1);
+            var g1 = pa.Y != pb.Y ? (sy - pa.Y) / (pb.Y - pa.Y) : 1.0f;
+            var x1 = Lerp(pa.X, pb.X, g1);
+            var z1 = Lerp(pa.Z, pb.Z, g1);
 
-            var sg2 = pc.Y != pd.Y ? (y - pc.Y) / (pd.Y - pc.Y) : 1.0f;
-            var sx2 = Lerp(pc.X, pd.X, sg2);
-            var sz2 = Lerp(pc.Z, pd.Z, sg2);
+            var g2 = pc.Y != pd.Y ? (sy - pc.Y) / (pd.Y - pc.Y) : 1.0f;
+            var x2 = Lerp(pc.X, pd.X, g2);
+            var z2 = Lerp(pc.Z, pd.Z, g2);
 
-            var start = (int)sx1;
-            var end = (int)sx2;
-            var delta = (float)(start - end);
+            var sx1 = (int)x1;
+            var sx2 = (int)x2;
 
-            for (var x = start; x < end; x++)
+            if (sx1 > sx2)
             {
-                var sg3 = (x - start) / delta;
-                var z = Lerp(sz1, sz2, sg3);
+                sx2 = Exchange(ref sx1, sx2);
+                z2 = Exchange(ref z1, z2);
+            }
 
-                var point = new Vector3(x, y, z);
-                DrawPixel(point, color);
+            Debug.Assert(sx1 <= sx2);
+
+            var (width, height) = (PixelWidth, PixelHeight);
+
+            if ((unchecked((uint)sy) >= height) || (sx2 < 0) || (sx1 >= width))
+            {
+                return;
+            }
+
+            var startX = Math.Max(sx1, 0);
+            var endX = Math.Min(sx2, width - 1);
+
+            var startIndex = (sy * width) + startX;
+            var length = endX - startX;
+            Debug.Assert(length >= 0);
+
+            var delta = (float)(startX - endX);
+
+            var lastIndex = startIndex + length;
+
+            for (var index = startIndex; index < lastIndex; index++)
+            {
+                var g3 = (index - startIndex) / delta;
+                var depth = Lerp(z1, z2, g3);
+                DrawPixelUnsafe(index, color, depth);
             }
         }
 
