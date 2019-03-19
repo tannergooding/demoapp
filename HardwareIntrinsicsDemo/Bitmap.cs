@@ -26,7 +26,8 @@ namespace DemoApplication
         private static readonly PixelFormat DepthBufferPixelFormat = PixelFormats.Gray32Float;
         private static readonly PixelFormat RenderBufferPixelFormat = PixelFormats.Bgra32;
 
-        private static readonly Vector128<float> VectorOne = Vector128.Create(1.0f);
+        private static readonly Vector128<int> Vector128Int32One = Vector128.Create(1);
+        private static readonly Vector128<float> Vector128SingleOne = Vector128.Create(1.0f);
         #endregion
 
         #region Fields
@@ -351,7 +352,7 @@ namespace DemoApplication
 
         private static Vector128<float> Lerp(Vector128<float> min, Vector128<float> max, Vector128<float> gradient)
         {
-            var clampedGradient = Sse.Min(Sse.Max(gradient, Vector128<float>.Zero), VectorOne);
+            var clampedGradient = Sse.Min(Sse.Max(gradient, Vector128<float>.Zero), Vector128SingleOne);
             return Sse.Add(min, Sse.Multiply(Sse.Subtract(max, min), clampedGradient));
         }
 
@@ -594,19 +595,20 @@ namespace DemoApplication
         {
             var g1 = pa.Y != pb.Y ? (sy - pa.Y) / (pb.Y - pa.Y) : 1.0f;
             var x1 = Lerp(pa.X, pb.X, g1);
-            var z1 = Lerp(pa.Z, pb.Z, g1);
 
             var g2 = pc.Y != pd.Y ? (sy - pc.Y) / (pd.Y - pc.Y) : 1.0f;
             var x2 = Lerp(pc.X, pd.X, g2);
-            var z2 = Lerp(pc.Z, pd.Z, g2);
 
             var sx1 = (int)x1;
             var sx2 = (int)x2;
 
+            var sz1 = Lerp(pa.Z, pb.Z, g1);
+            var sz2 = Lerp(pc.Z, pd.Z, g2);
+
             if (sx1 > sx2)
             {
                 sx2 = Exchange(ref sx1, sx2);
-                z2 = Exchange(ref z1, z2);
+                sz2 = Exchange(ref sz1, sz2);
             }
 
             Debug.Assert(sx1 <= sx2);
@@ -633,43 +635,50 @@ namespace DemoApplication
                 var pRenderBuffer = (uint*)RenderBuffer.BackBuffer + startIndex;
                 var pDepthBuffer = (float*)DepthBuffer.BackBuffer + startIndex;
 
-                var vz1 = Vector128.Create(z1);
-                var vz2 = Vector128.Create(z2);
+                var vz1 = Vector128.Create(sz1);
+                var vz2 = Vector128.Create(sz2);
 
                 var vColor = Vector128.Create(color);
-                length = Math.DivRem(length, (int)PixelsPerBlock, out var remainder);
-
-                var vIndex = Vector128.Create(0.0f, 1.0f, 2.0f, 3.0f);
+                var vIndex = Vector128.Create(0, 1, 2, 3);
                 var vDelta = Vector128.Create(delta);
 
-                for (var i = 0; i < length; i++)
+                var remainder = length % (int)PixelsPerBlock;
+
+                for (var pEnd = pRenderBuffer + (length - remainder); pRenderBuffer < pEnd; pRenderBuffer += PixelsPerBlock, pDepthBuffer += PixelsPerBlock)
                 {
-                    var vg3 = Sse.Divide(vIndex, vDelta);
+                    var vg3 = Sse.Divide(Sse2.ConvertToVector128Single(vIndex), vDelta);
                     var vDepth = Lerp(vz1, vz2, vg3);
 
+                    // Load the existing colors/depths
                     var eColor = Sse2.LoadVector128(pRenderBuffer);
                     var eDepth = Sse.LoadVector128(pDepthBuffer);
 
                     var mask = Sse.CompareGreaterThanOrEqual(eDepth, vDepth);
-                    vColor = Sse41.BlendVariable(vColor, eColor, mask.AsUInt32());
-                    vDepth = Sse41.BlendVariable(vDepth, eDepth, mask);
 
-                    Sse2.Store(pRenderBuffer, vColor);
-                    Sse.Store(pDepthBuffer, vDepth);
+                    var nColor = Sse41.BlendVariable(vColor, eColor, mask.AsUInt32());  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
+                    var nDepth = Sse41.BlendVariable(vDepth, eDepth, mask);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
 
-                    vIndex = Sse.Add(vIndex, VectorOne);
-                    pRenderBuffer += PixelsPerBlock;
-                    pDepthBuffer += PixelsPerBlock;
+                    Sse2.Store(pRenderBuffer, nColor);
+                    Sse.Store(pDepthBuffer, nDepth);
+
+                    vIndex = Sse2.Add(vIndex, Vector128Int32One);
                 }
 
-                startIndex = lastIndex - remainder;
+                for (var index = lastIndex - remainder; index < lastIndex; index++)
+                {
+                    var g3 = (index - startIndex) / delta;
+                    var depth = Lerp(sz1, sz2, g3);
+                    DrawPixelUnsafe(index, color, depth);
+                }
             }
-
-            for (var index = startIndex; index < lastIndex; index++)
+            else
             {
-                var g3 = (index - startIndex) / delta;
-                var depth = Lerp(z1, z2, g3);
-                DrawPixelUnsafe(index, color, depth);
+                for (var index = startIndex; index < lastIndex; index++)
+                {
+                    var g3 = (index - startIndex) / delta;
+                    var depth = Lerp(sz1, sz2, g3);
+                    DrawPixelUnsafe(index, color, depth);
+                }
             }
         }
 
