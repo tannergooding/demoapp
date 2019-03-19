@@ -188,6 +188,13 @@ namespace DemoApplication
                         break;
                     }
 
+                    case 4:
+                    {
+                        DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[2]], vertices[verticeGroup[3]], vertices[verticeGroup[0]], color, isWireframe, useHWIntrinsics);
+                        break;
+                    }
+
                     default:
                     {
                         var center = Vector3.Zero;
