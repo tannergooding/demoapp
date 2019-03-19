@@ -45,7 +45,7 @@
 
   <!-- Default settings that are otherwise undefined -->
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)DemoApp.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)HardwareIntrinsicsDemo.snk</AssemblyOriginatorKeyFile>
     <Copyright>Copyright © Tanner Gooding and Contributors</Copyright>
     <Description>A demo application.</Description>
     <Features>strict</Features>
