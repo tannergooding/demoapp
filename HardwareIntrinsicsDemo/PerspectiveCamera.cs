@@ -18,13 +18,13 @@ namespace DemoApplication
 
         private float _fieldOfView = MathF.PI / 4.0f;
         private float _aspectRatio = 9.0f / 16.0f;
-        private float _nearClip = 1.0f;
-        private float _farClip = 1000.0f;
+        private float _nearClip = float.MinValue;
+        private float _farClip = float.MaxValue;
         private bool _reverseZ = true;
 
         public PerspectiveCamera()
         {
-            SetPerspective(MathF.PI / 4.0f, 9.0f / 16.0f, 1.0f, 1000.0f);
+            SetPerspective(_fieldOfView, _aspectRatio, _nearClip, _farClip);
         }
 
         #region Properties
@@ -45,7 +45,7 @@ namespace DemoApplication
         {
             get
             {
-                return _reverseZ ? 0.0f : 1.0f;
+                return _reverseZ ? _nearClip : _farClip;
             }
         }
 

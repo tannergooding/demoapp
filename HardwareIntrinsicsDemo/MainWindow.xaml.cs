@@ -48,7 +48,6 @@ namespace DemoApplication
         private PerspectiveCamera _camera = new PerspectiveCamera();
 
         private uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
-        private float _clearDepth = float.MinValue;
         private uint _foregroundColor = 0xFF000000; // Black
 
         private bool _isRotating = true;
@@ -245,7 +244,7 @@ namespace DemoApplication
             var renderBuffer = _buffers[_renderBufferIndex];
 
             renderBuffer.Lock();
-            renderBuffer.Clear(_backgroundColor, _clearDepth, _useHWIntrinsics);
+            renderBuffer.Clear(_backgroundColor, _camera.ClearDepth, _useHWIntrinsics);
 
             if (_activeScene != null)
             {
@@ -325,10 +324,7 @@ namespace DemoApplication
             Reset();
 
             _rotateModelCheckBox.IsChecked = true;
-
             _camera.SetEyeAtUp(Vector3.Zero, Vector3.Zero, Vector3.UnitY);
-            _camera.SetClip(1.0f, 10000.0f);
-
             _previousTimestamp = GetTimestamp();
 
             Dispatcher.Hooks.DispatcherInactive += OnApplicationIdle;
