@@ -40,33 +40,31 @@ namespace DemoApplication
 
             var model = new Model(verticeCount, verticeGroupCount, normalCount, normalGroupCount);
 
-            for (var i = 0; i < verticeCount; i++)
+            foreach (var verticeData in vertices.EnumerateArray())
             {
-                var verticeData = vertices[i];
                 Debug.Assert(verticeData.GetArrayLength() == 3);
 
                 var vertice = new Vector3(verticeData[0].GetSingle(), verticeData[1].GetSingle(), verticeData[2].GetSingle());
                 model.Vertices.Add(vertice);
             }
 
-            for (var i = 0; i < verticeGroupCount; i++)
+            foreach (var verticeGroupData in verticeGroups.EnumerateArray())
             {
-                var verticeGroup = verticeGroups[i].EnumerateArray().Select(element => element.GetInt32()).ToArray();
+                var verticeGroup = verticeGroupData.EnumerateArray().Select(element => element.GetInt32()).ToArray();
                 model.VerticeGroups.Add(verticeGroup);
             }
 
-            for (var i = 0; i < normalCount; i++)
+            foreach (var normalData in normals.EnumerateArray())
             {
-                var normalData = normals[i];
                 Debug.Assert(normalData.GetArrayLength() == 3);
 
                 var normal = new Vector3(normalData[0].GetSingle(), normalData[1].GetSingle(), normalData[2].GetSingle());
                 model.Normals.Add(normal);
             }
 
-            for (var i = 0; i < normalGroupCount; i++)
+            foreach (var normalGroupData in normalGroups.EnumerateArray())
             {
-                var normalGroup = normalGroups[i].EnumerateArray().Select(element => element.GetInt32()).ToArray();
+                var normalGroup = normalGroupData.EnumerateArray().Select(element => element.GetInt32()).ToArray();
                 model.NormalGroups.Add(normalGroup);
             }
 
