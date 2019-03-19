@@ -146,26 +146,30 @@ namespace DemoApplication
             DrawPixelUnsafe(index, color, point.Z);
         }
 
-        public void DrawModel(Model model, uint color, bool isWireframe, bool useHWIntrinsics)
+        public void DrawModel(Model model, Vector3 lightPosition, uint color, bool isWireframe, bool useHWIntrinsics)
         {
             var verticeGroupCount = model.VerticeGroups.Count;
 
             for (var i = 0; i < verticeGroupCount; i++)
             {
-                if (!isWireframe)
-                {
-                    if (ShouldCull(model, i))
-                    {
-                        continue;
-                    }
+                var normal = Vector3.Zero;
 
-                    var grey = (uint)((0.25f + ((i % verticeGroupCount) * 0.75f / verticeGroupCount)) * byte.MaxValue);
-                    color = 0xFF000000 | (grey << 16) | (grey << 8) | grey;
+                if (!isWireframe && ShouldCull(model, i, out normal))
+                {
+                    continue;
                 }
 
                 var vertices = model.ModifiedVertices;
                 var verticeGroup = model.VerticeGroups[i];
                 var verticeCount = verticeGroup.Length;
+
+                var center = Vector3.Zero;
+
+                for (var n = 0; n < verticeCount; n++)
+                {
+                    center += vertices[verticeGroup[n]];
+                }
+                center /= verticeGroup.Length;
 
                 switch (verticeCount)
                 {
@@ -184,32 +188,24 @@ namespace DemoApplication
 
                     case 3:
                     {
-                        DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
                         break;
                     }
 
                     case 4:
                     {
-                        DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], color, isWireframe, useHWIntrinsics);
-                        DrawTriangle(vertices[verticeGroup[2]], vertices[verticeGroup[3]], vertices[verticeGroup[0]], color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[2]], vertices[verticeGroup[3]], vertices[verticeGroup[0]], center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
                         break;
                     }
 
                     default:
                     {
-                        var center = Vector3.Zero;
-
-                        for (var n = 0; n < verticeCount; n++)
-                        {
-                            center += vertices[verticeGroup[n]];
-                        }
-                        center /= verticeGroup.Length;
-
                         for (var n = 0; n < (verticeCount - 1); n++)
                         {
-                            DrawTriangle(vertices[verticeGroup[n]], vertices[verticeGroup[n + 1]], center, color, isWireframe, useHWIntrinsics);
+                            DrawTriangle(vertices[verticeGroup[n]], vertices[verticeGroup[n + 1]], center, center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
                         }
-                        DrawTriangle(vertices[verticeGroup[verticeCount - 1]], vertices[verticeGroup[0]], center, color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[verticeCount - 1]], vertices[verticeGroup[0]], center, center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
 
                         break;
                     }
@@ -217,7 +213,7 @@ namespace DemoApplication
             }
         }
 
-        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, uint color, bool isWireframe, bool useHWIntrinsics)
+        public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 center, Vector3 normal, Vector3 lightPosition, uint color, bool isWireframe, bool useHWIntrinsics)
         {
             if (isWireframe)
             {
@@ -270,6 +266,15 @@ namespace DemoApplication
 
             Debug.Assert(sy1 <= sy2);
             Debug.Assert(sy2 <= sy3);
+
+            var lightDirection = (lightPosition - center).Normalize();
+            var ndotl = Math.Max(0, Vector3.DotProduct(normal, lightDirection));
+
+            var blue = unchecked((byte)color) * ndotl;
+            var green = unchecked((byte)(color >> 8)) * ndotl;
+            var red = unchecked((byte)(color >> 16)) * ndotl;
+
+            color = 0xFF000000 | ((uint)red << 16) | ((uint)green << 8) | (uint)blue;
 
             if ((((pt2.X - pt1.X) * (pt3.Y - pt1.Y)) - ((pt3.X - pt1.X) * (pt2.Y - pt1.Y))) > 0)
             {
@@ -774,7 +779,7 @@ namespace DemoApplication
             }
         }
 
-        private bool ShouldCull(Model model, int index)
+        private bool ShouldCull(Model model, int index, out Vector3 normal)
         {
             var normals = model.ModifiedNormals;
             var normalGroup = model.NormalGroups[index];
@@ -788,7 +793,8 @@ namespace DemoApplication
             }
             center /= normalGroup.Length;
 
-            return ShouldCull(center.Normalize());
+            normal = center.Normalize();
+            return ShouldCull(normal);
         }
 
         private bool ShouldCull(Vector3 normal)

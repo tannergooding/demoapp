@@ -14,6 +14,9 @@ namespace DemoApplication
     {
         #region Constants
         private const int BufferCount = 2;
+        private const float DefaultLightPositionX = 0.0f;
+        private const float DefaultLightPositionY = 0.0f;
+        private const float DefaultLightPositionZ = 1000.0f;
         private const float DefaultRotationXSpeed = -5.0f;
         private const float DefaultRotationYSpeed = 0.0f;
         private const float DefaultRotationZSpeed = 5.0f;
@@ -40,6 +43,8 @@ namespace DemoApplication
         private TimeSpan _totalUptime = TimeSpan.Zero;
         private TimeSpan _lastHeaderUpdate = TimeSpan.Zero;
 
+        private Vector3 _lightPosition = Vector3.Zero;
+        private Vector3 _modifiedLightPosition = Vector3.Zero;
         private Vector3 _rotation = Vector3.Zero;
         private Vector3 _rotationSpeed = Vector3.Zero;
         private Vector3 _scale = Vector3.Unit;
@@ -48,7 +53,7 @@ namespace DemoApplication
         private PerspectiveCamera _camera = new PerspectiveCamera();
 
         private uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
-        private uint _foregroundColor = 0xFF000000; // Black
+        private uint _foregroundColor = 0xFFFFFFFF; // White
 
         private bool _isRotating = true;
         private bool _isWireframe = true;
@@ -87,6 +92,24 @@ namespace DemoApplication
         private void OnDisplayDepthBufferUnchecked(object sender, RoutedEventArgs e)
         {
             _displayDepthBuffer = false;
+        }
+
+        private void OnLightPositionXChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _lightPosition.X = (float)e.NewValue;
+            _lightPositionXLabel.Content = $"X ({_lightPosition.X:F2})";
+        }
+
+        private void OnLightPositionYChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _lightPosition.Y = (float)e.NewValue;
+            _lightPositionYLabel.Content = $"Y ({_lightPosition.Y:F2})";
+        }
+
+        private void OnLightPositionZChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            _lightPosition.Z = (float)e.NewValue;
+            _lightPositionZLabel.Content = $"Z ({_lightPosition.Z:F2})";
         }
 
         private void OnRotateModelChecked(object sender, RoutedEventArgs e)
@@ -248,7 +271,7 @@ namespace DemoApplication
 
             if (_activeScene != null)
             {
-                renderBuffer.DrawModel(_activeScene, _foregroundColor, _isWireframe, _useHWIntrinsics);
+                renderBuffer.DrawModel(_activeScene, _modifiedLightPosition, _foregroundColor, _isWireframe, _useHWIntrinsics);
             }
             renderBuffer.Invalidate();
         }
@@ -274,6 +297,10 @@ namespace DemoApplication
             _rotationXSlider.Value = DefaultRotationXSpeed;
             _rotationYSlider.Value = DefaultRotationYSpeed;
             _rotationZSlider.Value = DefaultRotationZSpeed;
+
+            _lightPositionXSlider.Value = DefaultLightPositionX;
+            _lightPositionYSlider.Value = DefaultLightPositionY;
+            _lightPositionZSlider.Value = DefaultLightPositionZ;
 
             _zoomSlider.Value = DefaultZoomLevel;
 
@@ -306,7 +333,7 @@ namespace DemoApplication
         {
             var scale = _scale;
 
-            var m = new Matrix3x3(
+            var scaleTransform = new Matrix3x3(
                 new Vector3(scale.X, 0.0f, 0.0f),
                 new Vector3(0.0f, scale.Y, 0.0f),
                 new Vector3(0.0f, 0.0f, scale.Z)
@@ -314,7 +341,7 @@ namespace DemoApplication
 
             for (var i = 0; i < polygon.Vertices.Count; i++)
             {
-                polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(m);
+                polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(scaleTransform);
             }
         }
 
@@ -333,6 +360,7 @@ namespace DemoApplication
         private void TranslateObject(Model polygon)
         {
             var translation = _translation;
+            _modifiedLightPosition += translation;
 
             for (var i = 0; i < polygon.Vertices.Count; i++)
             {
@@ -352,7 +380,9 @@ namespace DemoApplication
 
             if (activeScene != null)
             {
+                _modifiedLightPosition = _lightPosition;
                 activeScene.Reset();
+
                 ObjectToWorld(activeScene);
                 WorldToCamera(activeScene);
                 CameraToScreen(activeScene);
@@ -407,14 +437,17 @@ namespace DemoApplication
 
         private void WorldToCamera(Model polygon)
         {
+            var viewProjection = _camera.ViewProjection;
+            _modifiedLightPosition = _modifiedLightPosition.Transform(viewProjection);
+
             for (var i = 0; i < polygon.Vertices.Count; i++)
             {
-                polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(_camera.ViewProjection);
+                polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(viewProjection);
             }
 
             for (var i = 0; i < polygon.Normals.Count; i++)
             {
-                polygon.ModifiedNormals[i] = polygon.ModifiedNormals[i].Transform(_camera.ViewProjection);
+                polygon.ModifiedNormals[i] = polygon.ModifiedNormals[i].Transform(viewProjection);
             }
         }
         #endregion

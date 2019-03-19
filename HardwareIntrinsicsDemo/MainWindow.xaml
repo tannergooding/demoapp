@@ -42,6 +42,37 @@
                 </StackPanel>
             </GroupBox>
 
+            <GroupBox Header="Light Position" BorderThickness="1" BorderBrush="Black">
+                <StackPanel Orientation="Vertical">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Label Content="X (0): " x:Name="_lightPositionXLabel" Grid.Column="0" />
+                        <Slider ValueChanged="OnLightPositionXChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionXSlider" Grid.Column="1" />
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Y (0): " x:Name="_lightPositionYLabel" Grid.Column="0" />
+                        <Slider ValueChanged="OnLightPositionYChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionYSlider" Grid.Column="1" />
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Z (0): " x:Name="_lightPositionZLabel" Grid.Column="0" />
+                        <Slider ValueChanged="OnLightPositionZChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionZSlider" Grid.Column="1" />
+                    </Grid>
+                </StackPanel>
+            </GroupBox>
+
             <GroupBox Header="View" BorderThickness="1" BorderBrush="Black">
                 <Grid>
                     <Grid.ColumnDefinitions>
