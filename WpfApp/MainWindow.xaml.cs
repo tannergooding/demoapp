@@ -1,3 +1,5 @@
+// Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +14,6 @@ namespace DemoApplication
 {
     public partial class MainWindow : Window
     {
-        #region Constants
         private const int BufferCount = 2;
         private const float DefaultLightPositionX = 0.0f;
         private const float DefaultLightPositionY = 0.0f;
@@ -27,9 +28,7 @@ namespace DemoApplication
         private static readonly Vector3 DefaultScale = new Vector3(DefaultZoomLevel, DefaultZoomLevel, 1.0f);
         private static readonly TimeSpan OneSecond = TimeSpan.FromSeconds(1.0);
         private static readonly float TickFrequency = TicksPerSecond / Stopwatch.Frequency;
-        #endregion
 
-        #region Fields
         private readonly Bitmap[] _buffers = new Bitmap[BufferCount];
 
         private int _renderBufferIndex = 0;
@@ -47,7 +46,7 @@ namespace DemoApplication
         private Vector3 _modifiedLightPosition = Vector3.Zero;
         private Vector3 _rotation = Vector3.Zero;
         private Vector3 _rotationSpeed = Vector3.Zero;
-        private Vector3 _scale = Vector3.Unit;
+        private Vector3 _scale = Vector3.One;
         private Vector3 _translation = Vector3.Zero;
 
         private PerspectiveCamera _camera = new PerspectiveCamera();
@@ -60,20 +59,16 @@ namespace DemoApplication
         private bool _useHWIntrinsics = false;
         private bool _displayDepthBuffer = false;
 
-        private readonly List<Model> _scenes = new List<Model>();
-        private Model _activeScene = null;
-        #endregion
+        private readonly List<Model?> _scenes = new List<Model?>();
+        private Model? _activeScene = null;
 
-        #region Constructors
         public MainWindow()
         {
             InitializeComponent();
             Startup();
         }
-        #endregion
 
-        #region Event Handlers
-        private void OnApplicationIdle(object sender, EventArgs e)
+        private void OnApplicationIdle(object? sender, EventArgs e)
         {
             var timestamp = GetTimestamp();
             {
@@ -140,10 +135,7 @@ namespace DemoApplication
             _rotationZLabel.Content = $"Z ({_rotationSpeed.Z:F2})";
         }
 
-        private void OnResetClicked(object sender, RoutedEventArgs e)
-        {
-            Reset();
-        }
+        private void OnResetClicked(object sender, RoutedEventArgs e) => Reset();
 
         private void OnUseHWIntrinsicsChecked(object sender, RoutedEventArgs e)
         {
@@ -183,9 +175,7 @@ namespace DemoApplication
 
             _activeScene = _scenes[selectedIndex];
         }
-        #endregion
 
-        #region Methods
         private static Timestamp GetTimestamp()
         {
             double ticks = Stopwatch.GetTimestamp();
@@ -193,9 +183,7 @@ namespace DemoApplication
             return new Timestamp((long)ticks);
         }
 
-        private void CameraToScreen(Model model)
-        {
-        }
+        private void CameraToScreen(Model model) { }
 
         private void LoadFile(string path)
         {
@@ -333,11 +321,9 @@ namespace DemoApplication
         {
             var scale = _scale;
 
-            var scaleTransform = new Matrix3x3(
-                new Vector3(scale.X, 0.0f, 0.0f),
-                new Vector3(0.0f, scale.Y, 0.0f),
-                new Vector3(0.0f, 0.0f, scale.Z)
-            );
+            var scaleTransform = new Matrix3x3(new Vector3(scale.X, 0.0f, 0.0f),
+                                               new Vector3(0.0f, scale.Y, 0.0f),
+                                               new Vector3(0.0f, 0.0f, scale.Z));
 
             for (var i = 0; i < polygon.Vertices.Count; i++)
             {
@@ -450,6 +436,5 @@ namespace DemoApplication
                 polygon.ModifiedNormals[i] = polygon.ModifiedNormals[i].Transform(viewProjection);
             }
         }
-        #endregion
     }
 }

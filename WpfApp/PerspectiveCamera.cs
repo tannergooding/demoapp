@@ -1,3 +1,5 @@
+// Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 using System;
 using Mathematics;
 
@@ -27,7 +29,6 @@ namespace DemoApplication
             SetPerspective(_fieldOfView, _aspectRatio, _nearClip, _farClip);
         }
 
-        #region Properties
         public float AspectRatio
         {
             get
@@ -41,21 +42,9 @@ namespace DemoApplication
             }
         }
 
-        public float ClearDepth
-        {
-            get
-            {
-                return _reverseZ ? _nearClip : _farClip;
-            }
-        }
+        public float ClearDepth => _reverseZ ? _nearClip : _farClip;
 
-        public float FarClip
-        {
-            get
-            {
-                return _farClip;
-            }
-        }
+        public float FarClip => _farClip;
 
         public float FieldOfView
         {
@@ -70,21 +59,9 @@ namespace DemoApplication
             }
         }
 
-        public Vector3 Forward
-        {
-            get
-            {
-                return -_basis.Z;
-            }
-        }
+        public Vector3 Forward => -_basis.Z;
 
-        public float NearClip
-        {
-            get
-            {
-                return _nearClip;
-            }
-        }
+        public float NearClip => _nearClip;
 
         public Vector3 Position
         {
@@ -112,13 +89,7 @@ namespace DemoApplication
             }
         }
 
-        public Matrix4x4 Reprojection
-        {
-            get
-            {
-                return _reprojection;
-            }
-        }
+        public Matrix4x4 Reprojection => _reprojection;
 
         public bool ReverseZ
         {
@@ -133,13 +104,7 @@ namespace DemoApplication
             }
         }
 
-        public Vector3 Right
-        {
-            get
-            {
-                return _basis.X;
-            }
-        }
+        public Vector3 Right => _basis.X;
 
         public Quaternion Rotation
         {
@@ -155,48 +120,16 @@ namespace DemoApplication
             }
         }
 
-        public Vector3 Up
-        {
-            get
-            {
-                return _basis.Y;
-            }
-        }
+        public Vector3 Up => _basis.Y;
 
-        public Matrix4x4 View
-        {
-            get
-            {
-                return _view;
-            }
-        }
+        public Matrix4x4 View => _view;
 
-        public Matrix4x4 ViewProjection
-        {
-            get
-            {
-                return _viewProjection;
-            }
-        }
+        public Matrix4x4 ViewProjection => _viewProjection;
 
-        public BoundingFrustum ViewSpace
-        {
-            get
-            {
-                return _viewSpace;
-            }
-        }
+        public BoundingFrustum ViewSpace => _viewSpace;
 
-        public BoundingFrustum WorldSpace
-        {
-            get
-            {
-                return _worldSpace;
-            }
-        }
-        #endregion
+        public BoundingFrustum WorldSpace => _worldSpace;
 
-        #region Methods
         public void SetClip(float nearClip, float farClip)
         {
             _nearClip = nearClip;
@@ -278,6 +211,5 @@ namespace DemoApplication
 
             _projection = projection;
         }
-        #endregion
     }
 }

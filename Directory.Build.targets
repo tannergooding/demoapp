@@ -15,4 +15,10 @@
     <DefineConstants>$(DefineConstants);$(OS)</DefineConstants>
   </PropertyGroup>
 
+  <!-- Settings that are only set for CI builds -->
+  <PropertyGroup Condition="'$(GITHUB_RUN_ID)' != ''">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <PackageVersion>$(Version)-$(GITHUB_RUN_ID)</PackageVersion>
+  </PropertyGroup>
+
 </Project>

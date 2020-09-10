@@ -1,3 +1,5 @@
+// Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -8,13 +10,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Mathematics;
 
-using nuint = System.UInt64;
-
 namespace DemoApplication
 {
     public readonly struct Bitmap
     {
-        #region Constants
         private const nuint BitsPerPixel = 32;
         private const nuint BytesPerBlock = 16;
         private const nuint BytesPerPixel = BitsPerPixel / 8;
@@ -28,42 +27,22 @@ namespace DemoApplication
 
         private static readonly Vector128<int> Vector128Int32One = Vector128.Create(1);
         private static readonly Vector128<float> Vector128SingleOne = Vector128.Create(1.0f);
-        #endregion
 
-        #region Fields
         public readonly WriteableBitmap RenderBuffer;
         public readonly WriteableBitmap DepthBuffer;
         public readonly int PixelCount;
-        #endregion
 
-        #region Constructors
         public Bitmap(int width, int height)
         {
             RenderBuffer = new WriteableBitmap(width, height, DpiX, DpiY, RenderBufferPixelFormat, palette: null);
             DepthBuffer = new WriteableBitmap(width, height, DpiX, DpiY, DepthBufferPixelFormat, palette: null);
             PixelCount = width * height;
         }
-        #endregion
 
-        #region Properties
-        public int PixelHeight
-        {
-            get
-            {
-                return RenderBuffer.PixelHeight;
-            }
-        }
+        public int PixelHeight => RenderBuffer.PixelHeight;
 
-        public int PixelWidth
-        {
-            get
-            {
-                return RenderBuffer.PixelWidth;
-            }
-        }
-        #endregion
+        public int PixelWidth => RenderBuffer.PixelWidth;
 
-        #region Methods
         public unsafe void Clear(uint color, float depth, bool useHWIntrinsics)
         {
             var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
@@ -797,10 +776,6 @@ namespace DemoApplication
             return ShouldCull(normal);
         }
 
-        private bool ShouldCull(Vector3 normal)
-        {
-            return Vector3.DotProduct(normal, Vector3.UnitZ) <= 0;
-        }
-        #endregion
+        private bool ShouldCull(Vector3 normal) => Vector3.DotProduct(normal, Vector3.UnitZ) <= 0;
     }
 }

@@ -1,8 +1,9 @@
+// Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
+
 namespace Mathematics
 {
     public readonly struct BoundingFrustum
     {
-        #region Default Instances
         private static readonly Vector4[] HomogenousPoints = new Vector4[] {
             new Vector4( 1.0f,  0.0f, 1.0f, 1.0f),
             new Vector4(-1.0f,  0.0f, 1.0f, 1.0f),
@@ -11,9 +12,7 @@ namespace Mathematics
             new Vector4( 0.0f,  0.0f, 0.0f, 1.0f),
             new Vector4( 0.0f,  0.0f, 1.0f, 1.0f),
         };
-        #endregion
 
-        #region Fields
         private readonly Vector3 Origin;
         private readonly Vector4 Orientation;
         private readonly float RightSlope;
@@ -22,9 +21,7 @@ namespace Mathematics
         private readonly float BottomSlope;
         private readonly float Near;
         private readonly float Far;
-        #endregion
 
-        #region Constructors
         public BoundingFrustum(Vector3 origin, Vector4 orientation, float rightSlope, float leftSlope, float topSlope, float bottomSlope, float near, float far)
         {
             Origin = origin;
@@ -36,9 +33,7 @@ namespace Mathematics
             Near = near;
             Far = far;
         }
-        #endregion
 
-        #region Methods
         public static unsafe BoundingFrustum CreateFrom(Matrix4x4 projection)
         {
             var inverseProjection = projection.Invert();
@@ -77,6 +72,5 @@ namespace Mathematics
                 Far
             );
         }
-        #endregion
     }
 }
