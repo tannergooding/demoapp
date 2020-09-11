@@ -5,12 +5,9 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Mathematics;
 
-namespace DemoApplication
+namespace BitmapRendering
 {
     public readonly struct Bitmap
     {
@@ -22,33 +19,30 @@ namespace DemoApplication
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
 
-        private static readonly PixelFormat DepthBufferPixelFormat = PixelFormats.Gray32Float;
-        private static readonly PixelFormat RenderBufferPixelFormat = PixelFormats.Bgra32;
-
         private static readonly Vector128<int> Vector128Int32One = Vector128.Create(1);
         private static readonly Vector128<float> Vector128SingleOne = Vector128.Create(1.0f);
 
-        public readonly WriteableBitmap RenderBuffer;
-        public readonly WriteableBitmap DepthBuffer;
+        public readonly IntPtr RenderBuffer;
+        public readonly IntPtr DepthBuffer;
+        public readonly int PixelWidth;
+        public readonly int PixelHeight;
         public readonly int PixelCount;
 
-        public Bitmap(int width, int height)
+        public Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width, int height)
         {
-            RenderBuffer = new WriteableBitmap(width, height, DpiX, DpiY, RenderBufferPixelFormat, palette: null);
-            DepthBuffer = new WriteableBitmap(width, height, DpiX, DpiY, DepthBufferPixelFormat, palette: null);
+            RenderBuffer = renderBuffer;
+            DepthBuffer = depthBuffer;
+            PixelWidth = width;
+            PixelHeight = height;
             PixelCount = width * height;
         }
 
-        public int PixelHeight => RenderBuffer.PixelHeight;
-
-        public int PixelWidth => RenderBuffer.PixelWidth;
-
         public unsafe void Clear(uint color, float depth, bool useHWIntrinsics)
         {
-            var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
-            var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
-
             var length = (nuint)PixelCount;
+
+            var pRenderBuffer = (uint*)RenderBuffer;
+            var pDepthBuffer = (float*)DepthBuffer;
 
             if (useHWIntrinsics && (length >= PixelsPerBlock))
             {
@@ -63,6 +57,10 @@ namespace DemoApplication
                 for (nuint index = 0; index < length; index++)
                 {
                     pRenderBuffer[index] = color;
+                }
+
+                for (nuint index = 0; index < length; index++)
+                {
                     pDepthBuffer[index] = depth;
                 }
             }
@@ -263,25 +261,6 @@ namespace DemoApplication
             {
                 DrawLeftTriangle(pt1, pt2, pt3, color, useHWIntrinsics);
             }
-        }
-
-        public void Lock()
-        {
-            RenderBuffer.Lock();
-            DepthBuffer.Lock();
-        }
-
-        public void Invalidate()
-        {
-            var bufferRegion = new Int32Rect(0, 0, RenderBuffer.PixelWidth, RenderBuffer.PixelHeight);
-            RenderBuffer.AddDirtyRect(bufferRegion);
-            DepthBuffer.AddDirtyRect(bufferRegion);
-        }
-
-        public void Unlock()
-        {
-            RenderBuffer.Unlock();
-            DepthBuffer.Unlock();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -563,11 +542,11 @@ namespace DemoApplication
 
             if (useHWIntrinsics && ((nuint)length >= PixelsPerBlock))
             {
-                var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
+                var pRenderBuffer = (uint*)RenderBuffer;
                 var vColor = Vector128.Create(color);
                 AlignedStoreNonTemporal128(pRenderBuffer + index, (nuint)length, vColor);
-            
-                var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
+
+                var pDepthBuffer = (float*)DepthBuffer;
                 var vDepth = Vector128.Create(1.0f);
                 AlignedStoreNonTemporal128(pDepthBuffer + index, (nuint)length, vDepth);
             }
@@ -624,9 +603,6 @@ namespace DemoApplication
 
             if (useHWIntrinsics && ((nuint)length >= PixelsPerBlock))
             {
-                var pRenderBuffer = (uint*)RenderBuffer.BackBuffer + startIndex;
-                var pDepthBuffer = (float*)DepthBuffer.BackBuffer + startIndex;
-
                 var vz1 = Vector128.Create(sz1);
                 var vz2 = Vector128.Create(sz2);
 
@@ -635,6 +611,9 @@ namespace DemoApplication
                 var vDelta = Vector128.Create(delta);
 
                 var remainder = length % (int)PixelsPerBlock;
+
+                var pRenderBuffer = (uint*)RenderBuffer + startIndex;
+                var pDepthBuffer = (float*)DepthBuffer + startIndex;
 
                 for (var pEnd = pRenderBuffer + (length - remainder); pRenderBuffer < pEnd; pRenderBuffer += PixelsPerBlock, pDepthBuffer += PixelsPerBlock)
                 {
@@ -698,7 +677,7 @@ namespace DemoApplication
         {
             Debug.Assert((index >= 0) && (index < PixelCount));
 
-            var pDepthBuffer = (float*)DepthBuffer.BackBuffer;
+            var pDepthBuffer = (float*)DepthBuffer;
 
             if (pDepthBuffer[index] >= depth)
             {
@@ -706,7 +685,7 @@ namespace DemoApplication
             }
             pDepthBuffer[index] = depth;
 
-            var pRenderBuffer = (uint*)RenderBuffer.BackBuffer;
+            var pRenderBuffer = (uint*)RenderBuffer;
             pRenderBuffer[index] = color;
         }
 

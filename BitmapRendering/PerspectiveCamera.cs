@@ -3,7 +3,7 @@
 using System;
 using Mathematics;
 
-namespace DemoApplication
+namespace BitmapRendering
 {
     public class PerspectiveCamera
     {

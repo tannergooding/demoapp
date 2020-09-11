@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Mathematics\Mathematics.csproj" />
+    <ProjectReference Include="..\BitmapRendering\BitmapRendering.csproj" />
   </ItemGroup>
 
 </Project>

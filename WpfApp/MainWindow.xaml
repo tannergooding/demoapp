@@ -1,5 +1,5 @@
 <!-- Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information. -->
-<Window x:Class="DemoApplication.MainWindow"
+<Window x:Class="WpfApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow">
@@ -13,65 +13,43 @@
             <ListBox x:Name="_sceneListBox" SelectionChanged="SceneListBox_SelectionChanged" />
 
             <GroupBox Header="Rotation" BorderThickness="1" BorderBrush="Black">
-                <StackPanel Orientation="Vertical">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <Label Content="X (0): " x:Name="_rotationXLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnRotationXChanged" Minimum="-25" Maximum="+25" x:Name="_rotationXSlider" Grid.Column="1" />
-                    </Grid>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Y (0): " x:Name="_rotationYLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnRotationYChanged" Minimum="-25" Maximum="+25" x:Name="_rotationYSlider" Grid.Column="1" />
-                    </Grid>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Z (0): " x:Name="_rotationZLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnRotationZChanged" Minimum="-25" Maximum="+25" x:Name="_rotationZSlider" Grid.Column="1" />
-                    </Grid>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="1*" />
+                    </Grid.RowDefinitions>
+                    <Label Content="X (0): " x:Name="_rotationXLabel" Grid.Column="0" Grid.Row="0" />
+                    <Slider ValueChanged="OnRotationXChanged" Minimum="-25" Maximum="+25" x:Name="_rotationXSlider" Grid.Column="1" Grid.Row="0" />
+                    <Label Content="Y (0): " x:Name="_rotationYLabel" Grid.Column="0" Grid.Row="1" />
+                    <Slider ValueChanged="OnRotationYChanged" Minimum="-25" Maximum="+25" x:Name="_rotationYSlider" Grid.Column="1" Grid.Row="1" />
+                    <Label Content="Z (0): " x:Name="_rotationZLabel" Grid.Column="0" Grid.Row="2" />
+                    <Slider ValueChanged="OnRotationZChanged" Minimum="-25" Maximum="+25" x:Name="_rotationZSlider" Grid.Column="1" Grid.Row="2" />
+                </Grid>
             </GroupBox>
 
             <GroupBox Header="Light Position" BorderThickness="1" BorderBrush="Black">
-                <StackPanel Orientation="Vertical">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <Label Content="X (0): " x:Name="_lightPositionXLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnLightPositionXChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionXSlider" Grid.Column="1" />
-                    </Grid>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Y (0): " x:Name="_lightPositionYLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnLightPositionYChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionYSlider" Grid.Column="1" />
-                    </Grid>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Z (0): " x:Name="_lightPositionZLabel" Grid.Column="0" />
-                        <Slider ValueChanged="OnLightPositionZChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionZSlider" Grid.Column="1" />
-                    </Grid>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="1*" />
+                    </Grid.RowDefinitions>
+                    <Label Content="X (0): " x:Name="_lightPositionXLabel" Grid.Column="0" Grid.Row="0" />
+                    <Slider ValueChanged="OnLightPositionXChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionXSlider" Grid.Column="1" Grid.Row="0" />
+                    <Label Content="Y (0): " x:Name="_lightPositionYLabel" Grid.Column="0" Grid.Row="1" />
+                    <Slider ValueChanged="OnLightPositionYChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionYSlider" Grid.Column="1" Grid.Row="1" />
+                    <Label Content="Z (0): " x:Name="_lightPositionZLabel" Grid.Column="0" Grid.Row="2" />
+                    <Slider ValueChanged="OnLightPositionZChanged" Minimum="-1000" Maximum="+1000" x:Name="_lightPositionZSlider" Grid.Column="1" Grid.Row="2" />
+                </Grid>
             </GroupBox>
 
             <GroupBox Header="View" BorderThickness="1" BorderBrush="Black">
@@ -86,7 +64,7 @@
             </GroupBox>
 
             <GroupBox Header="Options" BorderThickness="1" BorderBrush="Black">
-                <StackPanel>
+                <StackPanel Orientation="Vertical">
                     <CheckBox Content="Display Depth Buffer" Checked="OnDisplayDepthBufferChecked" Unchecked="OnDisplayDepthBufferUnchecked" x:Name="_displayDepthBufferCheckBox" />
                     <CheckBox Content="Rotate Model" Checked="OnRotateModelChecked" Unchecked="OnRotateModelUnchecked" x:Name="_rotateModelCheckBox" IsChecked="True" />
                     <CheckBox Content="Use HWIntrinsics" Checked="OnUseHWIntrinsicsChecked" Unchecked="OnUseHWIntrinsicsUnchecked" x:Name="_useHWIntrinsicsCheckBox" />

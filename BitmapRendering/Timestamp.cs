@@ -2,7 +2,7 @@
 
 using System;
 
-namespace DemoApplication
+namespace BitmapRendering
 {
     public readonly struct Timestamp
     {

@@ -20,6 +20,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mathematics", "Mathematics\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfApp", "WpfApp\WpfApp.csproj", "{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsApp", "WinFormsApp\WinFormsApp.csproj", "{67269996-3C73-4961-BCD7-04152480B116}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitmapRendering", "BitmapRendering\BitmapRendering.csproj", "{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +38,14 @@ Global
 		{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67269996-3C73-4961-BCD7-04152480B116}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67269996-3C73-4961-BCD7-04152480B116}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67269996-3C73-4961-BCD7-04152480B116}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67269996-3C73-4961-BCD7-04152480B116}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -41,6 +53,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{866CE41F-DD9A-496A-B5FD-D17B9CB51383} = {66314BF8-A945-4A41-BFFF-774468E5F567}
 		{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210} = {66314BF8-A945-4A41-BFFF-774468E5F567}
+		{67269996-3C73-4961-BCD7-04152480B116} = {66314BF8-A945-4A41-BFFF-774468E5F567}
+		{D5CA1FB1-810C-448D-B3CA-B18C85936D4E} = {66314BF8-A945-4A41-BFFF-774468E5F567}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FEAA7B2A-3BA3-4C84-A0CB-D09396D1B62F}

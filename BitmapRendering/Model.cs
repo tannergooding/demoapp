@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using Mathematics;
 
-namespace DemoApplication
+namespace BitmapRendering
 {
     public class Model
     {
