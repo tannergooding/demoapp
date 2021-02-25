@@ -20,7 +20,7 @@ namespace BitmapRendering
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
 
-        private static readonly Vector128<int> Vector128Int32One = Vector128.Create(1);
+        private static readonly Vector128<int> Vector128IndexIncrement = Vector128.Create((int)PixelsPerBlock);
         private static readonly Vector128<float> Vector128SingleOne = Vector128.Create(1.0f);
 
         public readonly IntPtr RenderBuffer;
@@ -674,13 +674,13 @@ namespace BitmapRendering
 
                         var mask = AdvSimd.CompareGreaterThanOrEqual(eDepth, vDepth);
 
-                        var nColor = AdvSimd.BitwiseSelect(mask.AsUInt32(), vColor, eColor);  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
-                        var nDepth = AdvSimd.BitwiseSelect(mask, vDepth, eDepth);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
+                        var nColor = AdvSimd.BitwiseSelect(mask.AsUInt32(), eColor, vColor);  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
+                        var nDepth = AdvSimd.BitwiseSelect(mask, eDepth, vDepth);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
 
                         AdvSimd.Store(pRenderBuffer, nColor);
                         AdvSimd.Store(pDepthBuffer, nDepth);
 
-                        vIndex = AdvSimd.Add(vIndex, Vector128Int32One);
+                        vIndex = AdvSimd.Add(vIndex, Vector128IndexIncrement);
                     }
                     else if (Sse2.IsSupported)
                     {
@@ -699,7 +699,7 @@ namespace BitmapRendering
                         Sse2.Store(pRenderBuffer, nColor);
                         Sse.Store(pDepthBuffer, nDepth);
 
-                        vIndex = Sse2.Add(vIndex, Vector128Int32One);
+                        vIndex = Sse2.Add(vIndex, Vector128IndexIncrement);
                     }
                     else
                     {
