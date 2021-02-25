@@ -674,8 +674,8 @@ namespace BitmapRendering
 
                         var mask = AdvSimd.CompareGreaterThanOrEqual(eDepth, vDepth);
 
-                        var nColor = AdvSimd.BitwiseSelect(vColor, eColor, mask.AsUInt32());  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
-                        var nDepth = AdvSimd.BitwiseSelect(vDepth, eDepth, mask);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
+                        var nColor = AdvSimd.BitwiseSelect(mask.AsUInt32(), vColor, eColor);  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
+                        var nDepth = AdvSimd.BitwiseSelect(mask, vDepth, eDepth);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
 
                         AdvSimd.Store(pRenderBuffer, nColor);
                         AdvSimd.Store(pDepthBuffer, nDepth);
