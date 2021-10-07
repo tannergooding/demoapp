@@ -401,7 +401,7 @@ namespace BitmapRendering
             }
             else
             {
-                if ((sx2 > wx2) || (sx2 < wx1))
+                if ((sx2 > wx2) || (sx1 < wx1))
                 {
                     return;
                 }
