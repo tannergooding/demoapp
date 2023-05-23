@@ -4,24 +4,19 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.Intrinsics.X86;
 using Mathematics;
 
 namespace BitmapRendering
 {
     public readonly struct Bitmap
     {
-        private const nuint BitsPerPixel = 32;
-        private const nuint BytesPerBlock = 16;
-        private const nuint BytesPerPixel = BitsPerPixel / 8;
-        private const nuint PixelsPerBlock = BytesPerBlock / BytesPerPixel;
+        private const int BitsPerPixel = 32;
+        private const int BytesPerBlock = 16;
+        private const int BytesPerPixel = BitsPerPixel / 8;
+        private const int PixelsPerBlock = BytesPerBlock / BytesPerPixel;
 
         private const double DpiX = 96.0;
         private const double DpiY = 96.0;
-
-        private static readonly Vector128<int> Vector128IndexIncrement = Vector128.Create((int)PixelsPerBlock);
-        private static readonly Vector128<float> Vector128SingleOne = Vector128.Create(1.0f);
 
         public readonly IntPtr RenderBuffer;
         public readonly IntPtr DepthBuffer;
@@ -277,18 +272,7 @@ namespace BitmapRendering
 
             if (misalignment != 0)
             {
-                if (AdvSimd.IsSupported)
-                {
-                    AdvSimd.Store((byte*)pDst, value.AsByte());
-                }
-                else if (Sse2.IsSupported)
-                {
-                    Sse2.Store((byte*)pDst, value.AsByte());
-                }
-                else
-                {
-                    throw new PlatformNotSupportedException();
-                }
+                value.Store(pDst);
                 misalignment = PixelsPerBlock - (misalignment / PixelsPerBlock);
 
                 Debug.Assert(misalignment > 0);
@@ -307,18 +291,7 @@ namespace BitmapRendering
 
                 for (var pEnd = pDst + (length - remainder); pDst < pEnd; pDst += PixelsPerBlock)
                 {
-                    if (AdvSimd.IsSupported)
-                    {
-                        AdvSimd.Store((byte*)pDst, value.AsByte());
-                    }
-                    else if (Sse2.IsSupported)
-                    {
-                        Sse2.StoreAlignedNonTemporal((byte*)pDst, value.AsByte());
-                    }
-                    else
-                    {
-                        throw new PlatformNotSupportedException();
-                    }
+                    value.StoreAlignedNonTemporal(pDst);
                 }
             }
 
@@ -326,19 +299,7 @@ namespace BitmapRendering
             {
                 misalignment = PixelsPerBlock - remainder;
                 pDst -= misalignment;
-
-                if (AdvSimd.IsSupported)
-                {
-                    AdvSimd.Store((byte*)pDst, value.AsByte());
-                }
-                else if (Sse2.IsSupported)
-                {
-                    Sse2.Store((byte*)pDst, value.AsByte());
-                }
-                else
-                {
-                    throw new PlatformNotSupportedException();
-                }
+                value.Store(pDst);
             }
         }
 
@@ -357,20 +318,8 @@ namespace BitmapRendering
 
         private static Vector128<float> Interpolate(Vector128<float> min, Vector128<float> max, Vector128<float> gradient)
         {
-            if (AdvSimd.IsSupported)
-            {
-                var t = AdvSimd.Min(AdvSimd.Max(gradient, Vector128<float>.Zero), Vector128SingleOne);
-                return AdvSimd.Add(AdvSimd.Multiply(AdvSimd.Subtract(Vector128SingleOne, t), min), AdvSimd.Multiply(t, max));
-            }
-            else if (Sse.IsSupported)
-            {
-                var t = Sse.Min(Sse.Max(gradient, Vector128<float>.Zero), Vector128SingleOne);
-                return Sse.Add(Sse.Multiply(Sse.Subtract(Vector128SingleOne, t), min), Sse.Multiply(t, max));
-            }
-            else
-            {
-                throw new PlatformNotSupportedException();
-            }
+            var t = Vector128.Min(Vector128.Max(gradient, Vector128<float>.Zero), Vector128<float>.One);
+            return ((Vector128<float>.One - t) * min) + (t * max);
         }
 
         private void DrawDiagonalLine2D(int sx1, int sy1, int sx2, int sy2, uint color)
@@ -663,48 +612,22 @@ namespace BitmapRendering
 
                 for (var pEnd = pRenderBuffer + (length - remainder); pRenderBuffer < pEnd; pRenderBuffer += PixelsPerBlock, pDepthBuffer += PixelsPerBlock)
                 {
-                    if (AdvSimd.Arm64.IsSupported)
-                    {
-                        var vg3 = AdvSimd.Arm64.Divide(AdvSimd.ConvertToSingle(vIndex), vDelta);
-                        var vDepth = Interpolate(vz1, vz2, vg3);
+                    var vg3 = Vector128.ConvertToSingle(vIndex) / vDelta;
+                    var vDepth = Interpolate(vz1, vz2, vg3);
 
-                        // Load the existing colors/depths
-                        var eColor = AdvSimd.LoadVector128(pRenderBuffer);
-                        var eDepth = AdvSimd.LoadVector128(pDepthBuffer);
+                    // Load the existing colors/depths
+                    var eColor = Vector128.Load(pRenderBuffer);
+                    var eDepth = Vector128.Load(pDepthBuffer);
 
-                        var mask = AdvSimd.CompareGreaterThanOrEqual(eDepth, vDepth);
+                    var mask = Vector128.GreaterThanOrEqual(eDepth, vDepth);
 
-                        var nColor = AdvSimd.BitwiseSelect(mask.AsUInt32(), eColor, vColor);  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
-                        var nDepth = AdvSimd.BitwiseSelect(mask, eDepth, vDepth);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
+                    var nColor = Vector128.ConditionalSelect(mask.AsUInt32(), eColor, vColor);  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
+                    var nDepth = Vector128.ConditionalSelect(mask, eDepth, vDepth);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
 
-                        AdvSimd.Store(pRenderBuffer, nColor);
-                        AdvSimd.Store(pDepthBuffer, nDepth);
+                    nColor.Store(pRenderBuffer);
+                    nDepth.Store(pDepthBuffer);
 
-                        vIndex = AdvSimd.Add(vIndex, Vector128IndexIncrement);
-                    }
-                    else if (Sse2.IsSupported)
-                    {
-                        var vg3 = Sse.Divide(Sse2.ConvertToVector128Single(vIndex), vDelta);
-                        var vDepth = Interpolate(vz1, vz2, vg3);
-
-                        // Load the existing colors/depths
-                        var eColor = Sse2.LoadVector128(pRenderBuffer);
-                        var eDepth = Sse.LoadVector128(pDepthBuffer);
-
-                        var mask = Sse.CompareGreaterThanOrEqual(eDepth, vDepth);
-
-                        var nColor = Sse41.BlendVariable(vColor, eColor, mask.AsUInt32());  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
-                        var nDepth = Sse41.BlendVariable(vDepth, eDepth, mask);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
-
-                        Sse2.Store(pRenderBuffer, nColor);
-                        Sse.Store(pDepthBuffer, nDepth);
-
-                        vIndex = Sse2.Add(vIndex, Vector128IndexIncrement);
-                    }
-                    else
-                    {
-                        throw new PlatformNotSupportedException();
-                    }
+                    vIndex += Vector128.Create(PixelsPerBlock);
                 }
 
                 for (var index = lastIndex - remainder; index < lastIndex; index++)
