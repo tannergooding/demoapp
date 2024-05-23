@@ -1,28 +1,46 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28711.165
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34902.84
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6D98AAB1-8447-4EE8-8428-532A8A948271}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
+		build.cmd = build.cmd
 		Directory.Build.props = Directory.Build.props
 		Directory.Build.targets = Directory.Build.targets
+		Directory.Packages.props = Directory.Packages.props
+		exclusion.dic = exclusion.dic
+		global.json = global.json
 		HardwareIntrinsicsDemo.snk = HardwareIntrinsicsDemo.snk
 		LICENSE.md = LICENSE.md
+		NuGet.config = NuGet.config
+		pack.cmd = pack.cmd
+		restore.cmd = restore.cmd
+		test.cmd = test.cmd
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{48E1F49D-7103-4DE6-9F69-915183B85095}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\build.ps1 = scripts\build.ps1
+		scripts\cibuild.cmd = scripts\cibuild.cmd
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sources", "sources", "{66314BF8-A945-4A41-BFFF-774468E5F567}"
+	ProjectSection(SolutionItems) = preProject
+		sources\Directory.Build.props = sources\Directory.Build.props
+		sources\Directory.Build.targets = sources\Directory.Build.targets
+	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mathematics", "Mathematics\Mathematics.csproj", "{866CE41F-DD9A-496A-B5FD-D17B9CB51383}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mathematics", "sources\Mathematics\Mathematics.csproj", "{866CE41F-DD9A-496A-B5FD-D17B9CB51383}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfApp", "WpfApp\WpfApp.csproj", "{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfApp", "sources\WpfApp\WpfApp.csproj", "{109FD4B3-88AC-4C86-AB3E-F8EBE1E5B210}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsApp", "WinFormsApp\WinFormsApp.csproj", "{67269996-3C73-4961-BCD7-04152480B116}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WinFormsApp", "sources\WinFormsApp\WinFormsApp.csproj", "{67269996-3C73-4961-BCD7-04152480B116}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitmapRendering", "BitmapRendering\BitmapRendering.csproj", "{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitmapRendering", "sources\BitmapRendering\BitmapRendering.csproj", "{D5CA1FB1-810C-448D-B3CA-B18C85936D4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

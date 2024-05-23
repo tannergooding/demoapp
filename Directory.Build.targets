@@ -12,13 +12,23 @@
 
   <!-- Settings that append the existing setting value -->
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);$(OS)</DefineConstants>
+    <NoWarn>$(NoWarn)</NoWarn>
   </PropertyGroup>
 
   <!-- Settings that are only set for CI builds -->
   <PropertyGroup Condition="'$(GITHUB_RUN_ID)' != ''">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-    <PackageVersion>$(Version)-$(GITHUB_RUN_ID)</PackageVersion>
+    <PackageVersion Condition="'$(EXCLUDE_RUN_ID_FROM_PACKAGE)' != 'true'">$(Version).$(GITHUB_RUN_ID)</PackageVersion>
+  </PropertyGroup>
+
+  <!-- Settings that are only set for executables -->
+  <PropertyGroup Condition="'$(OutputType)' != 'Library' AND '$(UseWindowsForms)' != 'true' AND '$(UseWpf)' != 'true'">
+    <PublishTrimmed>true</PublishTrimmed>
+  </PropertyGroup>
+
+  <!-- Settings that are only set for libraries -->
+  <PropertyGroup Condition="'$(OutputType)' == 'Library'">
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
 </Project>
