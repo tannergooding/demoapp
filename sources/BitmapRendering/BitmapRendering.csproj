@@ -10,6 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="models\LICENSE.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Mathematics\Mathematics.csproj" />
   </ItemGroup>
 

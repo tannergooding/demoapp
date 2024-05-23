@@ -99,7 +99,7 @@ namespace BitmapRendering
             {
                 DrawHorizontalLine2D(sx1, sy1, sx2, color, useHWIntrinsics);
             }
-            else 
+            else
             {
                 DrawDiagonalLine2D(sx1, sy1, sx2, sy2, color);
             }

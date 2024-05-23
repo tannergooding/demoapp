@@ -1,0 +1,1 @@
+Dotnetbot.json is Copyright (c) 2023 .NET Workshops and Presentations. Licensed under the MIT License (MIT).
