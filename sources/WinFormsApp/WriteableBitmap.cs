@@ -5,43 +5,34 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 
-namespace WinFormsApp
+namespace WinFormsApp;
+
+public sealed class WriteableBitmap(int pixelWidth, int pixelHeight, PixelFormat pixelFormat)
 {
-    public sealed class WriteableBitmap
+    private readonly Bitmap _bitmap = new Bitmap(pixelWidth, pixelHeight, pixelFormat);
+    private BitmapData? _bitmapData;
+
+    public void Lock(Rectangle dirtyRegion) => _bitmapData = _bitmap.LockBits(dirtyRegion, ImageLockMode.ReadWrite, _bitmap.PixelFormat);
+
+    public void Unlock()
     {
-        private Bitmap _bitmap;
-        private BitmapData? _bitmapData;
+        Debug.Assert(_bitmapData is not null);
+        _bitmap.UnlockBits(_bitmapData);
+        _bitmapData = null;
+    }
 
-        public WriteableBitmap(int pixelWidth, int pixelHeight, PixelFormat pixelFormat)
-        {
-            _bitmap = new Bitmap(pixelWidth, pixelHeight, pixelFormat);
-        }
-
-        public void Lock(Rectangle dirtyRegion)
-        {
-            _bitmapData = _bitmap.LockBits(dirtyRegion, ImageLockMode.ReadWrite, _bitmap.PixelFormat);
-        }
-
-        public void Unlock()
+    public IntPtr BackBuffer
+    {
+        get
         {
             Debug.Assert(_bitmapData is not null);
-            _bitmap.UnlockBits(_bitmapData);
-            _bitmapData = null;
+            return _bitmapData.Scan0;
         }
-
-        public IntPtr BackBuffer
-        {
-            get
-            {
-                Debug.Assert(_bitmapData is not null);
-                return _bitmapData.Scan0;
-            }
-        }
-
-        public int PixelWidth => _bitmap.Width;
-
-        public int PixelHeight => _bitmap.Height;
-
-        public static implicit operator Image(WriteableBitmap value) => value._bitmap;
     }
+
+    public int PixelWidth => _bitmap.Width;
+
+    public int PixelHeight => _bitmap.Height;
+
+    public static implicit operator Image(WriteableBitmap value) => value._bitmap;
 }

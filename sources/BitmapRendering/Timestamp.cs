@@ -2,19 +2,13 @@
 
 using System;
 
-namespace BitmapRendering
+namespace BitmapRendering;
+
+public readonly struct Timestamp(long ticks)
 {
-    public readonly struct Timestamp
-    {
-        public readonly long Ticks;
+    public readonly long Ticks = ticks;
 
-        public Timestamp(long ticks)
-        {
-            Ticks = ticks;
-        }
+    public static TimeSpan operator +(Timestamp left, Timestamp right) => new TimeSpan(left.Ticks + right.Ticks);
 
-        public static TimeSpan operator +(Timestamp left, Timestamp right) => new TimeSpan(left.Ticks + right.Ticks);
-
-        public static TimeSpan operator -(Timestamp left, Timestamp right) => new TimeSpan(left.Ticks - right.Ticks);
-    }
+    public static TimeSpan operator -(Timestamp left, Timestamp right) => new TimeSpan(left.Ticks - right.Ticks);
 }
