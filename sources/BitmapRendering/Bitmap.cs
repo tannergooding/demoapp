@@ -34,10 +34,10 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         if (useHWIntrinsics && (length >= PixelsPerBlock))
         {
             var vColor = Vector128.Create(color);
-            AlignedStoreNonTemporal128(pRenderBuffer, length, vColor);
+            AlignedStore128(pRenderBuffer, length, vColor);
 
             var vDepth = Vector128.Create(depth);
-            AlignedStoreNonTemporal128(pDepthBuffer, length, vDepth);
+            AlignedStore128(pDepthBuffer, length, vDepth);
         }
         else
         {
@@ -251,7 +251,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
     }
 
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    private static unsafe void AlignedStoreNonTemporal128<T>(T* pDst, nuint length, Vector128<T> value)
+    private static unsafe void AlignedStore128<T>(T* pDst, nuint length, Vector128<T> value)
         where T : unmanaged
     {
         Debug.Assert(length >= PixelsPerBlock);
@@ -282,7 +282,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
             for (var pEnd = pDst + (length - remainder); pDst < pEnd; pDst += PixelsPerBlock)
             {
-                value.StoreAlignedNonTemporal(pDst);
+                value.StoreAligned(pDst);
             }
         }
 
@@ -530,11 +530,11 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         {
             var pRenderBuffer = (uint*)RenderBuffer;
             var vColor = Vector128.Create(color);
-            AlignedStoreNonTemporal128(pRenderBuffer + index, (nuint)length, vColor);
+            AlignedStore128(pRenderBuffer + index, (nuint)length, vColor);
 
             var pDepthBuffer = (float*)DepthBuffer;
             var vDepth = Vector128.Create(1.0f);
-            AlignedStoreNonTemporal128(pDepthBuffer + index, (nuint)length, vDepth);
+            AlignedStore128(pDepthBuffer + index, (nuint)length, vDepth);
         }
         else
         {
