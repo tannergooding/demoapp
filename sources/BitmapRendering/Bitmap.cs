@@ -2,9 +2,9 @@
 
 using System;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
-using Mathematics;
 
 namespace BitmapRendering;
 
@@ -231,8 +231,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         Debug.Assert(sy1 <= sy2);
         Debug.Assert(sy2 <= sy3);
 
-        var lightDirection = (lightPosition - center).Normalize();
-        var ndotl = Math.Max(0, Vector3.DotProduct(normal, lightDirection));
+        var lightDirection = Vector3.Normalize(lightPosition - center);
+        var ndotl = Math.Max(0, Vector3.Dot(normal, lightDirection));
 
         var blue = unchecked((byte)color) * ndotl;
         var green = unchecked((byte)(color >> 8)) * ndotl;
@@ -737,9 +737,9 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         }
         center /= normalGroup.Length;
 
-        normal = center.Normalize();
+        normal = Vector3.Normalize(center);
         return ShouldCull(normal);
     }
 
-    private bool ShouldCull(Vector3 normal) => Vector3.DotProduct(normal, Vector3.UnitZ) <= 0;
+    private bool ShouldCull(Vector3 normal) => Vector3.Dot(normal, Vector3.UnitZ) <= 0;
 }

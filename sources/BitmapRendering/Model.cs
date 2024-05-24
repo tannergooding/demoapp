@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text.Json;
-using Mathematics;
 
 namespace BitmapRendering;
 
@@ -51,9 +51,9 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
 
         if (modelRoot.TryGetProperty("rotation", out var rotationProperty))
         {
-            rotation = Quaternion.CreateFrom(
-                float.DegreesToRadians(rotationProperty[0].GetSingle()),
+            rotation = Quaternion.CreateFromYawPitchRoll(
                 float.DegreesToRadians(rotationProperty[1].GetSingle()),
+                float.DegreesToRadians(rotationProperty[0].GetSingle()),
                 float.DegreesToRadians(rotationProperty[2].GetSingle())
             );
         }
@@ -70,7 +70,7 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
         }
 
         var transform = new OrthogonalTransform(rotation, translation);
-        var transformMatrix = Matrix4x4.CreateFrom(transform);
+        var transformMatrix = M4x4.CreateFrom(transform);
 
         var model = new Model(verticeCount, verticeGroupCount, normalCount, normalGroupCount);
 
@@ -79,7 +79,7 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
             Debug.Assert(verticeData.GetArrayLength() == 3);
 
             var vertice = new Vector3(verticeData[0].GetSingle(), verticeData[1].GetSingle(), verticeData[2].GetSingle());
-            vertice = vertice.Transform(transformMatrix);
+            vertice = Vector3.Transform(vertice, transformMatrix);
             vertice *= scale;
             model.Vertices.Add(vertice);
         }
@@ -95,7 +95,7 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
             Debug.Assert(normalData.GetArrayLength() == 3);
 
             var normal = new Vector3(normalData[0].GetSingle(), normalData[1].GetSingle(), normalData[2].GetSingle());
-            normal = normal.Transform(transformMatrix);
+            normal = Vector3.Transform(normal, transformMatrix);
             normal *= scale;
             model.Normals.Add(normal);
         }

@@ -2,7 +2,7 @@
 
 using System;
 using System.Diagnostics;
-using Mathematics;
+using System.Numerics;
 
 namespace BitmapRendering;
 
@@ -312,30 +312,26 @@ public sealed class BitmapRenderer
     private void RotateObject(Model polygon)
     {
         var rotation = _rotation * (MathF.PI / 180);
-        var rotationTransform = Quaternion.CreateFrom(rotation.X, rotation.Y, rotation.Z);
+        var rotationTransform = Quaternion.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z);
 
         for (var i = 0; i < polygon.Vertices.Count; i++)
         {
-            polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(rotationTransform);
+            polygon.ModifiedVertices[i] = Vector3.Transform(polygon.ModifiedVertices[i], rotationTransform);
         };
 
         for (var i = 0; i < polygon.Normals.Count; i++)
         {
-            polygon.ModifiedNormals[i] = polygon.ModifiedNormals[i].Transform(rotationTransform);
+            polygon.ModifiedNormals[i] = Vector3.Transform(polygon.ModifiedNormals[i], rotationTransform);
         }
     }
 
     private void ScaleObject(Model polygon)
     {
-        var scale = _scale;
-
-        var scaleTransform = new Matrix3x3(new Vector3(scale.X, 0.0f, 0.0f),
-                                           new Vector3(0.0f, scale.Y, 0.0f),
-                                           new Vector3(0.0f, 0.0f, scale.Z));
+        var scaleTransform = Matrix4x4.CreateScale(_scale);
 
         for (var i = 0; i < polygon.Vertices.Count; i++)
         {
-            polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(scaleTransform);
+            polygon.ModifiedVertices[i] = Vector3.Transform(polygon.ModifiedVertices[i], scaleTransform);
         }
     }
 
@@ -381,16 +377,16 @@ public sealed class BitmapRenderer
     private void WorldToCamera(Model polygon)
     {
         var viewProjection = _camera.ViewProjection;
-        _modifiedLightPosition = _modifiedLightPosition.Transform(viewProjection);
+        _modifiedLightPosition = Vector3.Transform(_modifiedLightPosition, viewProjection);
 
         for (var i = 0; i < polygon.Vertices.Count; i++)
         {
-            polygon.ModifiedVertices[i] = polygon.ModifiedVertices[i].Transform(viewProjection);
+            polygon.ModifiedVertices[i] = Vector3.Transform(polygon.ModifiedVertices[i], viewProjection);
         }
 
         for (var i = 0; i < polygon.Normals.Count; i++)
         {
-            polygon.ModifiedNormals[i] = polygon.ModifiedNormals[i].Transform(viewProjection);
+            polygon.ModifiedNormals[i] = Vector3.Transform(polygon.ModifiedNormals[i], viewProjection);
         }
     }
 }

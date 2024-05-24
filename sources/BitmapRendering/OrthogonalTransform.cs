@@ -1,6 +1,8 @@
 // Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-namespace Mathematics;
+using System.Numerics;
+
+namespace BitmapRendering;
 
 public readonly struct OrthogonalTransform(Quaternion rotation, Vector3 translation)
 {
@@ -11,8 +13,8 @@ public readonly struct OrthogonalTransform(Quaternion rotation, Vector3 translat
 
     public OrthogonalTransform Invert()
     {
-        var inverseRotation = Rotation.Conjugate;
-        return new OrthogonalTransform(inverseRotation, -Translation.Transform(inverseRotation));
+        var inverseRotation = Quaternion.Conjugate(Rotation);
+        return new OrthogonalTransform(inverseRotation, -Vector3.Transform(Translation, inverseRotation));
     }
 
     public OrthogonalTransform WithRotation(Quaternion rotation) => new OrthogonalTransform(rotation, Translation);

@@ -1,6 +1,8 @@
 // Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-namespace Mathematics;
+using System.Numerics;
+
+namespace BitmapRendering;
 
 public readonly struct BoundingFrustum(Vector3 origin, Vector4 orientation, float rightSlope, float leftSlope, float topSlope, float bottomSlope, float near, float far)
 {
@@ -24,15 +26,15 @@ public readonly struct BoundingFrustum(Vector3 origin, Vector4 orientation, floa
 
     public static unsafe BoundingFrustum CreateFrom(Matrix4x4 projection)
     {
-        var inverseProjection = projection.Invert();
+        _ = Matrix4x4.Invert(projection, out var inverseProjection);
 
         var points = stackalloc Vector4[] {
-            s_homogenousPoints[0].Transform(inverseProjection),
-            s_homogenousPoints[1].Transform(inverseProjection),
-            s_homogenousPoints[2].Transform(inverseProjection),
-            s_homogenousPoints[3].Transform(inverseProjection),
-            s_homogenousPoints[4].Transform(inverseProjection),
-            s_homogenousPoints[5].Transform(inverseProjection),
+            Vector4.Transform(s_homogenousPoints[0], inverseProjection),
+            Vector4.Transform(s_homogenousPoints[1], inverseProjection),
+            Vector4.Transform(s_homogenousPoints[2], inverseProjection),
+            Vector4.Transform(s_homogenousPoints[3], inverseProjection),
+            Vector4.Transform(s_homogenousPoints[4], inverseProjection),
+            Vector4.Transform(s_homogenousPoints[5], inverseProjection),
         };
 
         return new BoundingFrustum(
@@ -50,8 +52,8 @@ public readonly struct BoundingFrustum(Vector3 origin, Vector4 orientation, floa
     public BoundingFrustum Transform(OrthogonalTransform transform)
     {
         return new BoundingFrustum(
-            _origin.Transform(transform.Rotation) + transform.Translation,
-            _orientation.Transform(transform.Rotation),
+            Vector3.Transform(_origin, transform.Rotation) + transform.Translation,
+            Vector4.Transform(_orientation, transform.Rotation),
             _rightSlope,
             _leftSlope,
             _topSlope,
