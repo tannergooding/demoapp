@@ -26,7 +26,6 @@ public sealed class BitmapRenderer
 
     private static readonly Vector3 s_defaultScale = new Vector3(DefaultZoomLevel, DefaultZoomLevel, 1.0f);
     private static readonly TimeSpan s_oneSecond = TimeSpan.FromSeconds(1.0);
-    private static readonly float s_tickFrequency = TicksPerSecond / Stopwatch.Frequency;
 
     private Bitmap _bitmap;
 
@@ -35,7 +34,7 @@ public sealed class BitmapRenderer
     private int _maxFps = int.MinValue;
     private long _totalFrames;
 
-    private Timestamp _previousTimestamp = new Timestamp(0);
+    private long _previousTimestamp = Stopwatch.GetTimestamp();
     private TimeSpan _totalUptime = TimeSpan.Zero;
     private TimeSpan _lastHeaderUpdate = TimeSpan.Zero;
 
@@ -58,7 +57,7 @@ public sealed class BitmapRenderer
     public BitmapRenderer()
     {
         Reset();
-        _previousTimestamp = GetTimestamp();
+        _previousTimestamp = Stopwatch.GetTimestamp();
     }
 
     public Model? ActiveScene { get; set; }
@@ -245,8 +244,8 @@ public sealed class BitmapRenderer
     {
         _bitmap = new Bitmap(renderBuffer, depthBuffer, pixelWidth, pixelHeight);
 
-        var timestamp = GetTimestamp();
-        var delta = timestamp - _previousTimestamp;
+        var timestamp = Stopwatch.GetTimestamp();
+        var delta = Stopwatch.GetElapsedTime(_previousTimestamp, timestamp);
 
         _totalUptime += delta;
         _lastHeaderUpdate += delta;
@@ -264,13 +263,6 @@ public sealed class BitmapRenderer
         }
 
         _previousTimestamp = timestamp;
-    }
-
-    private static Timestamp GetTimestamp()
-    {
-        double ticks = Stopwatch.GetTimestamp();
-        ticks *= s_tickFrequency;
-        return new Timestamp((long)ticks);
     }
 
     private void ProjectScene(Model model, int pixelWidth, int pixelHeight)
