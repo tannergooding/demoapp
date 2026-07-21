@@ -42,17 +42,13 @@ internal partial class MainWindow : Form
             _renderer.Render();
             _renderer.Present();
 
-            var nextBufferIndex = _bufferIndex++;
+            var currentBufferIndex = _bufferIndex;
+            _bufferIndex = (_bufferIndex + 1) % BufferCount;
 
-            if (_bufferIndex == BufferCount)
-            {
-                _bufferIndex = 0;
-            }
+            var (currentRender, currentDepth) = GetBuffer(currentBufferIndex);
 
-            var (nextRender, nextDepth) = GetBuffer(nextBufferIndex);
-
-            nextRender.Unlock();
-            nextDepth.Unlock();
+            currentRender.Unlock();
+            currentDepth.Unlock();
         }
 
         if (_renderer.Title != Text)
