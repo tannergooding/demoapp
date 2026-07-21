@@ -520,6 +520,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         var endX = Math.Min(sx2, width - 1);
 
         var index = (sy * width) + startX;
+        // Half-open span [startX, endX): the end pixel belongs to the adjacent
+        // primitive so shared edges and vertices aren't drawn twice.
         var length = endX - startX;
         Debug.Assert(length >= 0);
 
@@ -578,6 +580,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         var endX = Math.Min(sx2, width - 1);
 
         var startIndex = (sy * width) + startX;
+        // Half-open span [startX, endX): the end pixel belongs to the adjacent
+        // primitive so shared edges and vertices aren't drawn twice.
         var length = endX - startX;
         Debug.Assert(length >= 0);
 
@@ -710,6 +714,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         var startY = Math.Max(sy1, 0);
         var endY = Math.Min(sy2, height - 1);
 
+        // Half-open span [startY, endY): the end pixel belongs to the adjacent
+        // primitive so shared edges and vertices aren't drawn twice.
         var delta = endY - startY;
         Debug.Assert(delta >= 0);
 
