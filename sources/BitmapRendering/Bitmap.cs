@@ -113,6 +113,10 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         var verticeGroups = CollectionsMarshal.AsSpan(model.VerticeGroups);
         var vertices = CollectionsMarshal.AsSpan(model.ModifiedVertices);
 
+        // The light is fixed for the whole model, so normalize its direction once
+        // here rather than per triangle. Wireframe ignores it, but it's a single op.
+        var lightDirection = Vector3.Normalize(lightPosition);
+
         for (var i = 0; i < verticeGroups.Length; i++)
         {
             var verticeGroup = verticeGroups[i];
@@ -149,14 +153,14 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
                 case 3:
                 {
-                    DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], normal, lightPosition, color, isWireframe, useHWIntrinsics);
+                    DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], normal, lightDirection, color, isWireframe, useHWIntrinsics);
                     break;
                 }
 
                 case 4:
                 {
-                    DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], normal, lightPosition, color, isWireframe, useHWIntrinsics);
-                    DrawTriangle(vertices[verticeGroup[2]], vertices[verticeGroup[3]], vertices[verticeGroup[0]], normal, lightPosition, color, isWireframe, useHWIntrinsics);
+                    DrawTriangle(vertices[verticeGroup[0]], vertices[verticeGroup[1]], vertices[verticeGroup[2]], normal, lightDirection, color, isWireframe, useHWIntrinsics);
+                    DrawTriangle(vertices[verticeGroup[2]], vertices[verticeGroup[3]], vertices[verticeGroup[0]], normal, lightDirection, color, isWireframe, useHWIntrinsics);
                     break;
                 }
 
@@ -173,9 +177,9 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
                     for (var n = 0; n < (verticeCount - 1); n++)
                     {
-                        DrawTriangle(vertices[verticeGroup[n]], vertices[verticeGroup[n + 1]], center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
+                        DrawTriangle(vertices[verticeGroup[n]], vertices[verticeGroup[n + 1]], center, normal, lightDirection, color, isWireframe, useHWIntrinsics);
                     }
-                    DrawTriangle(vertices[verticeGroup[verticeCount - 1]], vertices[verticeGroup[0]], center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
+                    DrawTriangle(vertices[verticeGroup[verticeCount - 1]], vertices[verticeGroup[0]], center, normal, lightDirection, color, isWireframe, useHWIntrinsics);
 
                     break;
                 }
@@ -196,7 +200,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         return true;
     }
 
-    public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 normal, Vector3 lightPosition, uint color, bool isWireframe, bool useHWIntrinsics)
+    public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 normal, Vector3 lightDirection, uint color, bool isWireframe, bool useHWIntrinsics)
     {
         if (isWireframe)
         {
@@ -250,7 +254,6 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         Debug.Assert(sy1 <= sy2);
         Debug.Assert(sy2 <= sy3);
 
-        var lightDirection = Vector3.Normalize(lightPosition);
         var ndotl = Math.Max(0, Vector3.Dot(normal, lightDirection));
 
         var blue = unchecked((byte)color) * ndotl;
