@@ -22,6 +22,11 @@ public sealed class BitmapRenderer
     private const float FarClip = 100.0f;
     private const float ZoomToWorldScale = 0.01f;
 
+    // Screen-space guard band. Vertices projecting beyond this are dropped so the
+    // integer rasterizer can't overflow: its worst intermediate is ~4*limit^2, which
+    // stays within int at 1<<14 yet sits well outside any real viewport.
+    private const float CoordinateLimit = 1 << 14;
+
     private static readonly Vector3 s_defaultRotation = new Vector3(90.0f, 0.0f, 0.0f);
 
     private static readonly Vector3 s_defaultScale = new Vector3(DefaultZoomLevel, DefaultZoomLevel, 1.0f);
@@ -234,13 +239,30 @@ public sealed class BitmapRenderer
         for (var i = 0; i < sourceVertices.Count; i++)
         {
             var clip = Vector4.Transform(new Vector4(sourceVertices[i], 1.0f), modelToClip);
+
+            if (clip.W <= NearClip)
+            {
+                // On or behind the near plane. There's no near-plane clipping, so the
+                // perspective divide would explode; drop the vertex and let DrawModel
+                // skip any primitive that references it.
+                vertices[i] = new Vector3(float.NaN);
+                continue;
+            }
+
             var ndc = new Vector3(clip.X, clip.Y, clip.Z) / clip.W;
 
-            vertices[i] = new Vector3(
-                ((ndc.X * 0.5f) + 0.5f) * pixelWidth,
-                (1.0f - ((ndc.Y * 0.5f) + 0.5f)) * pixelHeight,
-                ndc.Z
-            );
+            var sx = ((ndc.X * 0.5f) + 0.5f) * pixelWidth;
+            var sy = (1.0f - ((ndc.Y * 0.5f) + 0.5f)) * pixelHeight;
+
+            if (!((MathF.Abs(sx) <= CoordinateLimit) && (MathF.Abs(sy) <= CoordinateLimit)))
+            {
+                // Far enough off-screen that the integer rasterizer math would overflow.
+                // The clamp also rejects any non-finite coordinate. Drop it as above.
+                vertices[i] = new Vector3(float.NaN);
+                continue;
+            }
+
+            vertices[i] = new Vector3(sx, sy, ndc.Z);
         }
 
         var sourceNormals = model.Normals;

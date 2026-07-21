@@ -1,6 +1,7 @@
 // Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -110,9 +111,18 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
     public void DrawModel(Model model, Vector3 lightPosition, uint color, bool isWireframe, bool useHWIntrinsics)
     {
         var verticeGroupCount = model.VerticeGroups.Count;
+        var vertices = model.ModifiedVertices;
 
         for (var i = 0; i < verticeGroupCount; i++)
         {
+            var verticeGroup = model.VerticeGroups[i];
+
+            if (!IsGroupProjected(vertices, verticeGroup))
+            {
+                // A member vertex was rejected by near-plane clipping.
+                continue;
+            }
+
             var normal = Vector3.Zero;
 
             if (!isWireframe && ShouldCull(model, i, out normal))
@@ -120,8 +130,6 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
                 continue;
             }
 
-            var vertices = model.ModifiedVertices;
-            var verticeGroup = model.VerticeGroups[i];
             var verticeCount = verticeGroup.Length;
 
             var center = Vector3.Zero;
@@ -172,6 +180,19 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
                 }
             }
         }
+    }
+
+    private static bool IsGroupProjected(List<Vector3> vertices, int[] verticeGroup)
+    {
+        // Near-plane-rejected vertices are marked NaN by the projection pass.
+        for (var n = 0; n < verticeGroup.Length; n++)
+        {
+            if (float.IsNaN(vertices[verticeGroup[n]].X))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void DrawTriangle(Vector3 point1, Vector3 point2, Vector3 point3, Vector3 normal, Vector3 lightPosition, uint color, bool isWireframe, bool useHWIntrinsics)
@@ -487,8 +508,13 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
         while (xd != term)                      // Bresenham's Line Drawing
         {
-            var index = (d2 * PixelWidth) + d1;
-            DrawPixelUnsafe(index, color, depth: 1.0f);
+            // Kuzmin's entry clipping can leave the first pixel one step outside
+            // the window at a corner; guard the unsafe write to stay in-bounds.
+            if ((unchecked((uint)d1) < (uint)width) && (unchecked((uint)d2) < (uint)height))
+            {
+                var index = (d2 * PixelWidth) + d1;
+                DrawPixelUnsafe(index, color, depth: 1.0f);
+            }
 
             if (e >= 0)
             {
