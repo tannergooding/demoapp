@@ -95,8 +95,7 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
             Debug.Assert(normalData.GetArrayLength() == 3);
 
             var normal = new Vector3(normalData[0].GetSingle(), normalData[1].GetSingle(), normalData[2].GetSingle());
-            normal = Vector3.Transform(normal, transformMatrix);
-            normal *= scale;
+            normal = Vector3.TransformNormal(normal, transformMatrix);
             model.Normals.Add(normal);
         }
 
