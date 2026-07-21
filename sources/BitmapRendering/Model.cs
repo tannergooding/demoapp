@@ -114,11 +114,21 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
         ModifiedNormals.Clear();
     }
 
-    public void Reset()
+    public void EnsureInitialized()
     {
-        Clear();
+        // The modified buffers mirror the source counts and are fully overwritten each
+        // frame, so they only need sizing once (or re-sizing after a Clear).
 
-        ModifiedVertices.AddRange(Vertices);
-        ModifiedNormals.AddRange(Normals);
+        if (ModifiedVertices.Count != Vertices.Count)
+        {
+            ModifiedVertices.Clear();
+            ModifiedVertices.AddRange(Vertices);
+        }
+
+        if (ModifiedNormals.Count != Normals.Count)
+        {
+            ModifiedNormals.Clear();
+            ModifiedNormals.AddRange(Normals);
+        }
     }
 }

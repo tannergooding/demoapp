@@ -258,7 +258,7 @@ public sealed class BitmapRenderer
         if (activeScene != null)
         {
             _modifiedLightPosition = _lightPosition;
-            activeScene.Reset();
+            activeScene.EnsureInitialized();
 
             ProjectScene(activeScene, pixelWidth, pixelHeight);
         }
@@ -283,28 +283,29 @@ public sealed class BitmapRenderer
         _camera.SetEyeAtUp(new Vector3(0.0f, 0.0f, CameraDistance), Vector3.Zero, Vector3.UnitY);
         _camera.Update();
 
-        var viewProjection = _camera.ViewProjection;
+        var modelToClip = Matrix4x4.CreateScale(worldScale) * Matrix4x4.CreateFromQuaternion(rotation) * _camera.ViewProjection;
 
+        var sourceVertices = model.Vertices;
         var vertices = model.ModifiedVertices;
 
-        for (var i = 0; i < vertices.Count; i++)
+        for (var i = 0; i < sourceVertices.Count; i++)
         {
-            var world = Vector3.Transform(vertices[i], rotation) * worldScale;
-            var clip = Vector4.Transform(new Vector4(world, 1.0f), viewProjection);
+            var clip = Vector4.Transform(new Vector4(sourceVertices[i], 1.0f), modelToClip);
             var ndc = new Vector3(clip.X, clip.Y, clip.Z) / clip.W;
 
             vertices[i] = new Vector3(
-                (ndc.X * 0.5f + 0.5f) * pixelWidth,
+                ((ndc.X * 0.5f) + 0.5f) * pixelWidth,
                 (1.0f - ((ndc.Y * 0.5f) + 0.5f)) * pixelHeight,
                 ndc.Z
             );
         }
 
+        var sourceNormals = model.Normals;
         var normals = model.ModifiedNormals;
 
-        for (var i = 0; i < normals.Count; i++)
+        for (var i = 0; i < sourceNormals.Count; i++)
         {
-            normals[i] = Vector3.Transform(normals[i], rotation);
+            normals[i] = Vector3.Transform(sourceNormals[i], rotation);
         }
     }
 
