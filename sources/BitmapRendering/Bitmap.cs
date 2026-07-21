@@ -76,7 +76,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         {
             if (sy1 == sy2)
             {
-                var point = new Vector3(point1.X, point1.Y, Math.Max(point1.Z, point2.Z));
+                var point = new Vector3(point1.X, point1.Y, float.Max(point1.Z, point2.Z));
                 DrawPixel(point, color);
             }
             else
@@ -254,7 +254,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         Debug.Assert(sy1 <= sy2);
         Debug.Assert(sy2 <= sy3);
 
-        var ndotl = Math.Max(0, Vector3.Dot(normal, lightDirection));
+        var ndotl = float.Max(0.0f, Vector3.Dot(normal, lightDirection));
 
         var blue = unchecked((byte)color) * ndotl;
         var green = unchecked((byte)(color >> 8)) * ndotl;
@@ -325,7 +325,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
     private static float Interpolate(float min, float max, float gradient)
     {
-        var t = Math.Min(Math.Max(gradient, 0), 1);
+        var t = float.Clamp(gradient, 0.0f, 1.0f);
         return ((1 - t) * min) + (t * max);
     }
 
@@ -546,8 +546,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
             return;
         }
 
-        var startX = Math.Max(sx1, 0);
-        var endX = Math.Min(sx2, width - 1);
+        var startX = int.Max(sx1, 0);
+        var endX = int.Min(sx2, width - 1);
 
         var index = (sy * width) + startX;
         // Half-open span [startX, endX): the end pixel belongs to the adjacent
@@ -606,8 +606,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
             return;
         }
 
-        var startX = Math.Max(sx1, 0);
-        var endX = Math.Min(sx2, width - 1);
+        var startX = int.Max(sx1, 0);
+        var endX = int.Min(sx2, width - 1);
 
         var startIndex = (sy * width) + startX;
         // Half-open span [startX, endX): the end pixel belongs to the adjacent
@@ -741,8 +741,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
             return;
         }
 
-        var startY = Math.Max(sy1, 0);
-        var endY = Math.Min(sy2, height - 1);
+        var startY = int.Max(sy1, 0);
+        var endY = int.Min(sy2, height - 1);
 
         // Half-open span [startY, endY): the end pixel belongs to the adjacent
         // primitive so shared edges and vertices aren't drawn twice.

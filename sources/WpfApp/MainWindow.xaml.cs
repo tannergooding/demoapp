@@ -125,7 +125,7 @@ internal partial class MainWindow : Window
 
     private void SceneListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var selectedIndex = Math.Clamp(_sceneListBox.SelectedIndex, 0, _scenes.Count - 1);
+        var selectedIndex = int.Clamp(_sceneListBox.SelectedIndex, 0, _scenes.Count - 1);
 
         _renderer.ActiveScene?.Clear();
 

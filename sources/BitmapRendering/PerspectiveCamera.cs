@@ -1,6 +1,5 @@
 // Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
-using System;
 using System.Numerics;
 using System.Runtime.Intrinsics;
 
@@ -19,7 +18,7 @@ public class PerspectiveCamera
     private BoundingFrustum _viewSpace;
     private BoundingFrustum _worldSpace;
 
-    private float _fieldOfView = MathF.PI / 4.0f;
+    private float _fieldOfView = float.Pi / 4.0f;
     private float _aspectRatio = 9.0f / 16.0f;
     private float _nearClip = 0.1f;
     private float _farClip = 100.0f;
@@ -146,13 +145,13 @@ public class PerspectiveCamera
     public void SetLookDirection(Vector3 forward, Vector3 up)
     {
         var forwardLengthSq = forward.LengthSquared();
-        forward = (forwardLengthSq < 0.000001f) ? -Vector3.UnitZ : forward / MathF.Sqrt(forwardLengthSq);
+        forward = (forwardLengthSq < 0.000001f) ? -Vector3.UnitZ : forward / float.Sqrt(forwardLengthSq);
 
         var right = Vector3.Cross(forward, up);
         var rightLengthSq = right.LengthSquared();
         right = (rightLengthSq < 0.000001f)
-              ? Vector3.Transform(forward, new Quaternion(Vector3.UnitY, -MathF.PI / 2.0f))
-              : right / MathF.Sqrt(rightLengthSq);
+              ? Vector3.Transform(forward, new Quaternion(Vector3.UnitY, -float.Pi / 2.0f))
+              : right / float.Sqrt(rightLengthSq);
 
         up = Vector3.Cross(right, forward);
 
@@ -189,7 +188,7 @@ public class PerspectiveCamera
 
     private void UpdateProjection()
     {
-        var y = 1.0f / MathF.Tan(_fieldOfView * 0.5f);
+        var y = 1.0f / float.Tan(_fieldOfView * 0.5f);
         var x = y * _aspectRatio;
 
         float q1, q2;

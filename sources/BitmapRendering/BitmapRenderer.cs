@@ -224,7 +224,7 @@ public sealed class BitmapRenderer
 
     private void ProjectScene(Model model, int pixelWidth, int pixelHeight)
     {
-        var rotationRadians = _rotation * (MathF.PI / 180.0f);
+        var rotationRadians = _rotation * (float.Pi / 180.0f);
         var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
         var worldScale = ZoomLevel * ZoomToWorldScale;
 
@@ -255,7 +255,7 @@ public sealed class BitmapRenderer
             var sx = ((ndc.X * 0.5f) + 0.5f) * pixelWidth;
             var sy = (1.0f - ((ndc.Y * 0.5f) + 0.5f)) * pixelHeight;
 
-            if (!((MathF.Abs(sx) <= CoordinateLimit) && (MathF.Abs(sy) <= CoordinateLimit)))
+            if (!((float.Abs(sx) <= CoordinateLimit) && (float.Abs(sy) <= CoordinateLimit)))
             {
                 // Far enough off-screen that the integer rasterizer math would overflow.
                 // The clamp also rejects any non-finite coordinate. Drop it as above.
@@ -292,8 +292,8 @@ public sealed class BitmapRenderer
             return;
         }
 
-        _minFps = Math.Min(_minFps, _fps);
-        _maxFps = Math.Max(_maxFps, _fps);
+        _minFps = int.Min(_minFps, _fps);
+        _maxFps = int.Max(_maxFps, _fps);
 
         Title = $"FPS: {_fps}; Min FPS: {_minFps}; Max FPS: {_maxFps}; Avg FPS: {_totalFrames / (_totalUptime.Ticks / TicksPerSecond):F2}; Resolution: {_bitmap.PixelWidth}x{_bitmap.PixelHeight}; Vertices: {((ActiveScene is null) ? 0 : ActiveScene.ModifiedVertices.Count)}";
 
