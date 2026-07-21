@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace BitmapRendering;
 
@@ -233,10 +234,10 @@ public sealed class BitmapRenderer
 
         var modelToClip = Matrix4x4.CreateScale(worldScale) * Matrix4x4.CreateFromQuaternion(rotation) * _camera.ViewProjection;
 
-        var sourceVertices = model.Vertices;
-        var vertices = model.ModifiedVertices;
+        var sourceVertices = CollectionsMarshal.AsSpan(model.Vertices);
+        var vertices = CollectionsMarshal.AsSpan(model.ModifiedVertices);
 
-        for (var i = 0; i < sourceVertices.Count; i++)
+        for (var i = 0; i < sourceVertices.Length; i++)
         {
             var clip = Vector4.Transform(new Vector4(sourceVertices[i], 1.0f), modelToClip);
 
@@ -265,10 +266,10 @@ public sealed class BitmapRenderer
             vertices[i] = new Vector3(sx, sy, ndc.Z);
         }
 
-        var sourceNormals = model.Normals;
-        var normals = model.ModifiedNormals;
+        var sourceNormals = CollectionsMarshal.AsSpan(model.Normals);
+        var normals = CollectionsMarshal.AsSpan(model.ModifiedNormals);
 
-        for (var i = 0; i < sourceNormals.Count; i++)
+        for (var i = 0; i < sourceNormals.Length; i++)
         {
             normals[i] = Vector3.Transform(sourceNormals[i], rotation);
         }

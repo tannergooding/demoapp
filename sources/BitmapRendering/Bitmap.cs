@@ -1,10 +1,10 @@
 // Copyright © Tanner Gooding and Contributors. Licensed under the MIT License (MIT). See License.md in the repository root for more information.
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
 namespace BitmapRendering;
@@ -110,12 +110,12 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
     public void DrawModel(Model model, Vector3 lightPosition, uint color, bool isWireframe, bool useHWIntrinsics)
     {
-        var verticeGroupCount = model.VerticeGroups.Count;
-        var vertices = model.ModifiedVertices;
+        var verticeGroups = CollectionsMarshal.AsSpan(model.VerticeGroups);
+        var vertices = CollectionsMarshal.AsSpan(model.ModifiedVertices);
 
-        for (var i = 0; i < verticeGroupCount; i++)
+        for (var i = 0; i < verticeGroups.Length; i++)
         {
-            var verticeGroup = model.VerticeGroups[i];
+            var verticeGroup = verticeGroups[i];
 
             if (!IsGroupProjected(vertices, verticeGroup))
             {
@@ -131,14 +131,6 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
             }
 
             var verticeCount = verticeGroup.Length;
-
-            var center = Vector3.Zero;
-
-            for (var n = 0; n < verticeCount; n++)
-            {
-                center += vertices[verticeGroup[n]];
-            }
-            center /= verticeGroup.Length;
 
             switch (verticeCount)
             {
@@ -170,6 +162,15 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
                 default:
                 {
+                    // Only the fan triangulation needs the centroid, so it isn't computed for the common cases above.
+                    var center = Vector3.Zero;
+
+                    for (var n = 0; n < verticeCount; n++)
+                    {
+                        center += vertices[verticeGroup[n]];
+                    }
+                    center /= verticeCount;
+
                     for (var n = 0; n < (verticeCount - 1); n++)
                     {
                         DrawTriangle(vertices[verticeGroup[n]], vertices[verticeGroup[n + 1]], center, normal, lightPosition, color, isWireframe, useHWIntrinsics);
@@ -182,7 +183,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         }
     }
 
-    private static bool IsGroupProjected(List<Vector3> vertices, int[] verticeGroup)
+    private static bool IsGroupProjected(ReadOnlySpan<Vector3> vertices, int[] verticeGroup)
     {
         // Near-plane-rejected vertices are marked NaN by the projection pass.
         for (var n = 0; n < verticeGroup.Length; n++)
@@ -757,7 +758,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
     private static bool ShouldCull(Model model, int index, out Vector3 normal)
     {
-        var normals = model.ModifiedNormals;
+        var normals = CollectionsMarshal.AsSpan(model.ModifiedNormals);
         var normalGroup = model.NormalGroups[index];
         var normalCount = normalGroup.Length;
 
@@ -767,7 +768,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         {
             center += normals[normalGroup[n]];
         }
-        center /= normalGroup.Length;
+        center /= normalCount;
 
         normal = Vector3.Normalize(center);
         return ShouldCull(normal);
