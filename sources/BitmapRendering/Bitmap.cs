@@ -76,7 +76,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         {
             if (sy1 == sy2)
             {
-                var point = new Vector3(point1.X, point1.Y, float.Max(point1.Z, point2.Z));
+                var point = new Vector3(point1.X, point1.Y, float.MaxNative(point1.Z, point2.Z));
                 DrawPixel(point, color);
             }
             else
@@ -254,7 +254,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         Debug.Assert(sy1 <= sy2);
         Debug.Assert(sy2 <= sy3);
 
-        var ndotl = float.Max(0.0f, Vector3.Dot(normal, lightDirection));
+        var ndotl = float.MaxNative(0.0f, Vector3.Dot(normal, lightDirection));
 
         var blue = unchecked((byte)color) * ndotl;
         var green = unchecked((byte)(color >> 8)) * ndotl;
@@ -325,7 +325,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
     private static float Interpolate(float min, float max, float gradient)
     {
-        var t = float.Clamp(gradient, 0.0f, 1.0f);
+        var t = float.ClampNative(gradient, 0.0f, 1.0f);
         return ((1 - t) * min) + (t * max);
     }
 
