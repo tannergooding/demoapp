@@ -49,11 +49,6 @@ public sealed class BitmapRenderer
     private readonly uint _backgroundColor = 0xFF6495ED; // Cornflower Blue
     private readonly uint _foregroundColor = 0xFFFFFFFF; // White
 
-    private bool _isRotating = true;
-    private bool _isWireframe = true;
-    private bool _useHWIntrinsics;
-    private bool _displayDepthBuffer;
-
     public BitmapRenderer()
     {
         Reset();
@@ -62,18 +57,7 @@ public sealed class BitmapRenderer
 
     public Model? ActiveScene { get; set; }
 
-    public bool DisplayDepthBuffer
-    {
-        get
-        {
-            return _displayDepthBuffer;
-        }
-
-        set
-        {
-            _displayDepthBuffer = value;
-        }
-    }
+    public bool DisplayDepthBuffer { get; set; }
 
     public float LightPositionX
     {
@@ -114,18 +98,7 @@ public sealed class BitmapRenderer
         }
     }
 
-    public bool RotateModel
-    {
-        get
-        {
-            return _isRotating;
-        }
-
-        set
-        {
-            _isRotating = value;
-        }
-    }
+    public bool RotateModel { get; set; } = true;
 
     public float RotationXSpeed
     {
@@ -168,31 +141,9 @@ public sealed class BitmapRenderer
 
     public string Title { get; private set; } = "";
 
-    public bool UseHWIntrinsics
-    {
-        get
-        {
-            return _useHWIntrinsics;
-        }
+    public bool UseHWIntrinsics { get; set; }
 
-        set
-        {
-            _useHWIntrinsics = value;
-        }
-    }
-
-    public bool Wireframe
-    {
-        get
-        {
-            return _isWireframe;
-        }
-
-        set
-        {
-            _isWireframe = value;
-        }
-    }
+    public bool Wireframe { get; set; } = true;
 
     public float ZoomLevel
     {
@@ -303,11 +254,11 @@ public sealed class BitmapRenderer
 
     private void RenderBuffer()
     {
-        _bitmap.Clear(_backgroundColor, _camera.ClearDepth, _useHWIntrinsics);
+        _bitmap.Clear(_backgroundColor, _camera.ClearDepth, UseHWIntrinsics);
 
         if (ActiveScene != null)
         {
-            _bitmap.DrawModel(ActiveScene, _modifiedLightPosition, _foregroundColor, _isWireframe, _useHWIntrinsics);
+            _bitmap.DrawModel(ActiveScene, _modifiedLightPosition, _foregroundColor, Wireframe, UseHWIntrinsics);
         }
     }
 
@@ -329,7 +280,7 @@ public sealed class BitmapRenderer
 
     private void UpdateRotation(TimeSpan delta)
     {
-        if (!_isRotating)
+        if (!RotateModel)
         {
             return;
         }
