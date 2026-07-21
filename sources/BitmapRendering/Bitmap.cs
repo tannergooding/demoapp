@@ -584,7 +584,10 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         var length = endX - startX;
         Debug.Assert(length >= 0);
 
-        var delta = (float)(startX - endX);
+        // Interpolate depth against the full, unclipped span (sx1..sx2) so that
+        // clipping the drawn range to the screen doesn't skew the gradient.
+        var span = (float)(sx2 - sx1);
+        var startOffset = (float)(startX - sx1);
         var lastIndex = startIndex + length;
 
         if (useHWIntrinsics && ((nuint)length >= PixelsPerBlock))
@@ -593,8 +596,8 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
             var vz2 = Vector128.Create(sz2);
 
             var vColor = Vector128.Create(color);
-            var vIndex = Vector128.Create(0, 1, 2, 3);
-            var vDelta = Vector128.Create(delta);
+            var vIndex = Vector128.Create(0.0f, 1.0f, 2.0f, 3.0f) + Vector128.Create(startOffset);
+            var vSpan = Vector128.Create(span);
 
             var remainder = length % PixelsPerBlock;
 
@@ -603,7 +606,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
             for (var pEnd = pRenderBuffer + (length - remainder); pRenderBuffer < pEnd; pRenderBuffer += PixelsPerBlock, pDepthBuffer += PixelsPerBlock)
             {
-                var vg3 = Vector128.ConvertToSingle(vIndex) / vDelta;
+                var vg3 = vIndex / vSpan;
                 var vDepth = Interpolate(vz1, vz2, vg3);
 
                 // Load the existing colors/depths
@@ -612,18 +615,18 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
 
                 var mask = Vector128.GreaterThanOrEqual(eDepth, vDepth);
 
-                var nColor = Vector128.ConditionalSelect(mask.AsUInt32(), eColor, vColor);  // nColor = (eDepth >= vDepth) ? eDepth : vDepth;
+                var nColor = Vector128.ConditionalSelect(mask.AsUInt32(), eColor, vColor);  // nColor = (eDepth >= vDepth) ? eColor : vColor;
                 var nDepth = Vector128.ConditionalSelect(mask, eDepth, vDepth);             // nDepth = (eDepth >= vDepth) ? eDepth : vDepth;
 
                 nColor.Store(pRenderBuffer);
                 nDepth.Store(pDepthBuffer);
 
-                vIndex += Vector128.Create(PixelsPerBlock);
+                vIndex += Vector128.Create((float)PixelsPerBlock);
             }
 
             for (var index = lastIndex - remainder; index < lastIndex; index++)
             {
-                var g3 = (index - startIndex) / delta;
+                var g3 = (startOffset + (index - startIndex)) / span;
                 var depth = Interpolate(sz1, sz2, g3);
                 DrawPixelUnsafe(index, color, depth);
             }
@@ -632,7 +635,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         {
             for (var index = startIndex; index < lastIndex; index++)
             {
-                var g3 = (index - startIndex) / delta;
+                var g3 = (startOffset + (index - startIndex)) / span;
                 var depth = Interpolate(sz1, sz2, g3);
                 DrawPixelUnsafe(index, color, depth);
             }
