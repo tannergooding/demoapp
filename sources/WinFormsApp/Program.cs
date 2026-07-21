@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace WinFormsApp;
 
-public static class Program
+internal static class Program
 {
     /// <summary>
     ///  The main entry point for the application.
@@ -16,6 +16,8 @@ public static class Program
         _ = Application.SetHighDpiMode(HighDpiMode.SystemAware);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
-        Application.Run(new MainWindow());
+
+        using var mainWindow = new MainWindow();
+        Application.Run(mainWindow);
     }
 }

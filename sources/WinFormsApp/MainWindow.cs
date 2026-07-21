@@ -10,18 +10,18 @@ using BitmapRendering;
 
 namespace WinFormsApp;
 
-public partial class MainWindow : Form
+internal partial class MainWindow : Form
 {
     private const int BufferCount = 2;
 
-    private static readonly PixelFormat s_depthBufferPixelFormat = PixelFormat.Format32bppArgb;
-    private static readonly PixelFormat s_renderBufferPixelFormat = PixelFormat.Format32bppArgb;
+    private const PixelFormat DepthBufferPixelFormat = PixelFormat.Format32bppArgb;
+    private const PixelFormat RenderBufferPixelFormat = PixelFormat.Format32bppArgb;
 
     private readonly BitmapRenderer _renderer = new BitmapRenderer();
     private readonly List<Model?> _scenes = [];
     private readonly (WriteableBitmap Render, WriteableBitmap Depth)[] _buffers = new (WriteableBitmap, WriteableBitmap)[BufferCount];
 
-    private int _bufferIndex = 0;
+    private int _bufferIndex;
 
     public MainWindow()
     {
@@ -176,8 +176,8 @@ public partial class MainWindow : Form
 
         if ((buffer.Render is null) || (pixelWidth != buffer.Render.PixelWidth) || (pixelHeight != buffer.Render.PixelHeight))
         {
-            buffer.Render = new WriteableBitmap(pixelWidth, pixelHeight, s_renderBufferPixelFormat);
-            buffer.Depth = new WriteableBitmap(pixelWidth, pixelHeight, s_depthBufferPixelFormat);
+            buffer.Render = new WriteableBitmap(pixelWidth, pixelHeight, RenderBufferPixelFormat);
+            buffer.Depth = new WriteableBitmap(pixelWidth, pixelHeight, DepthBufferPixelFormat);
             _buffers[index] = buffer;
         }
         return buffer;

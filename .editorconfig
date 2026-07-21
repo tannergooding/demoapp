@@ -61,11 +61,19 @@ file_header_template = Copyright © Tanner Gooding and Contributors. Licensed un
 #    ignore use integral or string argument for indexers
 #    ignore operator overloads have named alternates
 #    ignore do not use insecure randomness
+#    ignore do not declare visible instance fields (public readonly fields are intentional)
+#    ignore do not expose generic lists (List<T> is intentional for perf)
+#    ignore validate arguments of public methods (nullable reference types are enabled and trusted)
+#    ignore value types should override equality (these value types have no equality semantics)
 ###############################################################################
 [*.cs]
 dotnet_diagnostic.CA1043.severity = none
 dotnet_diagnostic.CA2225.severity = none
 dotnet_diagnostic.CA5394.severity = none
+dotnet_diagnostic.CA1051.severity = none
+dotnet_diagnostic.CA1002.severity = none
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1815.severity = none
 
 ###############################################################################
 # Set dotnet naming rules to:

@@ -16,8 +16,8 @@ public class PerspectiveCamera
     private Matrix4x4 _previousViewProjection = Matrix4x4.Identity;
     private Matrix4x4 _reprojection = Matrix4x4.Identity;
 
-    private BoundingFrustum _viewSpace = new BoundingFrustum();
-    private BoundingFrustum _worldSpace = new BoundingFrustum();
+    private BoundingFrustum _viewSpace;
+    private BoundingFrustum _worldSpace;
 
     private float _fieldOfView = MathF.PI / 4.0f;
     private float _aspectRatio = 9.0f / 16.0f;

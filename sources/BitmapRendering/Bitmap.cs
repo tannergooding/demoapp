@@ -15,9 +15,6 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
     private const int BytesPerPixel = BitsPerPixel / 8;
     private const int PixelsPerBlock = BytesPerBlock / BytesPerPixel;
 
-    private const double DpiX = 96.0;
-    private const double DpiY = 96.0;
-
     public readonly IntPtr RenderBuffer = renderBuffer;
     public readonly IntPtr DepthBuffer = depthBuffer;
     public readonly int PixelWidth = width;
@@ -726,7 +723,7 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         }
     }
 
-    private bool ShouldCull(Model model, int index, out Vector3 normal)
+    private static bool ShouldCull(Model model, int index, out Vector3 normal)
     {
         var normals = model.ModifiedNormals;
         var normalGroup = model.NormalGroups[index];
@@ -744,5 +741,5 @@ public readonly struct Bitmap(IntPtr renderBuffer, IntPtr depthBuffer, int width
         return ShouldCull(normal);
     }
 
-    private bool ShouldCull(Vector3 normal) => Vector3.Dot(normal, Vector3.UnitZ) <= 0;
+    private static bool ShouldCull(Vector3 normal) => Vector3.Dot(normal, Vector3.UnitZ) <= 0;
 }

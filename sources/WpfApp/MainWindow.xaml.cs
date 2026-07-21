@@ -13,7 +13,7 @@ using BitmapRendering;
 
 namespace WpfApp;
 
-public partial class MainWindow : Window
+internal partial class MainWindow : Window
 {
     private const int BufferCount = 2;
 
@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     private readonly List<Model?> _scenes = [];
     private readonly (WriteableBitmap Render, WriteableBitmap Depth)[] _buffers = new (WriteableBitmap, WriteableBitmap)[BufferCount];
 
-    private int _bufferIndex = 0;
+    private int _bufferIndex;
 
     public MainWindow()
     {

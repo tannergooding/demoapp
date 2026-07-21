@@ -26,9 +26,9 @@ public sealed class BitmapRenderer
     private Bitmap _bitmap;
 
     private int _minFps = int.MaxValue;
-    private int _fps = 0;
+    private int _fps;
     private int _maxFps = int.MinValue;
-    private long _totalFrames = 0;
+    private long _totalFrames;
 
     private Timestamp _previousTimestamp = new Timestamp(0);
     private TimeSpan _totalUptime = TimeSpan.Zero;
@@ -48,8 +48,8 @@ public sealed class BitmapRenderer
 
     private bool _isRotating = true;
     private bool _isWireframe = true;
-    private bool _useHWIntrinsics = false;
-    private bool _displayDepthBuffer = false;
+    private bool _useHWIntrinsics;
+    private bool _displayDepthBuffer;
 
     public BitmapRenderer()
     {
@@ -261,7 +261,6 @@ public sealed class BitmapRenderer
 
             ObjectToWorld(activeScene);
             WorldToCamera(activeScene);
-            CameraToScreen(activeScene);
         }
 
         _previousTimestamp = timestamp;
@@ -273,8 +272,6 @@ public sealed class BitmapRenderer
         ticks *= s_tickFrequency;
         return new Timestamp((long)ticks);
     }
-
-    private void CameraToScreen(Model model) { }
 
     private void ObjectToWorld(Model model)
     {

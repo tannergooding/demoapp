@@ -7,10 +7,12 @@ using System.Drawing.Imaging;
 
 namespace WinFormsApp;
 
-public sealed class WriteableBitmap(int pixelWidth, int pixelHeight, PixelFormat pixelFormat)
+internal sealed class WriteableBitmap(int pixelWidth, int pixelHeight, PixelFormat pixelFormat) : IDisposable
 {
     private readonly Bitmap _bitmap = new Bitmap(pixelWidth, pixelHeight, pixelFormat);
     private BitmapData? _bitmapData;
+
+    public void Dispose() => _bitmap.Dispose();
 
     public void Lock(Rectangle dirtyRegion) => _bitmapData = _bitmap.LockBits(dirtyRegion, ImageLockMode.ReadWrite, _bitmap.PixelFormat);
 
