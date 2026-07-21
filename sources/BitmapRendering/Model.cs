@@ -25,7 +25,7 @@ public class Model(int verticeCount, int verticeGroupCount, int normalCount, int
     {
         using var fileStream = new StreamReader(path);
 
-        var modelDocument = JsonDocument.Parse(fileStream.BaseStream);
+        using var modelDocument = JsonDocument.Parse(fileStream.BaseStream);
         var modelRoot = modelDocument.RootElement;
 
         var vertices = modelRoot.GetProperty("vertices");
