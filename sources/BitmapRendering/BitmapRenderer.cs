@@ -17,6 +17,11 @@ public sealed class BitmapRenderer
     private const float DefaultZoomLevel = 100.0f;
     private const float TicksPerSecond = TimeSpan.TicksPerSecond;
 
+    private const float CameraDistance = 8.0f;
+    private const float NearClip = 0.1f;
+    private const float FarClip = 100.0f;
+    private const float ZoomToWorldScale = 0.01f;
+
     private static readonly Vector3 s_defaultRotation = new Vector3(90.0f, 0.0f, 0.0f);
 
     private static readonly Vector3 s_defaultScale = new Vector3(DefaultZoomLevel, DefaultZoomLevel, 1.0f);
@@ -39,7 +44,6 @@ public sealed class BitmapRenderer
     private Vector3 _rotation = Vector3.Zero;
     private Vector3 _rotationSpeed = Vector3.Zero;
     private Vector3 _scale = Vector3.One;
-    private Vector3 _translation = Vector3.Zero;
 
     private readonly PerspectiveCamera _camera = new PerspectiveCamera();
 
@@ -54,7 +58,6 @@ public sealed class BitmapRenderer
     public BitmapRenderer()
     {
         Reset();
-        _camera.SetEyeAtUp(Vector3.Zero, Vector3.Zero, Vector3.UnitY);
         _previousTimestamp = GetTimestamp();
     }
 
@@ -248,8 +251,6 @@ public sealed class BitmapRenderer
         _totalUptime += delta;
         _lastHeaderUpdate += delta;
 
-        _translation = new Vector3(pixelWidth / 2.0f, pixelHeight / 2.0f, 0.0f);
-
         UpdateRotation(delta);
 
         var activeScene = ActiveScene;
@@ -259,8 +260,7 @@ public sealed class BitmapRenderer
             _modifiedLightPosition = _lightPosition;
             activeScene.Reset();
 
-            ObjectToWorld(activeScene);
-            WorldToCamera(activeScene);
+            ProjectScene(activeScene, pixelWidth, pixelHeight);
         }
 
         _previousTimestamp = timestamp;
@@ -273,11 +273,39 @@ public sealed class BitmapRenderer
         return new Timestamp((long)ticks);
     }
 
-    private void ObjectToWorld(Model model)
+    private void ProjectScene(Model model, int pixelWidth, int pixelHeight)
     {
-        RotateObject(model);
-        ScaleObject(model);
-        TranslateObject(model);
+        var rotationRadians = _rotation * (MathF.PI / 180.0f);
+        var rotation = Quaternion.CreateFromYawPitchRoll(rotationRadians.Y, rotationRadians.X, rotationRadians.Z);
+        var worldScale = ZoomLevel * ZoomToWorldScale;
+
+        _camera.SetPerspective(_camera.FieldOfView, (float)pixelHeight / pixelWidth, NearClip, FarClip);
+        _camera.SetEyeAtUp(new Vector3(0.0f, 0.0f, CameraDistance), Vector3.Zero, Vector3.UnitY);
+        _camera.Update();
+
+        var viewProjection = _camera.ViewProjection;
+
+        var vertices = model.ModifiedVertices;
+
+        for (var i = 0; i < vertices.Count; i++)
+        {
+            var world = Vector3.Transform(vertices[i], rotation) * worldScale;
+            var clip = Vector4.Transform(new Vector4(world, 1.0f), viewProjection);
+            var ndc = new Vector3(clip.X, clip.Y, clip.Z) / clip.W;
+
+            vertices[i] = new Vector3(
+                (ndc.X * 0.5f + 0.5f) * pixelWidth,
+                (1.0f - ((ndc.Y * 0.5f) + 0.5f)) * pixelHeight,
+                ndc.Z
+            );
+        }
+
+        var normals = model.ModifiedNormals;
+
+        for (var i = 0; i < normals.Count; i++)
+        {
+            normals[i] = Vector3.Transform(normals[i], rotation);
+        }
     }
 
     private void RenderBuffer()
@@ -306,43 +334,6 @@ public sealed class BitmapRenderer
         _fps = 0;
     }
 
-    private void RotateObject(Model polygon)
-    {
-        var rotation = _rotation * (MathF.PI / 180);
-        var rotationTransform = Quaternion.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z);
-
-        for (var i = 0; i < polygon.Vertices.Count; i++)
-        {
-            polygon.ModifiedVertices[i] = Vector3.Transform(polygon.ModifiedVertices[i], rotationTransform);
-        };
-
-        for (var i = 0; i < polygon.Normals.Count; i++)
-        {
-            polygon.ModifiedNormals[i] = Vector3.Transform(polygon.ModifiedNormals[i], rotationTransform);
-        }
-    }
-
-    private void ScaleObject(Model polygon)
-    {
-        var scaleTransform = Matrix4x4.CreateScale(_scale);
-
-        for (var i = 0; i < polygon.Vertices.Count; i++)
-        {
-            polygon.ModifiedVertices[i] = Vector3.Transform(polygon.ModifiedVertices[i], scaleTransform);
-        }
-    }
-
-    private void TranslateObject(Model polygon)
-    {
-        var translation = _translation;
-        _modifiedLightPosition += translation;
-
-        for (var i = 0; i < polygon.Vertices.Count; i++)
-        {
-            polygon.ModifiedVertices[i] += translation;
-        }
-    }
-
     private void UpdateRotation(TimeSpan delta)
     {
         if (!_isRotating)
@@ -369,21 +360,5 @@ public sealed class BitmapRenderer
         }
 
         _rotation = rotation;
-    }
-
-    private void WorldToCamera(Model polygon)
-    {
-        var viewProjection = _camera.ViewProjection;
-        _modifiedLightPosition = Vector3.Transform(_modifiedLightPosition, viewProjection);
-
-        for (var i = 0; i < polygon.Vertices.Count; i++)
-        {
-            polygon.ModifiedVertices[i] = Vector3.Transform(polygon.ModifiedVertices[i], viewProjection);
-        }
-
-        for (var i = 0; i < polygon.Normals.Count; i++)
-        {
-            polygon.ModifiedNormals[i] = Vector3.Transform(polygon.ModifiedNormals[i], viewProjection);
-        }
     }
 }

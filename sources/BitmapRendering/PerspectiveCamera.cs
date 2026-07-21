@@ -21,8 +21,8 @@ public class PerspectiveCamera
 
     private float _fieldOfView = MathF.PI / 4.0f;
     private float _aspectRatio = 9.0f / 16.0f;
-    private float _nearClip = float.MinValue;
-    private float _farClip = float.MaxValue;
+    private float _nearClip = 0.1f;
+    private float _farClip = 100.0f;
     private bool _reverseZ = true;
 
     public PerspectiveCamera()
@@ -43,7 +43,7 @@ public class PerspectiveCamera
         }
     }
 
-    public float ClearDepth => _reverseZ ? _nearClip : _farClip;
+    public float ClearDepth => _reverseZ ? 0.0f : 1.0f;
 
     public float FarClip => _farClip;
 
@@ -178,7 +178,7 @@ public class PerspectiveCamera
         _previousViewProjection = _viewProjection;
 
         _view = M4x4.CreateFrom(_cameraToWorld.Invert());
-        _viewProjection = _projection * _view;
+        _viewProjection = _view * _projection;
 
         _ = Matrix4x4.Invert(_viewProjection, out var invertedViewProjection);
         _reprojection = _previousViewProjection * invertedViewProjection;
