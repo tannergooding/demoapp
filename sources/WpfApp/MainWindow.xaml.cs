@@ -43,6 +43,13 @@ internal partial class MainWindow : Window
             _renderer.Render();
             _renderer.Present();
 
+            // Gray32Float shows the raw depth, and reverse-Z leaves the geometry in a sliver
+            // near zero, so normalize it for contrast before display.
+            if (_renderer.DisplayDepthBuffer)
+            {
+                _renderer.VisualizeDepth(depth.BackBuffer, render.PixelWidth * render.PixelHeight);
+            }
+
             var dirtyRegion = new Int32Rect(0, 0, render.PixelWidth, render.PixelHeight);
             render.AddDirtyRect(dirtyRegion);
             depth.AddDirtyRect(dirtyRegion);

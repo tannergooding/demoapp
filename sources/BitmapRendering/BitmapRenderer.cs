@@ -170,6 +170,77 @@ public sealed class BitmapRenderer
         _totalFrames++;
     }
 
+    // Rewrites the depth buffer in place as a normalized [0, 1] grayscale so the near/far
+    // variation is visible. Reverse-Z depth for a scene this far inside the frustum otherwise
+    // occupies well under a percent of the range and reads as flat near-black. The window is
+    // fixed to the scene geometry -- the model's bounding-sphere radius is rotation invariant,
+    // so [CameraDistance - radius, CameraDistance + radius] bounds every view-space distance
+    // the geometry can occupy as it spins, mapping a given surface to a constant gray instead
+    // of a per-frame relative one that flickers under rotation. Display only -- the buffer is
+    // cleared and rewritten each frame, so overwriting it here is safe.
+    public unsafe void VisualizeDepth(IntPtr depthBuffer, int pixelCount)
+    {
+        var pDepth = (float*)depthBuffer;
+        var background = _camera.ClearDepth;
+
+        var radius = 0.0f;
+
+        if (ActiveScene is Model scene)
+        {
+            var vertices = CollectionsMarshal.AsSpan(scene.Vertices);
+
+            for (var i = 0; i < vertices.Length; i++)
+            {
+                radius = float.MaxNative(radius, vertices[i].LengthSquared());
+            }
+
+            radius = float.Sqrt(radius) * (ZoomLevel * ZoomToWorldScale);
+        }
+
+        var near = _camera.NearClip;
+        var far = _camera.FarClip;
+
+        float q1, q2;
+
+        if (_camera.ReverseZ)
+        {
+            q1 = near / (far - near);
+            q2 = q1 * far;
+        }
+        else
+        {
+            q1 = far / (near - far);
+            q2 = q1 * near;
+        }
+
+        // ndc.Z as a function of positive view distance is q2/dist - q1; evaluate it at the
+        // near and far shells of the bounding sphere to get the fixed window extremes.
+        var nearDist = float.MaxNative(CameraDistance - radius, near);
+        var depthAtNear = (q2 / nearDist) - q1;
+        var depthAtFar = (q2 / (CameraDistance + radius)) - q1;
+
+        var min = float.MinNative(depthAtNear, depthAtFar);
+        var range = float.MaxNative(depthAtNear, depthAtFar) - min;
+
+        if (range <= 0.0f)
+        {
+            // No geometry, or a degenerate window, so there is nothing to spread.
+            for (var i = 0; i < pixelCount; i++)
+            {
+                pDepth[i] = 0.0f;
+            }
+            return;
+        }
+
+        var scale = 1.0f / range;
+
+        for (var i = 0; i < pixelCount; i++)
+        {
+            var depth = pDepth[i];
+            pDepth[i] = (depth != background) ? float.ClampNative((depth - min) * scale, 0.0f, 1.0f) : 0.0f;
+        }
+    }
+
     public void Render()
     {
         RenderInfo();

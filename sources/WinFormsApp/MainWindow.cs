@@ -42,12 +42,14 @@ internal partial class MainWindow : Form
             _renderer.Render();
             _renderer.Present();
 
-            // GDI+ has no float grayscale format like WPF's Gray32Float, so pack the raw
-            // reverse-Z depth into an 8-bit gray ARGB image before it is displayed. The depth
-            // buffer is fully cleared and rewritten next frame, so overwriting it here is safe.
+            // GDI+ has no float grayscale format like WPF's Gray32Float, so normalize the
+            // reverse-Z depth for contrast and pack it into an 8-bit sRGB gray ARGB image
+            // before it is displayed.
             if (_renderer.DisplayDepthBuffer)
             {
-                PackDepthAsGrayscale(depth.BackBuffer, render.PixelWidth * render.PixelHeight);
+                var pixelCount = render.PixelWidth * render.PixelHeight;
+                _renderer.VisualizeDepth(depth.BackBuffer, pixelCount);
+                PackDepthAsGrayscale(depth.BackBuffer, pixelCount);
             }
 
             var currentBufferIndex = _bufferIndex;
