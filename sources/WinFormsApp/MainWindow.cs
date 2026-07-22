@@ -42,6 +42,14 @@ internal partial class MainWindow : Form
             _renderer.Render();
             _renderer.Present();
 
+            // GDI+ has no float grayscale format like WPF's Gray32Float, so pack the raw
+            // reverse-Z depth into an 8-bit gray ARGB image before it is displayed. The depth
+            // buffer is fully cleared and rewritten next frame, so overwriting it here is safe.
+            if (_renderer.DisplayDepthBuffer)
+            {
+                PackDepthAsGrayscale(depth.BackBuffer, render.PixelWidth * render.PixelHeight);
+            }
+
             var currentBufferIndex = _bufferIndex;
             _bufferIndex = (_bufferIndex + 1) % BufferCount;
 
@@ -59,6 +67,23 @@ internal partial class MainWindow : Form
     }
 
     private void OnDisplayDepthBufferCheckedChanged(object sender, EventArgs e) => _renderer.DisplayDepthBuffer = _displayDepthBufferCheckBox.Checked;
+
+    private static unsafe void PackDepthAsGrayscale(IntPtr depthBuffer, int pixelCount)
+    {
+        var pDepth = (float*)depthBuffer;
+        var pColor = (uint*)depthBuffer;
+
+        for (var i = 0; i < pixelCount; i++)
+        {
+            // WPF treats Gray32Float as linear and sRGB-encodes it on display, so do the
+            // same here so the two backends match.
+            var gray = (uint)(LinearToSrgb(float.ClampNative(pDepth[i], 0.0f, 1.0f)) * 255.0f);
+            pColor[i] = 0xFF000000 | (gray << 16) | (gray << 8) | gray;
+        }
+    }
+
+    private static float LinearToSrgb(float value)
+        => value <= 0.0031308f ? value * 12.92f : (1.055f * float.Pow(value, 1.0f / 2.4f)) - 0.055f;
 
     private void OnLightPositionXChanged(object sender, EventArgs e)
     {
