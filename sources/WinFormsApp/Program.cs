@@ -13,7 +13,7 @@ internal static class Program
     [STAThread]
     public static void Main()
     {
-        _ = Application.SetHighDpiMode(HighDpiMode.SystemAware);
+        _ = Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 

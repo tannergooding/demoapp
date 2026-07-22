@@ -201,16 +201,20 @@ internal partial class MainWindow : Window
     private (WriteableBitmap Render, WriteableBitmap Depth) GetBuffer(int index)
     {
         var displaySurface = _displaySurface;
+        var dpi = VisualTreeHelper.GetDpi(displaySurface);
 
-        var pixelWidth = (int)displaySurface.Width;
-        var pixelHeight = (int)displaySurface.Height;
+        // Size the backbuffers in physical pixels so the software rasterizer renders at the
+        // display's real resolution. Sizing them in DIPs would let WPF upscale and blur the
+        // result on a high-DPI monitor.
+        var pixelWidth = int.Max(1, (int)(displaySurface.ActualWidth * dpi.DpiScaleX));
+        var pixelHeight = int.Max(1, (int)(displaySurface.ActualHeight * dpi.DpiScaleY));
 
         var buffer = _buffers[index];
 
         if ((buffer.Render is null) || (pixelWidth != buffer.Render.PixelWidth) || (pixelHeight != buffer.Render.PixelHeight))
         {
-            buffer.Render = new WriteableBitmap(pixelWidth, pixelHeight, 96.0, 96.0, s_renderBufferPixelFormat, palette: null);
-            buffer.Depth = new WriteableBitmap(pixelWidth, pixelHeight, 96.0, 96.0, s_depthBufferPixelFormat, palette: null);
+            buffer.Render = new WriteableBitmap(pixelWidth, pixelHeight, 96.0 * dpi.DpiScaleX, 96.0 * dpi.DpiScaleY, s_renderBufferPixelFormat, palette: null);
+            buffer.Depth = new WriteableBitmap(pixelWidth, pixelHeight, 96.0 * dpi.DpiScaleX, 96.0 * dpi.DpiScaleY, s_depthBufferPixelFormat, palette: null);
             _buffers[index] = buffer;
         }
         return buffer;

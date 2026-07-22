@@ -96,10 +96,7 @@ namespace WinFormsApp
             // 
             // _leftGrid
             // 
-            this._leftGrid.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this._leftGrid.AutoSize = true;
-            this._leftGrid.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this._leftGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this._leftGrid.ColumnCount = 1;
             this._leftGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this._leftGrid.Controls.Add(this._sceneListBox, 0, 0);
@@ -111,18 +108,20 @@ namespace WinFormsApp
             this._leftGrid.Location = new System.Drawing.Point(3, 3);
             this._leftGrid.Name = "_leftGrid";
             this._leftGrid.RowCount = 6;
-            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._leftGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
             this._leftGrid.Size = new System.Drawing.Size(150, 655);
             this._leftGrid.TabIndex = 0;
             // 
             // _sceneListBox
             // 
+            this._sceneListBox.Dock = System.Windows.Forms.DockStyle.Fill;
             this._sceneListBox.FormattingEnabled = true;
+            this._sceneListBox.IntegralHeight = false;
             this._sceneListBox.ItemHeight = 15;
             this._sceneListBox.Location = new System.Drawing.Point(3, 3);
             this._sceneListBox.Name = "_sceneListBox";
@@ -148,8 +147,8 @@ namespace WinFormsApp
             this._rotationGrid.AutoSize = true;
             this._rotationGrid.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this._rotationGrid.ColumnCount = 2;
-            this._rotationGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._rotationGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._rotationGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._rotationGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this._rotationGrid.Controls.Add(this._rotationXLabel, 0, 0);
             this._rotationGrid.Controls.Add(this._rotationXSlider, 1, 0);
             this._rotationGrid.Controls.Add(this._rotationYLabel, 0, 1);
@@ -160,9 +159,9 @@ namespace WinFormsApp
             this._rotationGrid.Location = new System.Drawing.Point(3, 19);
             this._rotationGrid.Name = "_rotationGrid";
             this._rotationGrid.RowCount = 3;
-            this._rotationGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._rotationGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._rotationGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this._rotationGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this._rotationGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this._rotationGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this._rotationGrid.Size = new System.Drawing.Size(138, 153);
             this._rotationGrid.TabIndex = 0;
             // 
@@ -253,8 +252,8 @@ namespace WinFormsApp
             this._lightPositionGrid.AutoSize = true;
             this._lightPositionGrid.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this._lightPositionGrid.ColumnCount = 2;
-            this._lightPositionGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._lightPositionGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._lightPositionGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._lightPositionGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this._lightPositionGrid.Controls.Add(this._lightPositionXLabel, 0, 0);
             this._lightPositionGrid.Controls.Add(this._lightPositionXSlider, 1, 0);
             this._lightPositionGrid.Controls.Add(this._lightPositionYLabel, 0, 1);
@@ -265,9 +264,9 @@ namespace WinFormsApp
             this._lightPositionGrid.Location = new System.Drawing.Point(3, 19);
             this._lightPositionGrid.Name = "_lightPositionGrid";
             this._lightPositionGrid.RowCount = 3;
-            this._lightPositionGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._lightPositionGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
-            this._lightPositionGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33333F));
+            this._lightPositionGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this._lightPositionGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this._lightPositionGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this._lightPositionGrid.Size = new System.Drawing.Size(138, 153);
             this._lightPositionGrid.TabIndex = 0;
             // 
@@ -358,15 +357,15 @@ namespace WinFormsApp
             this._viewGrid.AutoSize = true;
             this._viewGrid.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this._viewGrid.ColumnCount = 2;
-            this._viewGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this._viewGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this._viewGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize));
+            this._viewGrid.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this._viewGrid.Controls.Add(this._zoomLabel, 0, 0);
             this._viewGrid.Controls.Add(this._zoomSlider, 1, 0);
             this._viewGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this._viewGrid.Location = new System.Drawing.Point(3, 19);
             this._viewGrid.Name = "_viewGrid";
             this._viewGrid.RowCount = 1;
-            this._viewGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this._viewGrid.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this._viewGrid.Size = new System.Drawing.Size(138, 51);
             this._viewGrid.TabIndex = 0;
             // 

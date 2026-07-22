@@ -10,14 +10,23 @@
             <ColumnDefinition Width="8*" />
         </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Vertical" Grid.Column="0">
-            <ListBox x:Name="_sceneListBox" SelectionChanged="SceneListBox_SelectionChanged" />
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <GroupBox Header="Rotation" BorderThickness="1" BorderBrush="Black">
+            <ListBox x:Name="_sceneListBox" SelectionChanged="SceneListBox_SelectionChanged" Grid.Row="0" />
+
+            <GroupBox Header="Rotation" BorderThickness="1" BorderBrush="Black" Grid.Row="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*" />
@@ -33,11 +42,11 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="Light Position" BorderThickness="1" BorderBrush="Black">
+            <GroupBox Header="Light Position" BorderThickness="1" BorderBrush="Black" Grid.Row="2">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*" />
@@ -53,18 +62,18 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="View" BorderThickness="1" BorderBrush="Black">
+            <GroupBox Header="View" BorderThickness="1" BorderBrush="Black" Grid.Row="3">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Label Content="Zoom (0): " x:Name="_zoomLabel" Grid.Column="0" />
                     <Slider ValueChanged="OnZoomChanged" Minimum="0" Maximum="1000" x:Name="_zoomSlider" Grid.Column="1" />
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="Options" BorderThickness="1" BorderBrush="Black">
+            <GroupBox Header="Options" BorderThickness="1" BorderBrush="Black" Grid.Row="4">
                 <StackPanel Orientation="Vertical">
                     <CheckBox Content="Display Depth Buffer" Checked="OnDisplayDepthBufferChecked" Unchecked="OnDisplayDepthBufferUnchecked" x:Name="_displayDepthBufferCheckBox" />
                     <CheckBox Content="Rotate Model" Checked="OnRotateModelChecked" Unchecked="OnRotateModelUnchecked" x:Name="_rotateModelCheckBox" IsChecked="True" />
@@ -73,10 +82,10 @@
                 </StackPanel>
             </GroupBox>
 
-            <Button Content="Reset" Click="OnResetClicked" x:Name="_resetButton" />
-        </StackPanel>
+            <Button Content="Reset" Click="OnResetClicked" x:Name="_resetButton" Grid.Row="5" />
+        </Grid>
         <DockPanel Grid.Column="1">
-            <Image x:Name="_displaySurface" Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType={x:Type DockPanel}, Mode=FindAncestor}}" Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType={x:Type DockPanel}, Mode=FindAncestor}}" />
+            <Image x:Name="_displaySurface" Stretch="Fill" />
         </DockPanel>
     </Grid>
 </Window>
